@@ -23,6 +23,8 @@ class User(UserMixin, db.Model):
     is_active = db.Column(db.Boolean, default=True)
     created_at = db.Column(db.DateTime, default=datetime.now)
     last_login = db.Column(db.DateTime)
+    reset_token = db.Column(db.String(100), nullable=True)
+    reset_token_expires = db.Column(db.DateTime, nullable=True)
     
     # Relationships
     scraping_history = db.relationship('ScrapingHistory', backref='user', lazy='dynamic')
@@ -39,6 +41,30 @@ class User(UserMixin, db.Model):
     def is_admin(self):
         """Check if user is an admin"""
         return self.role == 'admin'
+    
+    def generate_reset_token(self):
+        """Generate a password reset token"""
+        import secrets
+        self.reset_token = secrets.token_urlsafe(32)
+        # Token expires in 1 hour
+        from datetime import timedelta
+        self.reset_token_expires = datetime.now() + timedelta(hours=1)
+        return self.reset_token
+    
+    def verify_reset_token(self, token):
+        """Verify if reset token is valid and not expired"""
+        if not self.reset_token or not self.reset_token_expires:
+            return False
+        if self.reset_token != token:
+            return False
+        if datetime.now() > self.reset_token_expires:
+            return False
+        return True
+    
+    def clear_reset_token(self):
+        """Clear reset token after password reset"""
+        self.reset_token = None
+        self.reset_token_expires = None
     
     def __repr__(self):
         return f'<User {self.email}>'

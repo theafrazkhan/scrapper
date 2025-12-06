@@ -515,6 +515,79 @@ def api_logout():
     return jsonify({'success': True})
 
 
+@app.route('/api/forgot-password', methods=['POST'])
+def forgot_password():
+    """Generate password reset token for admin user only"""
+    data = request.get_json()
+    email = data.get('email')
+    
+    if not email:
+        return jsonify({'success': False, 'message': 'Email is required'}), 400
+    
+    # Find user by email
+    user = User.query.filter_by(email=email).first()
+    
+    # Check if user exists and is admin
+    if not user:
+        # Don't reveal if email exists for security
+        return jsonify({'success': True, 'message': 'If this email exists and is an admin account, a reset token has been generated.'})
+    
+    if not user.is_admin():
+        return jsonify({'success': False, 'message': 'Password reset is only available for admin accounts'}), 403
+    
+    # Generate reset token
+    token = user.generate_reset_token()
+    db.session.commit()
+    
+    # In a real app, you'd send this via email
+    # For now, we'll return it in the response (development only)
+    return jsonify({
+        'success': True,
+        'message': 'Password reset token generated successfully',
+        'token': token,  # In production, send via email instead
+        'expires_in': '1 hour'
+    })
+
+
+@app.route('/api/reset-password', methods=['POST'])
+def reset_password():
+    """Reset password using valid token"""
+    data = request.get_json()
+    email = data.get('email')
+    token = data.get('token')
+    new_password = data.get('new_password')
+    
+    if not email or not token or not new_password:
+        return jsonify({'success': False, 'message': 'Email, token, and new password are required'}), 400
+    
+    # Validate password strength
+    if len(new_password) < 6:
+        return jsonify({'success': False, 'message': 'Password must be at least 6 characters long'}), 400
+    
+    # Find user
+    user = User.query.filter_by(email=email).first()
+    
+    if not user:
+        return jsonify({'success': False, 'message': 'Invalid reset token'}), 400
+    
+    if not user.is_admin():
+        return jsonify({'success': False, 'message': 'Password reset is only available for admin accounts'}), 403
+    
+    # Verify token
+    if not user.verify_reset_token(token):
+        return jsonify({'success': False, 'message': 'Invalid or expired reset token'}), 400
+    
+    # Reset password
+    user.set_password(new_password)
+    user.clear_reset_token()
+    db.session.commit()
+    
+    return jsonify({
+        'success': True,
+        'message': 'Password reset successfully. You can now login with your new password.'
+    })
+
+
 @app.route('/api/start_scraping', methods=['POST'])
 def start_scraping():
     """Start the scraping process"""

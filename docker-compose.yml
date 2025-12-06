@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+  lululemon-scraper:
+    build: .
+    container_name: lululemon-scraper
+    ports:
+      - "5000:5000"
+    volumes:
+      # Persist database
+      - ./frontend/instance:/app/frontend/instance
+      # Persist scraped data
+      - ./backend/data:/app/backend/data
+      # Persist logs
+      - ./backend/logs:/app/backend/logs
+    environment:
+      - FLASK_ENV=production
+      - SECRET_KEY=${SECRET_KEY:-change-this-secret-key-in-production}
+      - PYTHONUNBUFFERED=1
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s

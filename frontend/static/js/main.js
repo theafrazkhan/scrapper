@@ -688,3 +688,159 @@ style.textContent = `
     }
 `;
 document.head.appendChild(style);
+
+
+// ============================================
+// Forgot Password Functions
+// ============================================
+
+function openForgotPasswordModal() {
+    const modal = document.getElementById('forgotPasswordModal');
+    document.getElementById('resetStep1').classList.remove('hidden');
+    document.getElementById('resetStep2').classList.add('hidden');
+    document.getElementById('resetEmail').value = '';
+    document.getElementById('resetToken').value = '';
+    document.getElementById('newPassword').value = '';
+    document.getElementById('confirmPassword').value = '';
+    modal.classList.remove('hidden');
+}
+
+function closeForgotPasswordModal() {
+    const modal = document.getElementById('forgotPasswordModal');
+    modal.classList.add('hidden');
+}
+
+async function requestResetToken(event) {
+    event.preventDefault();
+    
+    const email = document.getElementById('resetEmail').value;
+    const submitBtn = event.target.querySelector('button[type="submit"]');
+    
+    // Disable button and show loading
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> <span>Sending...</span>';
+    
+    try {
+        const response = await fetch('/api/forgot-password', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ email })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok && data.success) {
+            // Show step 2 with the token
+            document.getElementById('resetStep1').classList.add('hidden');
+            document.getElementById('resetStep2').classList.remove('hidden');
+            document.getElementById('resetTokenDisplay').textContent = data.token;
+            document.getElementById('resetToken').value = data.token;
+            document.getElementById('resetEmail').setAttribute('data-email', email);
+            
+            showToast('Reset token generated successfully!', 'success');
+        } else {
+            showToast(data.message || 'Failed to generate reset token', 'error');
+        }
+    } catch (error) {
+        console.error('Error requesting reset token:', error);
+        showToast('Network error. Please try again.', 'error');
+    } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> <span>Request Reset Token</span>';
+    }
+}
+
+async function resetPassword(event) {
+    event.preventDefault();
+    
+    const email = document.getElementById('resetEmail').getAttribute('data-email');
+    const token = document.getElementById('resetToken').value;
+    const newPassword = document.getElementById('newPassword').value;
+    const confirmPassword = document.getElementById('confirmPassword').value;
+    
+    // Validate passwords match
+    if (newPassword !== confirmPassword) {
+        showToast('Passwords do not match!', 'error');
+        return;
+    }
+    
+    // Validate password length
+    if (newPassword.length < 6) {
+        showToast('Password must be at least 6 characters long', 'error');
+        return;
+    }
+    
+    const submitBtn = event.target.querySelector('button[type="submit"]');
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> <span>Resetting...</span>';
+    
+    try {
+        const response = await fetch('/api/reset-password', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ 
+                email,
+                token,
+                new_password: newPassword
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok && data.success) {
+            showToast('Password reset successfully! You can now login.', 'success');
+            closeForgotPasswordModal();
+            
+            // Pre-fill email in login form
+            document.getElementById('email').value = email;
+        } else {
+            showToast(data.message || 'Failed to reset password', 'error');
+        }
+    } catch (error) {
+        console.error('Error resetting password:', error);
+        showToast('Network error. Please try again.', 'error');
+    } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i class="fas fa-check"></i> <span>Reset Password</span>';
+    }
+}
+
+function copyToken() {
+    const token = document.getElementById('resetTokenDisplay').textContent;
+    navigator.clipboard.writeText(token).then(() => {
+        showToast('Token copied to clipboard!', 'success');
+    }).catch(() => {
+        showToast('Failed to copy token', 'error');
+    });
+}
+
+function toggleNewPassword() {
+    const passwordInput = document.getElementById('newPassword');
+    const toggleBtn = passwordInput.nextElementSibling;
+    const icon = toggleBtn.querySelector('i');
+    
+    if (passwordInput.type === 'password') {
+        passwordInput.type = 'text';
+        icon.classList.remove('fa-eye');
+        icon.classList.add('fa-eye-slash');
+    } else {
+        passwordInput.type = 'password';
+        icon.classList.remove('fa-eye-slash');
+        icon.classList.add('fa-eye');
+    }
+}
+
+// Add event listener for forgot password link
+document.addEventListener('DOMContentLoaded', () => {
+    const forgotPasswordLink = document.getElementById('forgotPasswordLink');
+    if (forgotPasswordLink) {
+        forgotPasswordLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            openForgotPasswordModal();
+        });
+    }
+});
