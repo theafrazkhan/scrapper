@@ -1436,6 +1436,6 @@ with app.app_context():
 if __name__ == '__main__':
     print("🚀 Starting Lululemon Scraper - Enterprise Edition")
     print("📍 Server running at: http://localhost:5000")
-    print("👤 Default admin: Joe@aureaclubs.com / admin123")
-    socketio.run(app, host='0.0.0.0', port=5000, debug=True)
-
+    print("👤 Default admin: Joe@aureaclubs.com / Joeilaspa455!")
+    # Use allow_unsafe_werkzeug=True for production deployment with Flask-SocketIO
+    socketio.run(app, host='0.0.0.0', port=5000, debug=False, allow_unsafe_werkzeug=True)
