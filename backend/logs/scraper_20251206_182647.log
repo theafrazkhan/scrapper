@@ -1,0 +1,10 @@
+2025-12-06 18:26:47,881 - INFO - Pipeline started
+2025-12-06 18:26:47,891 - INFO - Log file: /home/theafrazkhan/Desktop/scrappin/backend/logs/scraper_20251206_182647.log
+2025-12-06 18:26:53,363 - INFO - ✓ Found credentials for: Joe@aureaclubs.com
+2025-12-06 18:26:53,368 - INFO - 
+======================================================================
+2025-12-06 18:26:53,371 - INFO - STEP 1: Login & Save Cookies
+2025-12-06 18:26:53,375 - INFO - ======================================================================
+2025-12-06 18:26:53,379 - INFO - 🚀 Running: login_and_save_cookies.py
+2025-12-06 18:28:26,786 - WARNING - 
+⚠️  Pipeline interrupted by user

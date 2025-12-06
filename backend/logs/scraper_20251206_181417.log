@@ -1,0 +1,55 @@
+2025-12-06 18:14:17,409 - INFO - Pipeline started
+2025-12-06 18:14:17,410 - INFO - Log file: /home/theafrazkhan/Desktop/scrappin/backend/logs/scraper_20251206_181417.log
+2025-12-06 18:14:19,230 - INFO - ✓ Found credentials for: thebestafa
+2025-12-06 18:14:19,230 - INFO - 
+======================================================================
+2025-12-06 18:14:19,231 - INFO - STEP 1: Login & Save Cookies
+2025-12-06 18:14:19,231 - INFO - ======================================================================
+2025-12-06 18:14:19,232 - INFO - 🚀 Running: login_and_save_cookies.py
+2025-12-06 18:15:58,591 - INFO - ============================================================
+2025-12-06 18:15:58,591 - INFO - Lululemon Wholesale Portal - Login & Cookie Extractor
+2025-12-06 18:15:58,592 - INFO - ============================================================
+2025-12-06 18:15:58,592 - INFO - [1/4] Setting up Chrome WebDriver...
+2025-12-06 18:15:58,592 - INFO - [2/4] Logging in to wholesale portal...
+2025-12-06 18:15:58,592 - INFO - Navigating to https://wholesale.lululemon.com/...
+2025-12-06 18:15:58,593 - INFO - Looking for email input field...
+2025-12-06 18:15:58,593 - INFO - Entering email: thebestafa
+2025-12-06 18:15:58,593 - INFO - Entering password...
+2025-12-06 18:15:58,594 - INFO - Clicking login button...
+2025-12-06 18:15:58,594 - INFO - Waiting for login to complete...
+2025-12-06 18:15:58,595 - INFO - ✓ Login successful!
+2025-12-06 18:15:58,595 - INFO - Current URL: https://wholesale.lululemon.com/login?lvp=%2F
+2025-12-06 18:15:58,595 - INFO - [3/4] Saving cookies...
+2025-12-06 18:15:58,596 - INFO - Found 5 cookies
+2025-12-06 18:15:58,596 - INFO - ✓ Cookies saved to: /home/theafrazkhan/Desktop/scrappin/backend/data/cookie/cookie.json
+2025-12-06 18:15:58,596 - INFO - Important cookies found:
+2025-12-06 18:15:58,596 - INFO -   - frontastic-session: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiIsImtpZCI6IjZiMm...
+2025-12-06 18:15:58,597 - INFO - [4/4] Extracting product counts from category pages...
+2025-12-06 18:15:58,597 - INFO -   Navigating to women...
+2025-12-06 18:15:58,597 - INFO -   Found text: Showing 12 of 266 items
+2025-12-06 18:15:58,597 - INFO -   ✓ Total products in women: 266
+2025-12-06 18:15:58,598 - INFO -   Navigating to men...
+2025-12-06 18:15:58,598 - INFO -   ⚠ Could not extract product count for men, using default limit=12
+2025-12-06 18:15:58,598 - INFO -   Navigating to accessories...
+2025-12-06 18:15:58,598 - INFO -   ⚠ Could not extract product count for accessories, using default limit=12
+2025-12-06 18:15:58,598 - INFO -   Navigating to supplies...
+2025-12-06 18:15:58,599 - INFO -   ⚠ Could not extract product count for supplies, using default limit=12
+2025-12-06 18:15:58,599 - INFO - [4/4] Updating links.csv file...
+2025-12-06 18:15:58,599 - INFO -   - women: limit=276
+2025-12-06 18:15:58,599 - INFO -   - men: limit=12
+2025-12-06 18:15:58,599 - INFO -   - accessories: limit=12
+2025-12-06 18:15:58,600 - INFO -   - supplies: limit=12
+2025-12-06 18:15:58,600 - INFO - ✓ Links saved to: /home/theafrazkhan/Desktop/scrappin/backend/data/links.csv
+2025-12-06 18:15:58,600 - INFO - ============================================================
+2025-12-06 18:15:58,601 - INFO - ✓ SUCCESS! All tasks completed.
+2025-12-06 18:15:58,601 - INFO - ============================================================
+2025-12-06 18:15:58,601 - INFO - Cookie file: /home/theafrazkhan/Desktop/scrappin/backend/data/cookie/cookie.json
+2025-12-06 18:15:58,602 - INFO - Links file: /home/theafrazkhan/Desktop/scrappin/backend/data/links.csv
+2025-12-06 18:15:58,602 - INFO - You can now use these cookies and links with your download scripts.
+2025-12-06 18:15:58,602 - INFO - Closing browser...
+2025-12-06 18:15:58,950 - INFO - ✓ login_and_save_cookies.py completed successfully
+2025-12-06 18:15:58,951 - INFO - 
+======================================================================
+2025-12-06 18:15:58,951 - INFO - STEP 2: Extract Product Links
+2025-12-06 18:15:58,952 - INFO - ======================================================================
+2025-12-06 18:15:58,952 - INFO - 🚀 Running: extract_product_links.py

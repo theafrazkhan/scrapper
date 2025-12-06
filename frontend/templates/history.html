@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scraping History - Lululemon Scraper</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .history-section {
+            background: var(--white);
+            border-radius: var(--radius-xl);
+            padding: var(--spacing-xl);
+            margin-bottom: var(--spacing-xl);
+            box-shadow: var(--shadow-lg), var(--inner-shadow-sm);
+            border: 1px solid var(--gray-200);
+            transition: all var(--transition-base);
+        }
+        
+        .history-section {
+            background: var(--white);
+            border-radius: var(--radius-xl);
+            padding: var(--spacing-2xl);
+            box-shadow: var(--shadow-md), var(--inner-shadow-sm);
+            border: 1px solid var(--gray-200);
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        th, td {
+            padding: var(--spacing-md);
+            text-align: left;
+            border-bottom: 1px solid var(--gray-200);
+        }
+        
+        th {
+            background: var(--gray-50);
+            font-weight: 600;
+            color: var(--gray-700);
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        tbody tr {
+            transition: all var(--transition-base);
+        }
+        
+        tbody tr:hover {
+            background: var(--gray-50);
+        }
+        
+        .status-badge {
+            padding: 6px 12px;
+            border-radius: var(--radius-full);
+            font-size: 0.75rem;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .status-completed {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--success);
+        }
+        
+        .status-failed {
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--danger);
+        }
+        
+        .status-running {
+            background: rgba(59, 130, 246, 0.1);
+            color: #3b82f6;
+        }
+        
+        .btn-download {
+            background: var(--gradient-primary);
+            color: var(--white);
+            border: none;
+            padding: 8px 16px;
+            border-radius: var(--radius-lg);
+            cursor: pointer;
+            font-size: 0.875rem;
+            font-weight: 500;
+            transition: all var(--transition-base);
+            box-shadow: var(--shadow-sm);
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .btn-download:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-orange);
+        }
+        
+        .btn-download:disabled {
+            background: var(--gray-300);
+            color: var(--gray-500);
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: var(--spacing-2xl) var(--spacing-xl);
+            color: var(--gray-600);
+        }
+        
+        .empty-state i {
+            font-size: 4rem;
+            background: var(--gradient-primary);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: var(--spacing-lg);
+            display: inline-block;
+        }
+        
+        .empty-state h3 {
+            font-size: 1.5rem;
+            color: var(--gray-800);
+            margin-bottom: var(--spacing-sm);
+        }
+        
+        .empty-state p {
+            color: var(--gray-600);
+            margin-bottom: var(--spacing-xl);
+        }
+        
+        .btn-primary {
+            background: var(--gradient-primary);
+            color: var(--white);
+            border: none;
+            padding: var(--spacing-sm) var(--spacing-xl);
+            border-radius: var(--radius-lg);
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 500;
+            transition: all var(--transition-base);
+            box-shadow: var(--shadow-lg);
+            display: inline-flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+            text-decoration: none;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-orange);
+        }
+        
+        .filters {
+            display: flex;
+            gap: var(--spacing-md);
+            margin-bottom: var(--spacing-lg);
+            flex-wrap: wrap;
+        }
+        
+        .filters select,
+        .filters input {
+            padding: var(--spacing-sm) var(--spacing-md);
+            border: 1px solid var(--gray-300);
+            border-radius: var(--radius-lg);
+            font-size: 0.875rem;
+            transition: all var(--transition-base);
+            background: var(--white);
+        }
+        
+        .filters select:focus,
+        .filters input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: var(--shadow-orange);
+        }
+    </style>
+</head>
+<body>
+    <div class="particles-bg">
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+    </div>
+
+    <div class="container">
+        <header class="header">
+            <div class="logo-section">
+                <div class="logo-icon">
+                    <i class="fas fa-history"></i>
+                </div>
+                <div class="logo-text">
+                    <h1>Scraping History</h1>
+                    <p class="subtitle">View Past Scraping Sessions</p>
+                </div>
+            </div>
+            <div class="header-actions">
+                <div class="status-indicator">
+                    <span class="status-dot"></span>
+                    <span class="status-text">Ready</span>
+                </div>
+                
+                <!-- User Menu Button -->
+                <div class="user-menu-wrapper">
+                    <button class="user-menu-button" id="userMenuButton">
+                        <i class="fas fa-user-circle"></i>
+                        <span id="userEmailShort">{{ user.email.split('@')[0] }}</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </button>
+                </div>
+            </div>
+        </header>
+        
+        <!-- User Dropdown Menu -->
+        <div class="user-dropdown" id="userDropdown">
+            <div class="dropdown-header">
+                <i class="fas fa-user-circle"></i>
+                <div>
+                    <div class="dropdown-email">{{ user.email }}</div>
+                    <div class="dropdown-role {% if user.is_admin() %}admin{% endif %}">
+                        {% if user.is_admin() %}Administrator{% else %}User{% endif %}
+                    </div>
+                </div>
+            </div>
+            <div class="menu-divider"></div>
+            <a href="/" class="menu-link">
+                <i class="fas fa-home"></i>
+                <span>Dashboard</span>
+            </a>
+            <a href="/history" class="menu-link">
+                <i class="fas fa-history"></i>
+                <span>History</span>
+            </a>
+            {% if user.is_admin() %}
+            <a href="/settings" class="menu-link">
+                <i class="fas fa-cog"></i>
+                <span>Settings</span>
+            </a>
+            {% endif %}
+            <div class="menu-divider"></div>
+            <button class="menu-link logout-btn" id="logoutBtn">
+                <i class="fas fa-sign-out-alt"></i>
+                <span>Logout</span>
+            </button>
+        </div>
+        
+        <!-- Dropdown Overlay -->
+        <div class="dropdown-overlay" id="dropdownOverlay"></div>
+
+        <main class="main-content">
+            <!-- Stats -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-chart-bar"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3>{{ history|length }}</h3>
+                        <p>Total Scrapes</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3>{{ history|selectattr('status', 'equalto', 'completed')|list|length }}</h3>
+                        <p>Successful</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-times-circle"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3>{{ history|selectattr('status', 'equalto', 'failed')|list|length }}</h3>
+                        <p>Failed</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-shopping-bag"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3>{{ history|selectattr('total_products')|sum(attribute='total_products') if history else 0 }}</h3>
+                        <p>Total Products</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- History Table -->
+            <div class="history-section">
+                <h3 style="margin-top: 0; margin-bottom: 20px;">
+                    <i class="fas fa-list"></i> Scraping Sessions
+                </h3>
+                
+                {% if history %}
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Date & Time</th>
+                            <th>Status</th>
+                            <th>Products</th>
+                            <th>Duration</th>
+                            <th>File Size</th>
+                            <th>Excel File</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for h in history %}
+                        <tr>
+                            <td>{{ h.started_at.strftime('%Y-%m-%d %H:%M:%S') if h.started_at else 'N/A' }}</td>
+                            <td>
+                                <span class="status-badge status-{{ h.status }}">
+                                    {% if h.status == 'completed' %}
+                                        <i class="fas fa-check-circle"></i> Completed
+                                    {% elif h.status == 'failed' %}
+                                        <i class="fas fa-times-circle"></i> Failed
+                                    {% elif h.status == 'running' %}
+                                        <i class="fas fa-spinner fa-spin"></i> Running
+                                    {% else %}
+                                        {{ h.status }}
+                                    {% endif %}
+                                </span>
+                            </td>
+                            <td>{{ h.total_products if h.total_products else 'N/A' }}</td>
+                            <td>
+                                {% if h.started_at and h.completed_at %}
+                                    {% set duration = (h.completed_at - h.started_at).total_seconds() %}
+                                    {{ '%dm %ds' % (duration // 60, duration % 60) }}
+                                {% else %}
+                                    N/A
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if h.file_size %}
+                                    {{ '%.2f MB' % (h.file_size / 1024 / 1024) }}
+                                {% else %}
+                                    N/A
+                                {% endif %}
+                            </td>
+                            <td>{{ h.excel_filename if h.excel_filename else 'N/A' }}</td>
+                            <td>
+                                {% if h.status == 'completed' and h.excel_filename %}
+                                <button class="btn-download" onclick="downloadExcel('{{ h.excel_filename }}')">
+                                    <i class="fas fa-download"></i> Download
+                                </button>
+                                {% else %}
+                                <button class="btn-download" disabled>
+                                    <i class="fas fa-ban"></i> N/A
+                                </button>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <div class="empty-state">
+                    <i class="fas fa-inbox"></i>
+                    <h3>No Scraping History</h3>
+                    <p>Run your first scrape to see it here</p>
+                    <a href="/" class="btn-primary">
+                        <i class="fas fa-play"></i> Start Scraping
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </main>
+        
+        <!-- Footer -->
+        <footer class="footer">
+            <p>&copy; 2025 Lululemon Product Scraper - built at <a href="https://afrazkhan.dev" target="_blank" style="color: var(--primary); text-decoration: none; font-weight: 600;">Afrazkhan.dev</a></p>
+        </footer>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <script>
+        // Initialize user menu dropdown
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeUserMenu();
+        });
+        
+        async function downloadExcel(filename) {
+            window.location.href = `/api/download_excel?filename=${filename}`;
+        }
+        
+        async function logout() {
+            const response = await fetch('/api/logout', {method: 'POST'});
+            if (response.ok) window.location.href = '/login';
+        }
+    </script>
+</body>
+</html>

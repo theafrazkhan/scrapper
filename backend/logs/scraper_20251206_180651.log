@@ -1,0 +1,7 @@
+2025-12-06 18:06:51,085 - INFO - Pipeline started
+2025-12-06 18:06:51,086 - INFO - Log file: /home/theafrazkhan/Desktop/scrappin/backend/logs/scraper_20251206_180651.log
+2025-12-06 18:06:51,086 - ERROR - ❌ .env file not found!
+2025-12-06 18:06:51,087 - ERROR - Please copy .env.example to .env and add your credentials
+2025-12-06 18:06:51,087 - ERROR - Example:
+2025-12-06 18:06:51,090 - ERROR -   cp .env.example .env
+2025-12-06 18:06:51,092 - ERROR -   Then edit .env with your email and password

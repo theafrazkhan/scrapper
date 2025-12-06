@@ -1,0 +1,65 @@
+[
+  {
+    "domain": "wholesale.lululemon.com",
+    "hostOnly": false,
+    "httpOnly": false,
+    "name": "frontastic-session",
+    "path": "/",
+    "sameSite": "Lax",
+    "secure": true,
+    "session": true,
+    "storeId": "0",
+    "value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiIsImtpZCI6IjZiMmUwZmJmIn0.eyJwYXlsb2FkIjoiTGVxNExFQUVOazlRNnl3U240OVQzanZ4RVAySHdmekJFZzZneU1pRENGSEhCcWRWb0JiWnpkU3lUVklaYURnVk9kcU1vZXVjZ2hSZmxTbkxTYUpjVkxMS3NtaGtIT1UxT3Y3WXVLMjRHSk81N2VNckUxdkFpOWp4WlQyYkNkVWFEUVV5N3VSdE9wb2VhQlVuTHFEUlNja3psWHlCeGlyeEdTU1VldHlDL3lxSHYrRmNFTk8yeUNod21nQS9FajFzZHlKUHZQZDdpMU5FaTRqQ3JzSFNqRGxGdDNUL3NDaTRRQk9hd1Z0ckRtc29mNWxnbjlScEEyWGR4LzZObWU3R3lxUWxTWk1aYUt1RFBkRkh5NXJmbXpzTlZxYlRPS1BRcHRzYVgrelQ0dFlWbWVjQU8vbWFqNjFxVzN6Z0VpWC80TWRRd3pXa3AvZWJvMEdoN0RRY2dVZ1I2VzY4cVkzdUtGdmlianpnYzl4dDgyNUllN1JxTGRlNHMwTTd5MHB2M3cvb1RRZ0haRHRucVJUZVhHWmNCdmlTUnBIcCtBVU9ITDBpcXNXeFpCOUp4Uk5mcitiSHNwYlB3aXh5VXliQUVKSlU5MUdRTkw3MjIzbTgrNVdSRnI3TWRlYk13NUdGQ01Yd3kxeXR1NkJMd2dyaVNPdE1Pc3dsTkNiRGFvdEZjUGVqTm5PNyt1L3ZLWnA1eCt2UFlOY0syNnd6Q3pFVU1ZZFRmVGVQNW1ZNEluU0pmVjVUWTcxM0xySHUycFhJWGlndHVxZjI1WnkyTHJlWXU4bStsVUtRa0tNaVU1OE9DOE5EWXM4aTlWRWlYVG5xM0IrSGRXc1BRenFpZzBMUFpoYlBkVWZ6WnVvUVdCL3N4UW0xTG83RVFDTitlWVJlamRIMHJnVTg4WGg0REdaR3Y3Uks3YXZMTFpvbEdzemp2WnlKYVUyVEQ5eGRReXVSdGxKWjcrQTNwZHZQRUljSEYrMU5DN3Rid1FRZ3dYamxETzJ0QzNPWXI4dVF4eHhsSXJXSTVkbitsZGc3WE80NG5MZldLWnJXT0dOUE4vMkN6OWNpcEl2N1hmL0psUUhJbHZJQ1JDYTh5SU9HYkJvenlPUGlpSm1YTmlxdmRidnhSZ3R4enk4akdxY1V0N0ljRUFwYzlxVzMyK0hBUXRDcWJRSCtIVGQ3KythQ0VYd3EvTXMwNUxpNTFTc2pwejVqY2x1WitGOWVtWGY3cXE0cWVpWHBBdlppdUlmSFdXK2dtdmtFMjZwdzRVSTBuLzRvWGk4MFkySnR6SnF5b2VaMDNPZ0JRcTFwQmVDeHVreXd5bGNKNS9TZHo0R2hUY3huc1Z2eStTUVVYUXFlV0VJZXVKN0ROYzladHVLeVN2WXorVWU0WDBsbUF2Y2JyTWdENWF2ZFlzckNRaGtxTms3bkUxdFNvdzZKc1hOZmV1b0dzRnU3ekcySzFjUDQ4YTFrdVlQMXY4R1RSRm9xU1VZdjc5V2dCVTlKUzd6ZWtaM1NtaExkZmpHNkwram5pb1o4SG9NR295bXY0ZnBZZncxV3VyZDBvN1BNbURVQS9rYXY0SDM4Y2lYS05FR0h6dEVHMUYwNnZDT21YOVNCbE0rbFpnK2Z2ODZHUXdqYmcwZ1o4cFhycGo2bktQM2RGNHlSRkhnUEpMalB3Q1pkRGJkL091ZE1YdWdSaDBuQ3VFblBrVVRUbmNpWGFJU1JxSFBuQ1NWNXIzRlJ6b1ExdDJLUHJIOGhlQ2ZpelhUb3lpelE3OGRXWGlaZXNGb0pjaUNHdU5sM1pqR2VZV0JqditPdnp2eTRFRTA5Unh5SXFGNFdVbUF6TUlHZTdibEJVYkN5cHo5WmpLWmdNUUpiSGg0b29VOWd4d0VzbFpWZ3ZVaDVOQlUzNERqdmN0UGhwQzdNRWxsQkdFREhOb0xjS2xKYktsK2ppbWFMS3o3cjhrVTNET0tRa3BqcDZUb2lNb3MwQ1VCVWl2cmVJU3ZSZzR6NVcvSmk3WldsSmc2dkpBeXErak5udHZDcko5eU1TSktRWERZVlJaK0hUK0FVOEVZa1VLS0lmMmZnMklJekk1TjJtSXlrQ3hsQ1RwYWpLRy8wejlIZWhxeUd1eFQyUjJnTUtGcTNXMmJRUUdNaWY2K0c1d1k3akhPM3FDR0pMUWFmT1diYjJyZGFnUzdrSG11ZFl4cE9rNkVJd2JwU1V3L0hZSXlUSzZjajNqYVlmOFdJZFloamQrZTJuTGtFVzVsVUpYNWhGbUFDTk8zb0VoVUpOSHRGeHpDTmZnNjdPa0JpKzlQU3lsanlRS1NaVGFoaEVOZ0dUb0NNcjhSdVRyS1pqOXA4dGs1Z2F5WnlWRVRkYVBlbWNpVCtQUXBidGoxb2ZtR0V2V1JlYVFaeHAxYnRodHpDVzByTnhjWFpvd2dhZURoQUpFN2VYUlhWV21EbTV5QVg3T0VLVTRhN2tjd0FhNFhrSW51TUhSUlk2N2ErVkNKSlk3SVVFTzlRNnRKNFhUN2Y1RksxV3d1cGtOaVVhT0tRQ0FjSGZ2UWI1SHV6YzFqTFNFdGhZR0RzSDdpNFhkUGcvRU4raFlCdldnTXNMOHZuZTRyR2R0OER6aVNlQUFHaDc5L3p2bmRrRGRqOC8zNituS00rS1BobEtqS0JjWlJvUEx0VUJVeUwyc09hMWN5cHROQnhEZVdrbWE4T0JBQ2lyRS9BZFdhNkpIcmFTaGM1a0l2U1BiYXgzaW9ZNDFaYlprTlFlN2JGZnVIQWtFN25zZ0lKUEp5dTBxVzRaYzNMQXpTcGxkaFpOZHMwNkVXcHlOK2R6cmNIT01TU0Z0L2hwcWZUeVNESlUxUk1kN1dJRm05M1JKWUpRQXJ1eWcwSEgycHhCMUZDY3k1WWF0b2hOSEF2d3NydS9wcmpWZTZ4S1pUTXJLNEVXTDluZ28vRGxUOEJhSzJ5NjBBd04rcDhUL3JJeS9URFA3U3ZGR29maTllUG95WkdxTkZFNnkwNWlya241MGJPUWxEdXJ5TzRtTzR0OHdOKzMzYnMxcjV2czk2S3NoM2t2T2p1T1FlUEs4dENVQ3VhTUxVdFlUcDBCbkZJbEhJL1h3NGZMZWJjNGlEQ3kvWFhualhaNVlSOUhDNjdqQXNhcWJlZWNaQldYNjdBbFNpdnBxSTNXbGd4QXB0VkhWcnVTU2pjZTVTS1p1a3lIZWRxbFY1T2lPYUozazZyRzRIM1Mxa0lVUkZnZWRPRHBWSm5PdkdVbzNLenFWWDN3MmNGb3ErR1hnOUdjSW5VbyszWUl5QzFxUnBBZFNDOHVHVm9pWXc9Iiwibm9uY2UiOiJFUmRTbnlTNHZzVXNDYXFkIn0.7TJ8Izv7exbN3tiU5dtjxTJeOBVJ9r-lHKZoFnt7Ez4"
+  },
+  {
+    "domain": ".lululemon.com",
+    "hostOnly": false,
+    "httpOnly": false,
+    "name": "bm_sv",
+    "path": "/",
+    "sameSite": "Lax",
+    "secure": true,
+    "session": false,
+    "storeId": "0",
+    "value": "75FF2E9ED460F475ADAE4D45F4E6E5FC~YAAQnE8kF9eHiauaAQAAJrLn8x6wCWIuGoVwLCkDHMKyGJ6hlm34cL2uZ6X0ivzsRYK+Dkfrk9TAyKfYGiiCw6jhXBcEJdmDZsAE4qXmE4Ngt5s+zBCbGUOqtrzv+yE6hB6d8wTg9Y35AidOt3zgSXnvgLcnxtfw91ZsW8TbpInJL/NaSsEYqra4xWGz63JMZIOYzIVx7sZkRrgovX3pKkKlyOFgISOJHoG9IojYw0qMpv7iMAA+4AycmTizkmQxvsmeHw==~1",
+    "expirationDate": 1765035820
+  },
+  {
+    "domain": ".lululemon.com",
+    "hostOnly": false,
+    "httpOnly": false,
+    "name": "PIM-SESSION-ID",
+    "path": "/",
+    "sameSite": "Lax",
+    "secure": false,
+    "session": true,
+    "storeId": "0",
+    "value": "xFsoHlb5Hidrqdyz"
+  },
+  {
+    "domain": "wholesale.lululemon.com",
+    "hostOnly": false,
+    "httpOnly": false,
+    "name": "_dd_s",
+    "path": "/",
+    "sameSite": "Strict",
+    "secure": false,
+    "session": false,
+    "storeId": "0",
+    "value": "rum=1&id=a91e2023-14a9-42b3-9afb-0d48a20abaab&created=1765028623882&expire=1765029534864",
+    "expirationDate": 1765029540
+  },
+  {
+    "domain": ".lululemon.com",
+    "hostOnly": false,
+    "httpOnly": true,
+    "name": "ak_bmsc",
+    "path": "/",
+    "sameSite": "Lax",
+    "secure": false,
+    "session": false,
+    "storeId": "0",
+    "value": "0904C9AB618657430846C584269EE91B~000000000000000000000000000000~YAAQnE8kF/CGiauaAQAAn2Pn8x5gC9LHan9xzRulfwivcrZH2iz/ZHdDh1wBtSdtaMHGYZrKbPNxCPeAOuoS+dQFXemWb5FkAs6/HUmKCj5efqEmx9CP2x9gNpkO0Rc1dV8aSXS4d9Hxp5pXSjLRvRmZQKbUQBXmgBEvvUVONmd9IUmZn1EdBmXh4kIDpLDJoZU7dfohVaHJ3xOD0bKZkGBsqtbyJtcC8gHcdSxRJYD48z5AIOz/xVajL4dh21rTbdbUg+EZnUHuY4btiq37DiE++1oj2Um6Kg5DfioJQezOPuevAnIAtkkIJseRODn4f2cSxc1FxsC3UMDviRdrMNO7BdDE+Zd9ZYblxNKbp+NynHGTvZ1iMk+Gw6uxpWe2a7zHe/AhvxkG1dXgDGo=",
+    "expirationDate": 1765035818
+  }
+]

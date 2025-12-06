@@ -1,0 +1,137 @@
+#!/usr/bin/env python3
+"""
+Database models for Lululemon Scraper - Enterprise Edition
+Using Flask-SQLAlchemy for ORM
+"""
+
+from flask_sqlalchemy import SQLAlchemy
+from flask_login import UserMixin
+from werkzeug.security import generate_password_hash, check_password_hash
+from datetime import datetime
+
+db = SQLAlchemy()
+
+
+class User(UserMixin, db.Model):
+    """User model for authentication"""
+    __tablename__ = 'users'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    email = db.Column(db.String(120), unique=True, nullable=False, index=True)
+    password_hash = db.Column(db.String(255), nullable=False)
+    role = db.Column(db.String(20), nullable=False, default='user')  # 'admin' or 'user'
+    is_active = db.Column(db.Boolean, default=True)
+    created_at = db.Column(db.DateTime, default=datetime.now)
+    last_login = db.Column(db.DateTime)
+    
+    # Relationships
+    scraping_history = db.relationship('ScrapingHistory', backref='user', lazy='dynamic')
+    email_recipients = db.relationship('EmailRecipient', backref='added_by_user', lazy='dynamic')
+    
+    def set_password(self, password):
+        """Hash and set user password"""
+        self.password_hash = generate_password_hash(password, method='pbkdf2:sha256')
+    
+    def check_password(self, password):
+        """Check if provided password matches hash"""
+        return check_password_hash(self.password_hash, password)
+    
+    def is_admin(self):
+        """Check if user is an admin"""
+        return self.role == 'admin'
+    
+    def __repr__(self):
+        return f'<User {self.email}>'
+
+
+class ScrapingHistory(db.Model):
+    """History of scraping runs"""
+    __tablename__ = 'scraping_history'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    trigger_type = db.Column(db.String(20), nullable=False)  # 'manual' or 'scheduled'
+    triggered_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    status = db.Column(db.String(20), nullable=False)  # 'running', 'completed', 'failed'
+    started_at = db.Column(db.DateTime, default=datetime.now)
+    completed_at = db.Column(db.DateTime)
+    excel_filename = db.Column(db.String(255))
+    file_size = db.Column(db.Integer)  # in bytes
+    total_products = db.Column(db.Integer)
+    error_message = db.Column(db.Text)
+    
+    def __repr__(self):
+        return f'<ScrapingHistory {self.id} - {self.status}>'
+
+
+class EmailRecipient(db.Model):
+    """Email recipients for automated reports"""
+    __tablename__ = 'email_recipients'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    email = db.Column(db.String(120), nullable=False)
+    is_active = db.Column(db.Boolean, default=True)
+    added_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    added_at = db.Column(db.DateTime, default=datetime.now)
+    
+    def __repr__(self):
+        return f'<EmailRecipient {self.email}>'
+
+
+class Schedule(db.Model):
+    """Scraping schedules"""
+    __tablename__ = 'schedules'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    frequency = db.Column(db.String(20), nullable=False)  # 'daily', '3-day', 'weekly', 'monthly'
+    time_of_day = db.Column(db.String(5))  # HH:MM format (24-hour)
+    is_enabled = db.Column(db.Boolean, default=True)
+    created_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.now)
+    last_run = db.Column(db.DateTime)
+    next_run = db.Column(db.DateTime)
+    
+    def __repr__(self):
+        return f'<Schedule {self.frequency} - {"enabled" if self.is_enabled else "disabled"}>'
+
+
+class EmailSettings(db.Model):
+    """SMTP email configuration"""
+    __tablename__ = 'email_settings'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    smtp_host = db.Column(db.String(255))
+    smtp_port = db.Column(db.Integer)
+    smtp_username = db.Column(db.String(255))
+    smtp_password = db.Column(db.String(255))
+    from_email = db.Column(db.String(120))
+    from_name = db.Column(db.String(100))
+    is_enabled = db.Column(db.Boolean, default=False)
+    updated_by = db.Column(db.Integer, db.ForeignKey('users.id'))
+    updated_at = db.Column(db.DateTime, default=datetime.now)
+    
+    def __repr__(self):
+        return f'<EmailSettings {self.smtp_host}>'
+
+
+class LululemonCredentials(db.Model):
+    """Lululemon account credentials for scraping"""
+    __tablename__ = 'lululemon_credentials'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(255), nullable=False)
+    password = db.Column(db.String(255), nullable=False)
+    is_active = db.Column(db.Boolean, default=True)
+    last_used = db.Column(db.DateTime)
+    updated_by = db.Column(db.Integer, db.ForeignKey('users.id'))
+    updated_at = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now)
+    created_at = db.Column(db.DateTime, default=datetime.now)
+    
+    def __repr__(self):
+        return f'<LululemonCredentials {self.username}>'
+
+
+def init_db(app):
+    """Initialize database and create all tables"""
+    with app.app_context():
+        db.create_all()
+        print("✅ Database initialized successfully")

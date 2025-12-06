@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lululemon Product Scraper Pro</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <!-- Animated Background Particles -->
+    <div class="particles-bg">
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+    </div>
+
+    <!-- Main Container -->
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="logo-section">
+                <div class="logo-icon">
+                    <i class="fas fa-bolt"></i>
+                </div>
+                <div class="logo-text">
+                    <h1>Lululemon Scraper</h1>
+                    <p class="subtitle">Wholesale Product Extractor</p>
+                </div>
+            </div>
+            <div class="header-actions">
+                <div class="status-indicator" id="statusIndicator">
+                    <span class="status-dot"></span>
+                    <span class="status-text">Ready</span>
+                </div>
+                
+                <!-- User Menu Button (Hidden until logged in) -->
+                <div class="user-menu-wrapper hidden" id="userMenuWrapper">
+                    <button class="user-menu-button" id="userMenuButton">
+                        <i class="fas fa-user-circle"></i>
+                        <span id="userEmailShort">User</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </button>
+                </div>
+            </div>
+        </header>
+        
+        <!-- User Dropdown Menu (Outside header, fixed position) -->
+        <div class="user-dropdown" id="userDropdown">
+            <div class="dropdown-header">
+                <i class="fas fa-user-circle"></i>
+                <div>
+                    <div class="dropdown-email" id="userEmail">user@example.com</div>
+                    <div class="dropdown-role" id="userRole">User</div>
+                </div>
+            </div>
+            <div class="menu-divider"></div>
+            <a href="/" class="menu-link">
+                <i class="fas fa-home"></i> Dashboard
+            </a>
+            <a href="/history" class="menu-link">
+                <i class="fas fa-history"></i> History
+            </a>
+            <a href="/settings" class="menu-link admin-only" id="settingsLink" style="display: none;">
+                <i class="fas fa-cog"></i> Settings
+            </a>
+            <div class="menu-divider"></div>
+            <button class="menu-link logout-btn" id="logoutBtn">
+                <i class="fas fa-sign-out-alt"></i> Logout
+            </button>
+        </div>
+
+        <!-- Overlay for closing dropdown -->
+        <div class="dropdown-overlay" id="dropdownOverlay"></div>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Login Section -->
+            <section class="card login-section" id="loginSection">
+                <div class="card-header">
+                    <i class="fas fa-lock"></i>
+                    <h2>Login to Lululemon Wholesale</h2>
+                </div>
+                <div class="card-body">
+                    <form id="loginForm">
+                        <div class="form-group">
+                            <label for="email">
+                                <i class="fas fa-envelope"></i>
+                                Email Address
+                            </label>
+                            <input 
+                                type="email" 
+                                id="email" 
+                                name="email" 
+                                placeholder="your.email@example.com"
+                                required
+                            >
+                        </div>
+                        <div class="form-group">
+                            <label for="password">
+                                <i class="fas fa-key"></i>
+                                Password
+                            </label>
+                            <div class="password-input-wrapper">
+                                <input 
+                                    type="password" 
+                                    id="password" 
+                                    name="password" 
+                                    placeholder="Enter your password"
+                                    required
+                                >
+                                <button type="button" class="toggle-password" onclick="togglePassword()">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-large" id="loginBtn">
+                            <i class="fas fa-sign-in-alt"></i>
+                            <span>Login & Start Scraping</span>
+                        </button>
+                    </form>
+                </div>
+            </section>
+
+            <!-- Scraping Dashboard -->
+            <section class="card dashboard-section hidden" id="dashboardSection">
+                <div class="card-header">
+                    <i class="fas fa-chart-line"></i>
+                    <h2>Scraping Dashboard</h2>
+                </div>
+                <div class="card-body">
+                    <!-- Stats Grid -->
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-icon">
+                                <i class="fas fa-shopping-bag"></i>
+                            </div>
+                            <div class="stat-content">
+                                <h3 id="totalProducts">0</h3>
+                                <p>Total Products</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">
+                                <i class="fas fa-check-circle"></i>
+                            </div>
+                            <div class="stat-content">
+                                <h3 id="downloadedProducts">0</h3>
+                                <p>Downloaded</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">
+                                <i class="fas fa-clock"></i>
+                            </div>
+                            <div class="stat-content">
+                                <h3 id="elapsedTime">00:00</h3>
+                                <p>Elapsed Time</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">
+                                <i class="fas fa-tachometer-alt"></i>
+                            </div>
+                            <div class="stat-content">
+                                <h3 id="speed">0</h3>
+                                <p>Pages/Second</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Progress Section -->
+                    <div class="progress-section">
+                        <h3>Scraping Progress</h3>
+                        <div class="progress-bar-container">
+                            <div class="progress-bar" id="progressBar">
+                                <span class="progress-text" id="progressText">0%</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Activity Log -->
+                    <div class="activity-section">
+                        <div class="activity-header">
+                            <h3>
+                                <i class="fas fa-list"></i>
+                                Activity Log
+                            </h3>
+                            <button class="btn btn-small btn-secondary" onclick="clearLog()">
+                                <i class="fas fa-trash"></i>
+                                Clear
+                            </button>
+                        </div>
+                        <div class="activity-log" id="activityLog">
+                            <div class="log-entry">
+                                <span class="log-time">--:--:--</span>
+                                <span class="log-message">Waiting to start...</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="action-buttons">
+                        <button class="btn btn-primary btn-large" id="startBtn" onclick="startScraping()">
+                            <i class="fas fa-play"></i>
+                            <span>Start Scraping</span>
+                        </button>
+                        <button class="btn btn-danger btn-large hidden" id="stopBtn" onclick="stopScraping()">
+                            <i class="fas fa-stop"></i>
+                            <span>Stop Scraping</span>
+                        </button>
+                        <button class="btn btn-success btn-large hidden" id="downloadBtn" onclick="downloadExcel()">
+                            <i class="fas fa-download"></i>
+                            <span>Download Excel</span>
+                        </button>
+                        <button class="btn btn-secondary btn-large" onclick="logout()">
+                            <i class="fas fa-sign-out-alt"></i>
+                            <span>Logout</span>
+                        </button>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>&copy; 2025 Lululemon Product Scraper - built at <a href="https://afrazkhan.dev" target="_blank" style="color: var(--primary); text-decoration: none; font-weight: 600;">Afrazkhan.dev</a></p>
+        </footer>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>

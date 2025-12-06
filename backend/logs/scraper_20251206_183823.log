@@ -1,0 +1,60 @@
+2025-12-06 18:38:23,766 - INFO - Pipeline started
+2025-12-06 18:38:23,767 - INFO - Log file: /home/theafrazkhan/Desktop/scrappin/backend/logs/scraper_20251206_183823.log
+2025-12-06 18:38:25,911 - INFO - ✓ Found credentials for: Joe@aureaclubs.com
+2025-12-06 18:38:25,911 - INFO - 
+======================================================================
+2025-12-06 18:38:25,912 - INFO - STEP 1: Login & Save Cookies
+2025-12-06 18:38:25,912 - INFO - ======================================================================
+2025-12-06 18:38:25,912 - INFO - 🚀 Running: login_and_save_cookies.py
+2025-12-06 18:40:37,887 - INFO - ============================================================
+2025-12-06 18:40:37,889 - INFO - Lululemon Wholesale Portal - Login & Cookie Extractor
+2025-12-06 18:40:37,890 - INFO - ============================================================
+2025-12-06 18:40:37,892 - INFO - [1/4] Setting up Chrome WebDriver...
+2025-12-06 18:40:37,895 - INFO - Setting up Chrome WebDriver...
+2025-12-06 18:40:37,897 - INFO - Installing/updating ChromeDriver...
+2025-12-06 18:40:37,897 - INFO - ✓ Chrome WebDriver initialized successfully
+2025-12-06 18:40:37,898 - INFO - [2/4] Logging in to wholesale portal...
+2025-12-06 18:40:37,898 - INFO - Navigating to https://wholesale.lululemon.com/...
+2025-12-06 18:40:37,899 - INFO - Looking for email input field...
+2025-12-06 18:40:37,899 - INFO - Entering email: Joe@aureaclubs.com
+2025-12-06 18:40:37,899 - INFO - Entering password...
+2025-12-06 18:40:37,900 - INFO - Clicking login button...
+2025-12-06 18:40:37,900 - INFO - Waiting for login to complete...
+2025-12-06 18:40:37,901 - INFO - ✓ Login successful!
+2025-12-06 18:40:37,902 - INFO - Current URL: https://wholesale.lululemon.com/
+2025-12-06 18:40:37,902 - INFO - [3/4] Saving cookies...
+2025-12-06 18:40:37,903 - INFO - Found 5 cookies
+2025-12-06 18:40:37,903 - INFO - ✓ Cookies saved to: /home/theafrazkhan/Desktop/scrappin/backend/data/cookie/cookie.json
+2025-12-06 18:40:37,904 - INFO - Important cookies found:
+2025-12-06 18:40:37,904 - INFO -   - frontastic-session: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiIsImtpZCI6IjZiMm...
+2025-12-06 18:40:37,905 - INFO - [4/4] Extracting product counts from category pages...
+2025-12-06 18:40:37,905 - INFO -   Navigating to women...
+2025-12-06 18:40:37,905 - INFO -   Found text: Showing 12 of 266 items
+2025-12-06 18:40:37,906 - INFO -   ✓ Total products in women: 266
+2025-12-06 18:40:37,906 - INFO -   Navigating to men...
+2025-12-06 18:40:37,907 - INFO -   ⚠ Could not extract product count for men, using default limit=12
+2025-12-06 18:40:37,907 - INFO -   Navigating to accessories...
+2025-12-06 18:40:37,907 - INFO -   ⚠ Could not extract product count for accessories, using default limit=12
+2025-12-06 18:40:37,908 - INFO -   Navigating to supplies...
+2025-12-06 18:40:37,908 - INFO -   ⚠ Could not extract product count for supplies, using default limit=12
+2025-12-06 18:40:37,908 - INFO - [4/4] Updating links.csv file...
+2025-12-06 18:40:37,909 - INFO -   - women: limit=276
+2025-12-06 18:40:37,909 - INFO -   - men: limit=12
+2025-12-06 18:40:37,909 - INFO -   - accessories: limit=12
+2025-12-06 18:40:37,910 - INFO -   - supplies: limit=12
+2025-12-06 18:40:37,910 - INFO - ✓ Links saved to: /home/theafrazkhan/Desktop/scrappin/backend/data/links.csv
+2025-12-06 18:40:37,911 - INFO - ============================================================
+2025-12-06 18:40:37,911 - INFO - ✓ SUCCESS! All tasks completed.
+2025-12-06 18:40:37,912 - INFO - ============================================================
+2025-12-06 18:40:37,912 - INFO - Cookie file: /home/theafrazkhan/Desktop/scrappin/backend/data/cookie/cookie.json
+2025-12-06 18:40:37,912 - INFO - Links file: /home/theafrazkhan/Desktop/scrappin/backend/data/links.csv
+2025-12-06 18:40:37,913 - INFO - You can now use these cookies and links with your download scripts.
+2025-12-06 18:40:37,913 - INFO - Closing browser...
+2025-12-06 18:40:38,318 - INFO - ✓ login_and_save_cookies.py completed successfully
+2025-12-06 18:40:38,319 - INFO - 
+======================================================================
+2025-12-06 18:40:38,324 - INFO - STEP 2: Extract Product Links
+2025-12-06 18:40:38,326 - INFO - ======================================================================
+2025-12-06 18:40:38,333 - INFO - 🚀 Running: extract_product_links.py
+2025-12-06 18:42:23,455 - WARNING - 
+⚠️  Pipeline interrupted by user

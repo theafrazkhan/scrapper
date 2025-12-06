@@ -1,0 +1,1191 @@
+2025-12-06 18:22:16,342 - INFO - Pipeline started
+2025-12-06 18:22:16,344 - INFO - Log file: /home/theafrazkhan/Desktop/scrappin/backend/logs/scraper_20251206_182216.log
+2025-12-06 18:22:18,661 - INFO - ✓ Found credentials for: Joe@aureaclubs.com
+2025-12-06 18:22:18,663 - INFO - 
+======================================================================
+2025-12-06 18:22:18,664 - INFO - STEP 1: Login & Save Cookies
+2025-12-06 18:22:18,665 - INFO - ======================================================================
+2025-12-06 18:22:18,665 - INFO - 🚀 Running: login_and_save_cookies.py
+2025-12-06 18:24:09,129 - INFO - ============================================================
+2025-12-06 18:24:09,130 - INFO - Lululemon Wholesale Portal - Login & Cookie Extractor
+2025-12-06 18:24:09,131 - INFO - ============================================================
+2025-12-06 18:24:09,131 - INFO - [1/4] Setting up Chrome WebDriver...
+2025-12-06 18:24:09,131 - INFO - [2/4] Logging in to wholesale portal...
+2025-12-06 18:24:09,131 - INFO - Navigating to https://wholesale.lululemon.com/...
+2025-12-06 18:24:09,132 - INFO - Looking for email input field...
+2025-12-06 18:24:09,132 - INFO - Entering email: Joe@aureaclubs.com
+2025-12-06 18:24:09,132 - INFO - Entering password...
+2025-12-06 18:24:09,132 - INFO - Clicking login button...
+2025-12-06 18:24:09,133 - INFO - Waiting for login to complete...
+2025-12-06 18:24:09,138 - INFO - ✓ Login successful!
+2025-12-06 18:24:09,138 - INFO - Current URL: https://wholesale.lululemon.com/
+2025-12-06 18:24:09,139 - INFO - [3/4] Saving cookies...
+2025-12-06 18:24:09,140 - INFO - Found 5 cookies
+2025-12-06 18:24:09,140 - INFO - ✓ Cookies saved to: /home/theafrazkhan/Desktop/scrappin/backend/data/cookie/cookie.json
+2025-12-06 18:24:09,141 - INFO - Important cookies found:
+2025-12-06 18:24:09,141 - INFO -   - frontastic-session: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiIsImtpZCI6IjZiMm...
+2025-12-06 18:24:09,141 - INFO - [4/4] Extracting product counts from category pages...
+2025-12-06 18:24:09,142 - INFO -   Navigating to women...
+2025-12-06 18:24:09,143 - INFO -   Found text: Showing 12 of 266 items
+2025-12-06 18:24:09,144 - INFO -   ✓ Total products in women: 266
+2025-12-06 18:24:09,144 - INFO -   Navigating to men...
+2025-12-06 18:24:09,145 - INFO -   ⚠ Could not extract product count for men, using default limit=12
+2025-12-06 18:24:09,145 - INFO -   Navigating to accessories...
+2025-12-06 18:24:09,147 - INFO -   ⚠ Could not extract product count for accessories, using default limit=12
+2025-12-06 18:24:09,147 - INFO -   Navigating to supplies...
+2025-12-06 18:24:09,148 - INFO -   ⚠ Could not extract product count for supplies, using default limit=12
+2025-12-06 18:24:09,148 - INFO - [4/4] Updating links.csv file...
+2025-12-06 18:24:09,149 - INFO -   - women: limit=276
+2025-12-06 18:24:09,149 - INFO -   - men: limit=12
+2025-12-06 18:24:09,151 - INFO -   - accessories: limit=12
+2025-12-06 18:24:09,151 - INFO -   - supplies: limit=12
+2025-12-06 18:24:09,151 - INFO - ✓ Links saved to: /home/theafrazkhan/Desktop/scrappin/backend/data/links.csv
+2025-12-06 18:24:09,152 - INFO - ============================================================
+2025-12-06 18:24:09,152 - INFO - ✓ SUCCESS! All tasks completed.
+2025-12-06 18:24:09,152 - INFO - ============================================================
+2025-12-06 18:24:09,153 - INFO - Cookie file: /home/theafrazkhan/Desktop/scrappin/backend/data/cookie/cookie.json
+2025-12-06 18:24:09,153 - INFO - Links file: /home/theafrazkhan/Desktop/scrappin/backend/data/links.csv
+2025-12-06 18:24:09,153 - INFO - You can now use these cookies and links with your download scripts.
+2025-12-06 18:24:09,154 - INFO - Closing browser...
+2025-12-06 18:24:09,512 - INFO - ✓ login_and_save_cookies.py completed successfully
+2025-12-06 18:24:09,512 - INFO - 
+======================================================================
+2025-12-06 18:24:09,513 - INFO - STEP 2: Extract Product Links
+2025-12-06 18:24:09,513 - INFO - ======================================================================
+2025-12-06 18:24:09,514 - INFO - 🚀 Running: extract_product_links.py
+2025-12-06 18:26:02,827 - INFO - ======================================================================
+2025-12-06 18:26:02,828 - INFO - Category Page Downloader & Product Link Extractor
+2025-12-06 18:26:02,828 - INFO - ======================================================================
+2025-12-06 18:26:02,829 - INFO - 📖 Reading category links from CSV...
+2025-12-06 18:26:02,829 - INFO - ✓ Found 4 categories: women, men, accessories, supplies
+2025-12-06 18:26:02,829 - INFO - 🍪 Loading session cookies...
+2025-12-06 18:26:02,829 - INFO - ✓ Loaded 5 cookies
+2025-12-06 18:26:02,830 - INFO - ======================================================================
+2025-12-06 18:26:02,830 - INFO - STEP 1: Downloading Category Pages
+2025-12-06 18:26:02,830 - INFO - ======================================================================
+2025-12-06 18:26:02,830 - INFO - 📥 Downloading: women
+2025-12-06 18:26:02,830 - INFO -    URL: https://wholesale.lululemon.com/lululemon/women?limit=276&pic=14ffd75b-6d75-49dd-8ea5-811f163e6c06&prc=a1eb736a-58d3-43fb-b99a-e435e30b5b4c
+2025-12-06 18:26:02,831 - INFO -    ⏳ Loading page...
+2025-12-06 18:26:02,831 - INFO -    ⏳ Waiting for products to load...
+2025-12-06 18:26:02,832 - INFO -    ✓ Products loaded in DOM
+2025-12-06 18:26:02,832 - INFO -    ✓ Saved to: /home/theafrazkhan/Desktop/scrappin/backend/data/women.html
+2025-12-06 18:26:02,832 - INFO - 📥 Downloading: men
+2025-12-06 18:26:02,833 - INFO -    URL: https://wholesale.lululemon.com/lululemon/men?limit=12&pic=14ffd75b-6d75-49dd-8ea5-811f163e6c06&prc=a1eb736a-58d3-43fb-b99a-e435e30b5b4c
+2025-12-06 18:26:02,833 - INFO -    ⏳ Loading page...
+2025-12-06 18:26:02,833 - INFO -    ⏳ Waiting for products to load...
+2025-12-06 18:26:02,834 - INFO -    ✓ Products loaded in DOM
+2025-12-06 18:26:02,834 - INFO -    ✓ Saved to: /home/theafrazkhan/Desktop/scrappin/backend/data/men.html
+2025-12-06 18:26:02,834 - INFO - 📥 Downloading: accessories
+2025-12-06 18:26:02,835 - INFO -    URL: https://wholesale.lululemon.com/lululemon/accessories?limit=12&pic=14ffd75b-6d75-49dd-8ea5-811f163e6c06&prc=a1eb736a-58d3-43fb-b99a-e435e30b5b4c
+2025-12-06 18:26:02,835 - INFO -    ⏳ Loading page...
+2025-12-06 18:26:02,835 - INFO -    ⏳ Waiting for products to load...
+2025-12-06 18:26:02,836 - INFO -    ✓ Products loaded in DOM
+2025-12-06 18:26:02,836 - INFO -    ✓ Saved to: /home/theafrazkhan/Desktop/scrappin/backend/data/accessories.html
+2025-12-06 18:26:02,836 - INFO - 📥 Downloading: supplies
+2025-12-06 18:26:02,837 - INFO -    URL: https://wholesale.lululemon.com/lululemon/supplies?limit=12&pic=14ffd75b-6d75-49dd-8ea5-811f163e6c06&prc=a1eb736a-58d3-43fb-b99a-e435e30b5b4c
+2025-12-06 18:26:02,837 - INFO -    ⏳ Loading page...
+2025-12-06 18:26:02,837 - INFO -    ⏳ Waiting for products to load...
+2025-12-06 18:26:02,838 - INFO -    ✓ Products loaded in DOM
+2025-12-06 18:26:02,838 - INFO -    ✓ Saved to: /home/theafrazkhan/Desktop/scrappin/backend/data/supplies.html
+2025-12-06 18:26:02,838 - INFO - ======================================================================
+2025-12-06 18:26:02,838 - INFO - STEP 2: Extracting Product Links
+2025-12-06 18:26:02,839 - INFO - ======================================================================
+2025-12-06 18:26:02,839 - INFO - 🔍 Extracting links from: women.html
+2025-12-06 18:26:02,839 - INFO -    📦 Found 0 products in JSON data
+2025-12-06 18:26:02,839 - INFO -    ℹ️  Falling back to HTML parsing...
+2025-12-06 18:26:02,840 - INFO -    ✓ Found 22 unique product links
+2025-12-06 18:26:02,840 - INFO -    ✓ Saved to: /home/theafrazkhan/Desktop/scrappin/backend/data/categories/women.csv
+2025-12-06 18:26:02,840 - INFO - 🔍 Extracting links from: men.html
+2025-12-06 18:26:02,841 - INFO -    📦 Found 0 products in JSON data
+2025-12-06 18:26:02,841 - INFO -    ℹ️  Falling back to HTML parsing...
+2025-12-06 18:26:02,841 - INFO -    ✓ Found 22 unique product links
+2025-12-06 18:26:02,842 - INFO -    ✓ Saved to: /home/theafrazkhan/Desktop/scrappin/backend/data/categories/men.csv
+2025-12-06 18:26:02,842 - INFO - 🔍 Extracting links from: accessories.html
+2025-12-06 18:26:02,842 - INFO -    📦 Found 0 products in JSON data
+2025-12-06 18:26:02,843 - INFO -    ℹ️  Falling back to HTML parsing...
+2025-12-06 18:26:02,843 - INFO -    ✓ Found 22 unique product links
+2025-12-06 18:26:02,843 - INFO -    ✓ Saved to: /home/theafrazkhan/Desktop/scrappin/backend/data/categories/accessories.csv
+2025-12-06 18:26:02,844 - INFO - 🔍 Extracting links from: supplies.html
+2025-12-06 18:26:02,844 - INFO -    📦 Found 0 products in JSON data
+2025-12-06 18:26:02,844 - INFO -    ℹ️  Falling back to HTML parsing...
+2025-12-06 18:26:02,844 - INFO -    ✓ Found 22 unique product links
+2025-12-06 18:26:02,845 - INFO -    ✓ Saved to: /home/theafrazkhan/Desktop/scrappin/backend/data/categories/supplies.csv
+2025-12-06 18:26:02,845 - INFO - ======================================================================
+2025-12-06 18:26:02,845 - INFO - STEP 3: Cleaning Up HTML Files
+2025-12-06 18:26:02,846 - INFO - ======================================================================
+2025-12-06 18:26:02,846 - INFO - 🗑️  Deleted: women.html
+2025-12-06 18:26:02,846 - INFO - 🗑️  Deleted: men.html
+2025-12-06 18:26:02,846 - INFO - 🗑️  Deleted: accessories.html
+2025-12-06 18:26:02,847 - INFO - 🗑️  Deleted: supplies.html
+2025-12-06 18:26:02,847 - INFO - ======================================================================
+2025-12-06 18:26:02,847 - INFO - EXTRACTION COMPLETE!
+2025-12-06 18:26:02,848 - INFO - ======================================================================
+2025-12-06 18:26:02,848 - INFO - ✓ Women: 22 product links
+2025-12-06 18:26:02,848 - INFO - ✓ Men: 22 product links
+2025-12-06 18:26:02,848 - INFO - ✓ Accessories: 22 product links
+2025-12-06 18:26:02,849 - INFO - ✓ Supplies: 22 product links
+2025-12-06 18:26:02,849 - INFO - 🔗 Total unique product links: 88
+2025-12-06 18:26:02,849 - INFO - 📁 CSV files saved in: /home/theafrazkhan/Desktop/scrappin/backend/data/categories/
+2025-12-06 18:26:02,850 - INFO - ======================================================================
+2025-12-06 18:26:03,080 - INFO - ✓ extract_product_links.py completed successfully
+2025-12-06 18:26:03,081 - INFO - 
+======================================================================
+2025-12-06 18:26:03,081 - INFO - STEP 3: Download Product Pages
+2025-12-06 18:26:03,082 - INFO - ======================================================================
+2025-12-06 18:26:03,082 - INFO - 🚀 Running: download_by_category.py
+2025-12-06 18:27:16,819 - INFO - ⚙️  Performance Settings:
+2025-12-06 18:27:16,820 - INFO -    • Max concurrent downloads: 50
+2025-12-06 18:27:16,820 - INFO -    • Browser contexts: 5
+2025-12-06 18:27:16,821 - INFO - ======================================================================
+2025-12-06 18:27:16,821 - INFO - Category-Based Product Page Downloader
+2025-12-06 18:27:16,823 - INFO - ======================================================================
+2025-12-06 18:27:16,823 - INFO - 🔐 Loading session cookies...
+2025-12-06 18:27:16,824 - INFO - ✓ Loaded 5 cookies
+2025-12-06 18:27:16,832 - INFO - 📂 Categories to process: women, men, accessories, supplies
+2025-12-06 18:27:16,833 - INFO - 🚀 Starting browser...
+2025-12-06 18:27:16,833 - INFO - 📦 Category: WOMEN
+2025-12-06 18:27:16,833 - INFO -    URLs to download: 22
+2025-12-06 18:27:16,833 - INFO -    🗑️  Clearing existing files in women/
+2025-12-06 18:27:16,834 - INFO -   [Progress] 10/22 pages downloaded
+2025-12-06 18:27:16,834 - INFO -   [Progress] 20/22 pages downloaded
+2025-12-06 18:27:16,834 - INFO -    ✅ Downloaded: 22/22 pages
+2025-12-06 18:27:16,834 - INFO - 📦 Category: MEN
+2025-12-06 18:27:16,834 - INFO -    URLs to download: 22
+2025-12-06 18:27:16,835 - INFO -    🗑️  Clearing existing files in men/
+2025-12-06 18:27:16,835 - INFO -   [Progress] 10/22 pages downloaded
+2025-12-06 18:27:16,835 - INFO -   [Progress] 20/22 pages downloaded
+2025-12-06 18:27:16,835 - INFO -    ✅ Downloaded: 22/22 pages
+2025-12-06 18:27:16,835 - INFO - 📦 Category: ACCESSORIES
+2025-12-06 18:27:16,836 - INFO -    URLs to download: 22
+2025-12-06 18:27:16,836 - INFO -    🗑️  Clearing existing files in accessories/
+2025-12-06 18:27:16,844 - INFO -   [Progress] 10/22 pages downloaded
+2025-12-06 18:27:16,844 - INFO -   [Progress] 20/22 pages downloaded
+2025-12-06 18:27:16,845 - INFO -    ✅ Downloaded: 22/22 pages
+2025-12-06 18:27:16,845 - INFO - 📦 Category: SUPPLIES
+2025-12-06 18:27:16,845 - INFO -    URLs to download: 22
+2025-12-06 18:27:16,845 - INFO -    🗑️  Clearing existing files in supplies/
+2025-12-06 18:27:16,845 - INFO -   [Progress] 10/22 pages downloaded
+2025-12-06 18:27:16,845 - INFO -   [Progress] 20/22 pages downloaded
+2025-12-06 18:27:16,846 - INFO -    ✅ Downloaded: 22/22 pages
+2025-12-06 18:27:16,846 - INFO - ======================================================================
+2025-12-06 18:27:16,846 - INFO - DOWNLOAD COMPLETE!
+2025-12-06 18:27:16,846 - INFO - ======================================================================
+2025-12-06 18:27:16,846 - INFO - ✅ Successfully downloaded: 88 pages
+2025-12-06 18:27:16,846 - INFO - ⏱️  Total time: 72 seconds (1.2 minutes)
+2025-12-06 18:27:16,847 - INFO - ⚡ Average speed: 1.21 pages/second
+2025-12-06 18:27:16,847 - INFO - 📂 Files saved to: /home/theafrazkhan/Desktop/scrappin/backend/data/{category}/
+2025-12-06 18:27:16,847 - INFO - ======================================================================
+2025-12-06 18:27:17,022 - INFO - ✓ download_by_category.py completed successfully
+2025-12-06 18:27:17,023 - INFO - 
+======================================================================
+2025-12-06 18:27:17,024 - INFO - STEP 4: Generate Excel Report
+2025-12-06 18:27:17,024 - INFO - ======================================================================
+2025-12-06 18:27:17,025 - INFO - 🚀 Running: extract_to_excel.py
+2025-12-06 18:27:20,583 - INFO - ============================================================
+2025-12-06 18:27:20,584 - INFO - Lululemon Product Information Batch Extractor
+2025-12-06 18:27:20,585 - INFO - ============================================================
+2025-12-06 18:27:20,585 - INFO - ✓ Checking data folder: /home/theafrazkhan/Desktop/scrappin/backend/data
+2025-12-06 18:27:20,586 - INFO -   Found 22 files in accessories
+2025-12-06 18:27:20,586 - INFO -   Found 22 files in men
+2025-12-06 18:27:20,586 - INFO -   Found 22 files in women
+2025-12-06 18:27:20,587 - INFO -   Found 22 files in supplies
+2025-12-06 18:27:20,587 - INFO - ✓ Found 88 HTML file(s) to process
+2025-12-06 18:27:20,588 - INFO - ------------------------------------------------------------
+2025-12-06 18:27:20,588 - INFO - Processing: jd2tq0pqw6.html
+2025-12-06 18:27:20,589 - INFO - ============================================================
+2025-12-06 18:27:20,589 - INFO - Lululemon Product Information Extractor to Excel
+2025-12-06 18:27:20,589 - INFO - ============================================================
+2025-12-06 18:27:20,589 - INFO - Reading HTML from: /home/theafrazkhan/Desktop/scrappin/backend/data/accessories/jd2tq0pqw6.html
+2025-12-06 18:27:20,590 - INFO - ✓ Successfully parsed __NEXT_DATA__ JSON
+2025-12-06 18:27:20,590 - INFO - ✓ Found product data
+2025-12-06 18:27:20,591 - INFO - ⚠ No inventory data found in HTML
+2025-12-06 18:27:20,592 - INFO - ⚠ No product image found
+2025-12-06 18:27:20,593 - INFO - ⚠ No color swatches found
+2025-12-06 18:27:20,593 - INFO -   ✓ Successfully extracted: Pace Breaker Linerless Short 7" [Category: accessories]
+2025-12-06 18:27:20,594 - INFO - Processing: s1zlom3wpy.html
+2025-12-06 18:27:20,595 - INFO - ============================================================
+2025-12-06 18:27:20,595 - INFO - Lululemon Product Information Extractor to Excel
+2025-12-06 18:27:20,595 - INFO - ============================================================
+2025-12-06 18:27:20,596 - INFO - Reading HTML from: /home/theafrazkhan/Desktop/scrappin/backend/data/accessories/s1zlom3wpy.html
+2025-12-06 18:27:20,596 - INFO - ✓ Successfully parsed __NEXT_DATA__ JSON
+2025-12-06 18:27:20,596 - INFO - ✓ Found product data
+2025-12-06 18:27:20,596 - INFO - ⚠ No inventory data found in HTML
+2025-12-06 18:27:20,597 - INFO - ⚠ No product image found
+2025-12-06 18:27:20,597 - INFO - ⚠ No color swatches found
+2025-12-06 18:27:20,597 - INFO -   ✓ Successfully extracted: lululemon Align™ Dress [Category: accessories]
+2025-12-06 18:27:20,598 - INFO - Processing: hnsjuvo8dn.html
+2025-12-06 18:27:20,598 - INFO - ============================================================
+2025-12-06 18:27:20,598 - INFO - Lululemon Product Information Extractor to Excel
+2025-12-06 18:27:20,598 - INFO - ============================================================
+2025-12-06 18:27:20,598 - INFO - Reading HTML from: /home/theafrazkhan/Desktop/scrappin/backend/data/accessories/hnsjuvo8dn.html
+2025-12-06 18:27:20,599 - INFO - ✓ Successfully parsed __NEXT_DATA__ JSON
+2025-12-06 18:27:20,600 - INFO - ✓ Found product data
+2025-12-06 18:27:20,600 - INFO - ⚠ No inventory data found in HTML
+2025-12-06 18:27:20,600 - INFO - ⚠ No product image found
+2025-12-06 18:27:20,601 - INFO - ⚠ No color swatches found
+2025-12-06 18:27:20,601 - INFO -   ✓ Successfully extracted: Define Jacket *Nulu [Category: accessories]
+2025-12-06 18:27:20,601 - INFO - Processing: l39b1md52p.html
+2025-12-06 18:27:20,601 - INFO - ============================================================
+2025-12-06 18:27:20,602 - INFO - Lululemon Product Information Extractor to Excel
+2025-12-06 18:27:20,602 - INFO - ============================================================
+2025-12-06 18:27:20,603 - INFO - Reading HTML from: /home/theafrazkhan/Desktop/scrappin/backend/data/accessories/l39b1md52p.html
+2025-12-06 18:27:20,603 - INFO - ✓ Successfully parsed __NEXT_DATA__ JSON
+2025-12-06 18:27:20,603 - INFO - ✓ Found product data
+2025-12-06 18:27:20,603 - INFO - ⚠ No inventory data found in HTML
+2025-12-06 18:27:20,603 - INFO - ⚠ No product image found
+2025-12-06 18:27:20,603 - INFO - ⚠ No color swatches found
+2025-12-06 18:27:20,603 - INFO -   ✓ Successfully extracted: License to Train Jogger *Regular [Category: accessories]
+2025-12-06 18:27:20,604 - INFO - Processing: flm088ugr4.html
+2025-12-06 18:27:20,604 - INFO - ============================================================
+2025-12-06 18:27:20,604 - INFO - Lululemon Product Information Extractor to Excel
+2025-12-06 18:27:20,604 - INFO - ============================================================
+2025-12-06 18:27:20,604 - INFO - Reading HTML from: /home/theafrazkhan/Desktop/scrappin/backend/data/accessories/flm088ugr4.html
+2025-12-06 18:27:20,604 - INFO - ✓ Successfully parsed __NEXT_DATA__ JSON
+2025-12-06 18:27:20,605 - INFO - ✓ Found product data
+2025-12-06 18:27:20,605 - INFO - ⚠ No inventory data found in HTML
+2025-12-06 18:27:20,605 - INFO - ⚠ No product image found
+2025-12-06 18:27:20,606 - INFO - ⚠ No color swatches found
+2025-12-06 18:27:20,606 - INFO -   ✓ Successfully extracted: Pace Breaker Pant *Regular [Category: accessories]
+2025-12-06 18:27:20,606 - INFO - Processing: mi17prdzjn.html
+2025-12-06 18:27:20,606 - INFO - ============================================================
+2025-12-06 18:27:20,607 - INFO - Lululemon Product Information Extractor to Excel
+2025-12-06 18:27:20,607 - INFO - ============================================================
+2025-12-06 18:27:20,607 - INFO - Reading HTML from: /home/theafrazkhan/Desktop/scrappin/backend/data/accessories/mi17prdzjn.html
+2025-12-06 18:27:20,608 - INFO - ✓ Successfully parsed __NEXT_DATA__ JSON
+2025-12-06 18:27:20,608 - INFO - ✓ Found product data
+2025-12-06 18:27:20,608 - INFO - ⚠ No inventory data found in HTML
+2025-12-06 18:27:20,609 - INFO - ⚠ No product image found
+2025-12-06 18:27:20,609 - INFO - ⚠ No color swatches found
+2025-12-06 18:27:20,609 - INFO -   ✓ Successfully extracted: Pace Breaker Linerless Short 5" [Category: accessories]
+2025-12-06 18:27:20,610 - INFO - Processing: yse0idzlrl.html
+2025-12-06 18:27:20,610 - INFO - ============================================================
+2025-12-06 18:27:20,610 - INFO - Lululemon Product Information Extractor to Excel
+2025-12-06 18:27:20,610 - INFO - ============================================================
+2025-12-06 18:27:20,611 - INFO - Reading HTML from: /home/theafrazkhan/Desktop/scrappin/backend/data/accessories/yse0idzlrl.html
+2025-12-06 18:27:20,611 - INFO - ✓ Successfully parsed __NEXT_DATA__ JSON
+2025-12-06 18:27:20,611 - INFO - ✓ Found product data
+2025-12-06 18:27:20,612 - INFO - ⚠ No inventory data found in HTML
+2025-12-06 18:27:20,612 - INFO - ⚠ No product image found
+2025-12-06 18:27:20,612 - INFO - ⚠ No color swatches found
+2025-12-06 18:27:20,612 - INFO -   ✓ Successfully extracted: ABC Jogger *Regular [Category: accessories]
+2025-12-06 18:27:20,613 - INFO - Processing: ov5xe6ce71.html
+2025-12-06 18:27:20,613 - INFO - ============================================================
+2025-12-06 18:27:20,613 - INFO - Lululemon Product Information Extractor to Excel
+2025-12-06 18:27:20,614 - INFO - ============================================================
+2025-12-06 18:27:20,614 - INFO - Reading HTML from: /home/theafrazkhan/Desktop/scrappin/backend/data/accessories/ov5xe6ce71.html
+2025-12-06 18:27:20,615 - INFO - ✓ Successfully parsed __NEXT_DATA__ JSON
+2025-12-06 18:27:20,615 - INFO - ✓ Found product data
+2025-12-06 18:27:20,615 - INFO - ⚠ No inventory data found in HTML
+2025-12-06 18:27:20,616 - INFO - ⚠ No product image found
+2025-12-06 18:27:20,616 - INFO - ⚠ No color swatches found
+2025-12-06 18:27:20,616 - INFO -   ✓ Successfully extracted: Cold Weather Running Half Zip [Category: accessories]
+2025-12-06 18:27:20,617 - INFO - Processing: o33vn871q7.html
+2025-12-06 18:27:20,617 - INFO - ============================================================
+2025-12-06 18:27:20,617 - INFO - Lululemon Product Information Extractor to Excel
+2025-12-06 18:27:20,618 - INFO - ============================================================
+2025-12-06 18:27:20,618 - INFO - Reading HTML from: /home/theafrazkhan/Desktop/scrappin/backend/data/accessories/o33vn871q7.html
+2025-12-06 18:27:20,618 - INFO - ✓ Successfully parsed __NEXT_DATA__ JSON
+2025-12-06 18:27:20,619 - INFO - ✓ Found product data
+2025-12-06 18:27:20,619 - INFO - ⚠ No inventory data found in HTML
+2025-12-06 18:27:20,619 - INFO - ⚠ No product image found
+2025-12-06 18:27:20,619 - INFO - ⚠ No color swatches found
+2025-12-06 18:27:20,620 - INFO -   ✓ Successfully extracted: Brushed Softstreme Half Zip [Category: accessories]
+2025-12-06 18:27:20,620 - INFO - Processing: mu7d0x376w.html
+2025-12-06 18:27:20,620 - INFO - ============================================================
+2025-12-06 18:27:20,620 - INFO - Lululemon Product Information Extractor to Excel
+2025-12-06 18:27:20,621 - INFO - ============================================================
+2025-12-06 18:27:20,621 - INFO - Reading HTML from: /home/theafrazkhan/Desktop/scrappin/backend/data/accessories/mu7d0x376w.html
+2025-12-06 18:27:20,621 - INFO - ✓ Successfully parsed __NEXT_DATA__ JSON
+2025-12-06 18:27:20,622 - INFO - ✓ Found product data
+2025-12-06 18:27:20,623 - INFO - ⚠ No inventory data found in HTML
+2025-12-06 18:27:20,623 - INFO - ⚠ No product image found
+2025-12-06 18:27:20,624 - INFO - ⚠ No color swatches found
+2025-12-06 18:27:20,625 - INFO -   ✓ Successfully extracted: Pace Breaker Jogger *Regular [Category: accessories]
+2025-12-06 18:27:20,625 - INFO - Processing: d279l7o1tv.html
+2025-12-06 18:27:20,626 - INFO - ============================================================
+2025-12-06 18:27:20,626 - INFO - Lululemon Product Information Extractor to Excel
+2025-12-06 18:27:20,626 - INFO - ============================================================
+2025-12-06 18:27:20,626 - INFO - Reading HTML from: /home/theafrazkhan/Desktop/scrappin/backend/data/accessories/d279l7o1tv.html
+2025-12-06 18:27:20,626 - INFO - ✓ Successfully parsed __NEXT_DATA__ JSON
+2025-12-06 18:27:20,626 - INFO - ✓ Found product data
+2025-12-06 18:27:20,627 - INFO - ⚠ No inventory data found in HTML
+2025-12-06 18:27:20,627 - INFO - ⚠ No product image found
+2025-12-06 18:27:20,627 - INFO - ⚠ No color swatches found
+2025-12-06 18:27:20,627 - INFO -   ✓ Successfully extracted: Pace Breaker Lined Short 7" [Category: accessories]
+2025-12-06 18:27:20,627 - INFO - Processing: a9ruj7kk4x.html
+2025-12-06 18:27:20,627 - INFO - ============================================================
+2025-12-06 18:27:20,628 - INFO - Lululemon Product Information Extractor to Excel
+2025-12-06 18:27:20,628 - INFO - ============================================================
+2025-12-06 18:27:20,628 - INFO - Reading HTML from: /home/theafrazkhan/Desktop/scrappin/backend/data/accessories/a9ruj7kk4x.html
+2025-12-06 18:27:20,628 - INFO - ✓ Successfully parsed __NEXT_DATA__ JSON
+2025-12-06 18:27:20,629 - INFO - ✓ Found product data
+2025-12-06 18:27:20,629 - INFO - ⚠ No inventory data found in HTML
+2025-12-06 18:27:20,630 - INFO - ⚠ No product image found
+2025-12-06 18:27:20,630 - INFO - ⚠ No color swatches found
+2025-12-06 18:27:20,630 - INFO -   ✓ Successfully extracted: ABC Slim-Fit Fixed-Waist Jogger *Regular [Category: accessories]
+2025-12-06 18:27:20,630 - INFO - Processing: d7dkzkc4mb.html
+2025-12-06 18:27:20,631 - INFO - ============================================================
+2025-12-06 18:27:20,631 - INFO - Lululemon Product Information Extractor to Excel
+2025-12-06 18:27:20,631 - INFO - ============================================================
+2025-12-06 18:27:20,631 - INFO - Reading HTML from: /home/theafrazkhan/Desktop/scrappin/backend/data/accessories/d7dkzkc4mb.html
+2025-12-06 18:27:20,632 - INFO - ✓ Successfully parsed __NEXT_DATA__ JSON
+2025-12-06 18:27:20,632 - INFO - ✓ Found product data
+2025-12-06 18:27:20,633 - INFO - ⚠ No inventory data found in HTML
+2025-12-06 18:27:20,634 - INFO - ⚠ No product image found
+2025-12-06 18:27:20,635 - INFO - ⚠ No color swatches found
+2025-12-06 18:27:20,636 - INFO -   ✓ Successfully extracted: ABC Jogger Warpstreme *Tall [Category: accessories]
+2025-12-06 18:27:20,636 - INFO - Processing: vd1eldejjq.html
+2025-12-06 18:27:20,636 - INFO - ============================================================
+2025-12-06 18:27:20,637 - INFO - Lululemon Product Information Extractor to Excel
+2025-12-06 18:27:20,637 - INFO - ============================================================
+2025-12-06 18:27:20,637 - INFO - Reading HTML from: /home/theafrazkhan/Desktop/scrappin/backend/data/accessories/vd1eldejjq.html
+2025-12-06 18:27:20,637 - INFO - ✓ Successfully parsed __NEXT_DATA__ JSON
+2025-12-06 18:27:20,638 - INFO - ✓ Found product data
+2025-12-06 18:27:20,638 - INFO - ⚠ No inventory data found in HTML
+2025-12-06 18:27:20,638 - INFO - ⚠ No product image found
+2025-12-06 18:27:20,638 - INFO - ⚠ No color swatches found
+2025-12-06 18:27:20,639 - INFO -   ✓ Successfully extracted: Define Jacket *Luon [Category: accessories]
+2025-12-06 18:27:20,639 - INFO - Processing: v6tla28mp0.html
+2025-12-06 18:27:20,639 - INFO - ============================================================
+2025-12-06 18:27:20,640 - INFO - Lululemon Product Information Extractor to Excel
+2025-12-06 18:27:20,640 - INFO - ============================================================
+2025-12-06 18:27:21,553 - INFO - Reading HTML from: /home/theafrazkhan/Desktop/scrappin/backend/data/accessories/v6tla28mp0.html
+2025-12-06 18:27:21,554 - INFO - ✓ Successfully parsed __NEXT_DATA__ JSON
+2025-12-06 18:27:21,554 - INFO - ✓ Found product data
+2025-12-06 18:27:21,555 - INFO - ⚠ No inventory data found in HTML
+2025-12-06 18:27:21,555 - INFO - ⚠ No product image found
+2025-12-06 18:27:21,555 - INFO - ⚠ No color swatches found
+2025-12-06 18:27:21,555 - INFO -   ✓ Successfully extracted: Soft Jersey Jogger *Regular [Category: accessories]
+2025-12-06 18:27:21,556 - INFO - Processing: bxp4p3wn4r.html
+2025-12-06 18:27:21,558 - INFO - ============================================================
+2025-12-06 18:27:21,559 - INFO - Lululemon Product Information Extractor to Excel
+2025-12-06 18:27:21,559 - INFO - ============================================================
+2025-12-06 18:27:21,559 - INFO - Reading HTML from: /home/theafrazkhan/Desktop/scrappin/backend/data/accessories/bxp4p3wn4r.html
+2025-12-06 18:27:21,560 - INFO - ✓ Successfully parsed __NEXT_DATA__ JSON
+2025-12-06 18:27:21,561 - INFO - ✓ Found product data
+2025-12-06 18:27:21,562 - INFO - ⚠ No inventory data found in HTML
+2025-12-06 18:27:21,562 - INFO - ⚠ No product image found
+2025-12-06 18:27:21,562 - INFO - ⚠ No color swatches found
+2025-12-06 18:27:21,563 - INFO -   ✓ Successfully extracted: Define Jacket Nulu *Flocked [Category: accessories]
+2025-12-06 18:27:21,563 - INFO - Processing: g2faof1o98.html
+2025-12-06 18:27:21,563 - INFO - ============================================================
+2025-12-06 18:27:21,563 - INFO - Lululemon Product Information Extractor to Excel
+2025-12-06 18:27:21,563 - INFO - ============================================================
+2025-12-06 18:27:21,564 - INFO - Reading HTML from: /home/theafrazkhan/Desktop/scrappin/backend/data/accessories/g2faof1o98.html
+2025-12-06 18:27:21,564 - INFO - ✓ Successfully parsed __NEXT_DATA__ JSON
+2025-12-06 18:27:21,564 - INFO - ✓ Found product data
+2025-12-06 18:27:21,566 - INFO - ⚠ No inventory data found in HTML
+2025-12-06 18:27:21,567 - INFO - ⚠ No product image found
+2025-12-06 18:27:21,567 - INFO - ⚠ No color swatches found
+2025-12-06 18:27:21,567 - INFO -   ✓ Successfully extracted: Ebb to Street Cropped Racerback Tank Top *Light Support, B/C Cup [Category: accessories]
+2025-12-06 18:27:21,568 - INFO - Processing: ccjxzqin3c.html
+2025-12-06 18:27:21,568 - INFO - ============================================================
+2025-12-06 18:27:21,568 - INFO - Lululemon Product Information Extractor to Excel
+2025-12-06 18:27:21,568 - INFO - ============================================================
+2025-12-06 18:27:21,569 - INFO - Reading HTML from: /home/theafrazkhan/Desktop/scrappin/backend/data/accessories/ccjxzqin3c.html
+2025-12-06 18:27:21,569 - INFO - ✓ Successfully parsed __NEXT_DATA__ JSON
+2025-12-06 18:27:21,569 - INFO - ✓ Found product data
+2025-12-06 18:27:21,570 - INFO - ⚠ No inventory data found in HTML
+2025-12-06 18:27:21,570 - INFO - ⚠ No product image found
+2025-12-06 18:27:21,571 - INFO - ⚠ No color swatches found
+2025-12-06 18:27:21,571 - INFO -   ✓ Successfully extracted: Pack It Down Vest [Category: accessories]
+2025-12-06 18:27:21,571 - INFO - Processing: oo2vz3qc01.html
+2025-12-06 18:27:21,572 - INFO - ============================================================
+2025-12-06 18:27:21,572 - INFO - Lululemon Product Information Extractor to Excel
+2025-12-06 18:27:21,572 - INFO - ============================================================
+2025-12-06 18:27:21,572 - INFO - Reading HTML from: /home/theafrazkhan/Desktop/scrappin/backend/data/accessories/oo2vz3qc01.html
+2025-12-06 18:27:21,573 - INFO - ✓ Successfully parsed __NEXT_DATA__ JSON
+2025-12-06 18:27:21,573 - INFO - ✓ Found product data
+2025-12-06 18:27:21,573 - INFO - ⚠ No inventory data found in HTML
+2025-12-06 18:27:21,574 - INFO - ⚠ No product image found
+2025-12-06 18:27:21,574 - INFO - ⚠ No color swatches found
+2025-12-06 18:27:21,574 - INFO -   ✓ Successfully extracted: Define Cropped Jacket *Nulu [Category: accessories]
+2025-12-06 18:27:21,574 - INFO - Processing: mc26jbe6ma.html
+2025-12-06 18:27:21,574 - INFO - ============================================================
+2025-12-06 18:27:21,575 - INFO - Lululemon Product Information Extractor to Excel
+2025-12-06 18:27:21,575 - INFO - ============================================================
+2025-12-06 18:27:21,575 - INFO - Reading HTML from: /home/theafrazkhan/Desktop/scrappin/backend/data/accessories/mc26jbe6ma.html
+2025-12-06 18:27:21,575 - INFO - ✓ Successfully parsed __NEXT_DATA__ JSON
+2025-12-06 18:27:21,576 - INFO - ✓ Found product data
+2025-12-06 18:27:21,576 - INFO - ⚠ No inventory data found in HTML
+2025-12-06 18:27:21,577 - INFO - ⚠ No product image found
+2025-12-06 18:27:21,577 - INFO - ⚠ No color swatches found
+2025-12-06 18:27:21,577 - INFO -   ✓ Successfully extracted: Cotton Terry Tennis Half Zip [Category: accessories]
+2025-12-06 18:27:21,578 - INFO - Processing: fnu1n3t43v.html
+2025-12-06 18:27:21,578 - INFO - ============================================================
+2025-12-06 18:27:21,578 - INFO - Lululemon Product Information Extractor to Excel
+2025-12-06 18:27:21,579 - INFO - ============================================================
+2025-12-06 18:27:21,579 - INFO - Reading HTML from: /home/theafrazkhan/Desktop/scrappin/backend/data/accessories/fnu1n3t43v.html
+2025-12-06 18:27:21,579 - INFO - ✓ Successfully parsed __NEXT_DATA__ JSON
+2025-12-06 18:27:21,580 - INFO - ✓ Found product data
+2025-12-06 18:27:21,580 - INFO - ⚠ No inventory data found in HTML
+2025-12-06 18:27:21,584 - INFO - ⚠ No product image found
+2025-12-06 18:27:21,584 - INFO - ⚠ No color swatches found
+2025-12-06 18:27:21,585 - INFO -   ✓ Successfully extracted: Smooth Spacer Jogger *Regular [Category: accessories]
+2025-12-06 18:27:21,585 - INFO - Processing: h534b5so2s.html
+2025-12-06 18:27:21,585 - INFO - ============================================================
+2025-12-06 18:27:21,585 - INFO - Lululemon Product Information Extractor to Excel
+2025-12-06 18:27:21,586 - INFO - ============================================================
+2025-12-06 18:27:21,586 - INFO - Reading HTML from: /home/theafrazkhan/Desktop/scrappin/backend/data/accessories/h534b5so2s.html
+2025-12-06 18:27:21,587 - INFO - ✓ Successfully parsed __NEXT_DATA__ JSON
+2025-12-06 18:27:21,588 - INFO - ✓ Found product data
+2025-12-06 18:27:21,588 - INFO - ⚠ No inventory data found in HTML
+2025-12-06 18:27:21,588 - INFO - ⚠ No product image found
+2025-12-06 18:27:21,591 - INFO - ⚠ No color swatches found
+2025-12-06 18:27:21,591 - INFO -   ✓ Successfully extracted: Define Cropped Jacket *Herringbone [Category: accessories]
+2025-12-06 18:27:21,592 - INFO - Processing: jd2tq0pqw6.html
+2025-12-06 18:27:21,592 - INFO - ============================================================
+2025-12-06 18:27:21,592 - INFO - Lululemon Product Information Extractor to Excel
+2025-12-06 18:27:21,592 - INFO - ============================================================
+2025-12-06 18:27:21,592 - INFO - Reading HTML from: /home/theafrazkhan/Desktop/scrappin/backend/data/men/jd2tq0pqw6.html
+2025-12-06 18:27:21,593 - INFO - ✓ Successfully parsed __NEXT_DATA__ JSON
+2025-12-06 18:27:21,593 - INFO - ✓ Found product data
+2025-12-06 18:27:21,593 - INFO - ⚠ No inventory data found in HTML
+2025-12-06 18:27:21,593 - INFO - ⚠ No product image found
+2025-12-06 18:27:21,593 - INFO - ⚠ No color swatches found
+2025-12-06 18:27:21,594 - INFO -   ✓ Successfully extracted: Pace Breaker Linerless Short 7" [Category: men]
+2025-12-06 18:27:21,594 - INFO - Processing: s1zlom3wpy.html
+2025-12-06 18:27:21,594 - INFO - ============================================================
+2025-12-06 18:27:21,595 - INFO - Lululemon Product Information Extractor to Excel
+2025-12-06 18:27:21,595 - INFO - ============================================================
+2025-12-06 18:27:21,595 - INFO - Reading HTML from: /home/theafrazkhan/Desktop/scrappin/backend/data/men/s1zlom3wpy.html
+2025-12-06 18:27:21,595 - INFO - ✓ Successfully parsed __NEXT_DATA__ JSON
+2025-12-06 18:27:21,595 - INFO - ✓ Found product data
+2025-12-06 18:27:21,596 - INFO - ⚠ No inventory data found in HTML
+2025-12-06 18:27:21,596 - INFO - ⚠ No product image found
+2025-12-06 18:27:21,597 - INFO - ⚠ No color swatches found
+2025-12-06 18:27:21,598 - INFO -   ✓ Successfully extracted: lululemon Align™ Dress [Category: men]
+2025-12-06 18:27:21,598 - INFO - Processing: hnsjuvo8dn.html
+2025-12-06 18:27:21,599 - INFO - ============================================================
+2025-12-06 18:27:21,599 - INFO - Lululemon Product Information Extractor to Excel
+2025-12-06 18:27:21,599 - INFO - ============================================================
+2025-12-06 18:27:21,600 - INFO - Reading HTML from: /home/theafrazkhan/Desktop/scrappin/backend/data/men/hnsjuvo8dn.html
+2025-12-06 18:27:21,600 - INFO - ✓ Successfully parsed __NEXT_DATA__ JSON
+2025-12-06 18:27:21,600 - INFO - ✓ Found product data
+2025-12-06 18:27:21,601 - INFO - ⚠ No inventory data found in HTML
+2025-12-06 18:27:21,601 - INFO - ⚠ No product image found
+2025-12-06 18:27:21,601 - INFO - ⚠ No color swatches found
+2025-12-06 18:27:21,601 - INFO -   ✓ Successfully extracted: Define Jacket *Nulu [Category: men]
+2025-12-06 18:27:21,602 - INFO - Processing: l39b1md52p.html
+2025-12-06 18:27:21,602 - INFO - ============================================================
+2025-12-06 18:27:21,602 - INFO - Lululemon Product Information Extractor to Excel
+2025-12-06 18:27:21,603 - INFO - ============================================================
+2025-12-06 18:27:21,603 - INFO - Reading HTML from: /home/theafrazkhan/Desktop/scrappin/backend/data/men/l39b1md52p.html
+2025-12-06 18:27:21,603 - INFO - ✓ Successfully parsed __NEXT_DATA__ JSON
+2025-12-06 18:27:21,603 - INFO - ✓ Found product data
+2025-12-06 18:27:21,603 - INFO - ⚠ No inventory data found in HTML
+2025-12-06 18:27:21,603 - INFO - ⚠ No product image found
+2025-12-06 18:27:21,604 - INFO - ⚠ No color swatches found
+2025-12-06 18:27:21,604 - INFO -   ✓ Successfully extracted: License to Train Jogger *Regular [Category: men]
+2025-12-06 18:27:21,604 - INFO - Processing: flm088ugr4.html
+2025-12-06 18:27:21,604 - INFO - ============================================================
+2025-12-06 18:27:21,605 - INFO - Lululemon Product Information Extractor to Excel
+2025-12-06 18:27:21,605 - INFO - ============================================================
+2025-12-06 18:27:21,605 - INFO - Reading HTML from: /home/theafrazkhan/Desktop/scrappin/backend/data/men/flm088ugr4.html
+2025-12-06 18:27:21,606 - INFO - ✓ Successfully parsed __NEXT_DATA__ JSON
+2025-12-06 18:27:21,606 - INFO - ✓ Found product data
+2025-12-06 18:27:21,606 - INFO - ⚠ No inventory data found in HTML
+2025-12-06 18:27:21,606 - INFO - ⚠ No product image found
+2025-12-06 18:27:21,606 - INFO - ⚠ No color swatches found
+2025-12-06 18:27:21,606 - INFO -   ✓ Successfully extracted: Pace Breaker Pant *Regular [Category: men]
+2025-12-06 18:27:21,607 - INFO - Processing: mi17prdzjn.html
+2025-12-06 18:27:21,607 - INFO - ============================================================
+2025-12-06 18:27:21,607 - INFO - Lululemon Product Information Extractor to Excel
+2025-12-06 18:27:21,607 - INFO - ============================================================
+2025-12-06 18:27:21,607 - INFO - Reading HTML from: /home/theafrazkhan/Desktop/scrappin/backend/data/men/mi17prdzjn.html
+2025-12-06 18:27:21,607 - INFO - ✓ Successfully parsed __NEXT_DATA__ JSON
+2025-12-06 18:27:21,607 - INFO - ✓ Found product data
+2025-12-06 18:27:21,607 - INFO - ⚠ No inventory data found in HTML
+2025-12-06 18:27:21,608 - INFO - ⚠ No product image found
+2025-12-06 18:27:21,608 - INFO - ⚠ No color swatches found
+2025-12-06 18:27:21,608 - INFO -   ✓ Successfully extracted: Pace Breaker Linerless Short 5" [Category: men]
+2025-12-06 18:27:21,608 - INFO - Processing: yse0idzlrl.html
+2025-12-06 18:27:21,608 - INFO - ============================================================
+2025-12-06 18:27:21,609 - INFO - Lululemon Product Information Extractor to Excel
+2025-12-06 18:27:21,609 - INFO - ============================================================
+2025-12-06 18:27:21,609 - INFO - Reading HTML from: /home/theafrazkhan/Desktop/scrappin/backend/data/men/yse0idzlrl.html
+2025-12-06 18:27:21,609 - INFO - ✓ Successfully parsed __NEXT_DATA__ JSON
+2025-12-06 18:27:21,610 - INFO - ✓ Found product data
+2025-12-06 18:27:21,610 - INFO - ⚠ No inventory data found in HTML
+2025-12-06 18:27:21,611 - INFO - ⚠ No product image found
+2025-12-06 18:27:21,611 - INFO - ⚠ No color swatches found
+2025-12-06 18:27:21,611 - INFO -   ✓ Successfully extracted: ABC Jogger *Regular [Category: men]
+2025-12-06 18:27:21,611 - INFO - Processing: ov5xe6ce71.html
+2025-12-06 18:27:21,611 - INFO - ============================================================
+2025-12-06 18:27:21,611 - INFO - Lululemon Product Information Extractor to Excel
+2025-12-06 18:27:21,611 - INFO - ============================================================
+2025-12-06 18:27:21,612 - INFO - Reading HTML from: /home/theafrazkhan/Desktop/scrappin/backend/data/men/ov5xe6ce71.html
+2025-12-06 18:27:21,612 - INFO - ✓ Successfully parsed __NEXT_DATA__ JSON
+2025-12-06 18:27:21,612 - INFO - ✓ Found product data
+2025-12-06 18:27:21,612 - INFO - ⚠ No inventory data found in HTML
+2025-12-06 18:27:21,612 - INFO - ⚠ No product image found
+2025-12-06 18:27:21,612 - INFO - ⚠ No color swatches found
+2025-12-06 18:27:22,437 - INFO -   ✓ Successfully extracted: Cold Weather Running Half Zip [Category: men]
+2025-12-06 18:27:22,437 - INFO - Processing: o33vn871q7.html
+2025-12-06 18:27:22,438 - INFO - ============================================================
+2025-12-06 18:27:22,438 - INFO - Lululemon Product Information Extractor to Excel
+2025-12-06 18:27:22,438 - INFO - ============================================================
+2025-12-06 18:27:22,439 - INFO - Reading HTML from: /home/theafrazkhan/Desktop/scrappin/backend/data/men/o33vn871q7.html
+2025-12-06 18:27:22,439 - INFO - ✓ Successfully parsed __NEXT_DATA__ JSON
+2025-12-06 18:27:22,439 - INFO - ✓ Found product data
+2025-12-06 18:27:22,439 - INFO - ⚠ No inventory data found in HTML
+2025-12-06 18:27:22,440 - INFO - ⚠ No product image found
+2025-12-06 18:27:22,440 - INFO - ⚠ No color swatches found
+2025-12-06 18:27:22,440 - INFO -   ✓ Successfully extracted: Brushed Softstreme Half Zip [Category: men]
+2025-12-06 18:27:22,441 - INFO - Processing: mu7d0x376w.html
+2025-12-06 18:27:22,441 - INFO - ============================================================
+2025-12-06 18:27:22,441 - INFO - Lululemon Product Information Extractor to Excel
+2025-12-06 18:27:22,442 - INFO - ============================================================
+2025-12-06 18:27:22,442 - INFO - Reading HTML from: /home/theafrazkhan/Desktop/scrappin/backend/data/men/mu7d0x376w.html
+2025-12-06 18:27:22,443 - INFO - ✓ Successfully parsed __NEXT_DATA__ JSON
+2025-12-06 18:27:22,443 - INFO - ✓ Found product data
+2025-12-06 18:27:22,444 - INFO - ⚠ No inventory data found in HTML
+2025-12-06 18:27:22,445 - INFO - ⚠ No product image found
+2025-12-06 18:27:22,445 - INFO - ⚠ No color swatches found
+2025-12-06 18:27:22,445 - INFO -   ✓ Successfully extracted: Pace Breaker Jogger *Regular [Category: men]
+2025-12-06 18:27:22,446 - INFO - Processing: d279l7o1tv.html
+2025-12-06 18:27:22,446 - INFO - ============================================================
+2025-12-06 18:27:22,446 - INFO - Lululemon Product Information Extractor to Excel
+2025-12-06 18:27:22,446 - INFO - ============================================================
+2025-12-06 18:27:22,447 - INFO - Reading HTML from: /home/theafrazkhan/Desktop/scrappin/backend/data/men/d279l7o1tv.html
+2025-12-06 18:27:22,447 - INFO - ✓ Successfully parsed __NEXT_DATA__ JSON
+2025-12-06 18:27:22,447 - INFO - ✓ Found product data
+2025-12-06 18:27:22,448 - INFO - ⚠ No inventory data found in HTML
+2025-12-06 18:27:22,448 - INFO - ⚠ No product image found
+2025-12-06 18:27:22,448 - INFO - ⚠ No color swatches found
+2025-12-06 18:27:22,448 - INFO -   ✓ Successfully extracted: Pace Breaker Lined Short 7" [Category: men]
+2025-12-06 18:27:22,449 - INFO - Processing: a9ruj7kk4x.html
+2025-12-06 18:27:22,449 - INFO - ============================================================
+2025-12-06 18:27:22,450 - INFO - Lululemon Product Information Extractor to Excel
+2025-12-06 18:27:22,450 - INFO - ============================================================
+2025-12-06 18:27:22,451 - INFO - Reading HTML from: /home/theafrazkhan/Desktop/scrappin/backend/data/men/a9ruj7kk4x.html
+2025-12-06 18:27:22,452 - INFO - ✓ Successfully parsed __NEXT_DATA__ JSON
+2025-12-06 18:27:22,452 - INFO - ✓ Found product data
+2025-12-06 18:27:22,453 - INFO - ⚠ No inventory data found in HTML
+2025-12-06 18:27:22,453 - INFO - ⚠ No product image found
+2025-12-06 18:27:22,454 - INFO - ⚠ No color swatches found
+2025-12-06 18:27:22,454 - INFO -   ✓ Successfully extracted: ABC Slim-Fit Fixed-Waist Jogger *Regular [Category: men]
+2025-12-06 18:27:22,455 - INFO - Processing: d7dkzkc4mb.html
+2025-12-06 18:27:22,455 - INFO - ============================================================
+2025-12-06 18:27:22,455 - INFO - Lululemon Product Information Extractor to Excel
+2025-12-06 18:27:22,456 - INFO - ============================================================
+2025-12-06 18:27:22,457 - INFO - Reading HTML from: /home/theafrazkhan/Desktop/scrappin/backend/data/men/d7dkzkc4mb.html
+2025-12-06 18:27:22,458 - INFO - ✓ Successfully parsed __NEXT_DATA__ JSON
+2025-12-06 18:27:22,458 - INFO - ✓ Found product data
+2025-12-06 18:27:22,458 - INFO - ⚠ No inventory data found in HTML
+2025-12-06 18:27:22,459 - INFO - ⚠ No product image found
+2025-12-06 18:27:22,459 - INFO - ⚠ No color swatches found
+2025-12-06 18:27:22,459 - INFO -   ✓ Successfully extracted: ABC Jogger Warpstreme *Tall [Category: men]
+2025-12-06 18:27:22,459 - INFO - Processing: vd1eldejjq.html
+2025-12-06 18:27:22,460 - INFO - ============================================================
+2025-12-06 18:27:22,460 - INFO - Lululemon Product Information Extractor to Excel
+2025-12-06 18:27:22,460 - INFO - ============================================================
+2025-12-06 18:27:22,460 - INFO - Reading HTML from: /home/theafrazkhan/Desktop/scrappin/backend/data/men/vd1eldejjq.html
+2025-12-06 18:27:22,461 - INFO - ✓ Successfully parsed __NEXT_DATA__ JSON
+2025-12-06 18:27:22,461 - INFO - ✓ Found product data
+2025-12-06 18:27:22,462 - INFO - ⚠ No inventory data found in HTML
+2025-12-06 18:27:22,462 - INFO - ⚠ No product image found
+2025-12-06 18:27:22,462 - INFO - ⚠ No color swatches found
+2025-12-06 18:27:22,463 - INFO -   ✓ Successfully extracted: Define Jacket *Luon [Category: men]
+2025-12-06 18:27:22,463 - INFO - Processing: v6tla28mp0.html
+2025-12-06 18:27:22,464 - INFO - ============================================================
+2025-12-06 18:27:22,464 - INFO - Lululemon Product Information Extractor to Excel
+2025-12-06 18:27:22,465 - INFO - ============================================================
+2025-12-06 18:27:22,466 - INFO - Reading HTML from: /home/theafrazkhan/Desktop/scrappin/backend/data/men/v6tla28mp0.html
+2025-12-06 18:27:22,467 - INFO - ✓ Successfully parsed __NEXT_DATA__ JSON
+2025-12-06 18:27:22,467 - INFO - ✓ Found product data
+2025-12-06 18:27:22,467 - INFO - ⚠ No inventory data found in HTML
+2025-12-06 18:27:22,468 - INFO - ⚠ No product image found
+2025-12-06 18:27:22,468 - INFO - ⚠ No color swatches found
+2025-12-06 18:27:22,469 - INFO -   ✓ Successfully extracted: Soft Jersey Jogger *Regular [Category: men]
+2025-12-06 18:27:22,470 - INFO - Processing: bxp4p3wn4r.html
+2025-12-06 18:27:22,470 - INFO - ============================================================
+2025-12-06 18:27:22,471 - INFO - Lululemon Product Information Extractor to Excel
+2025-12-06 18:27:22,471 - INFO - ============================================================
+2025-12-06 18:27:22,472 - INFO - Reading HTML from: /home/theafrazkhan/Desktop/scrappin/backend/data/men/bxp4p3wn4r.html
+2025-12-06 18:27:22,473 - INFO - ✓ Successfully parsed __NEXT_DATA__ JSON
+2025-12-06 18:27:22,473 - INFO - ✓ Found product data
+2025-12-06 18:27:22,474 - INFO - ⚠ No inventory data found in HTML
+2025-12-06 18:27:22,474 - INFO - ⚠ No product image found
+2025-12-06 18:27:22,474 - INFO - ⚠ No color swatches found
+2025-12-06 18:27:22,475 - INFO -   ✓ Successfully extracted: Define Jacket Nulu *Flocked [Category: men]
+2025-12-06 18:27:22,476 - INFO - Processing: g2faof1o98.html
+2025-12-06 18:27:22,476 - INFO - ============================================================
+2025-12-06 18:27:22,476 - INFO - Lululemon Product Information Extractor to Excel
+2025-12-06 18:27:22,476 - INFO - ============================================================
+2025-12-06 18:27:22,477 - INFO - Reading HTML from: /home/theafrazkhan/Desktop/scrappin/backend/data/men/g2faof1o98.html
+2025-12-06 18:27:22,477 - INFO - ✓ Successfully parsed __NEXT_DATA__ JSON
+2025-12-06 18:27:22,478 - INFO - ✓ Found product data
+2025-12-06 18:27:22,479 - INFO - ⚠ No inventory data found in HTML
+2025-12-06 18:27:22,479 - INFO - ⚠ No product image found
+2025-12-06 18:27:22,479 - INFO - ⚠ No color swatches found
+2025-12-06 18:27:22,480 - INFO -   ✓ Successfully extracted: Ebb to Street Cropped Racerback Tank Top *Light Support, B/C Cup [Category: men]
+2025-12-06 18:27:22,480 - INFO - Processing: ccjxzqin3c.html
+2025-12-06 18:27:22,481 - INFO - ============================================================
+2025-12-06 18:27:22,481 - INFO - Lululemon Product Information Extractor to Excel
+2025-12-06 18:27:22,482 - INFO - ============================================================
+2025-12-06 18:27:22,482 - INFO - Reading HTML from: /home/theafrazkhan/Desktop/scrappin/backend/data/men/ccjxzqin3c.html
+2025-12-06 18:27:22,482 - INFO - ✓ Successfully parsed __NEXT_DATA__ JSON
+2025-12-06 18:27:22,483 - INFO - ✓ Found product data
+2025-12-06 18:27:22,483 - INFO - ⚠ No inventory data found in HTML
+2025-12-06 18:27:22,483 - INFO - ⚠ No product image found
+2025-12-06 18:27:22,483 - INFO - ⚠ No color swatches found
+2025-12-06 18:27:22,484 - INFO -   ✓ Successfully extracted: Pack It Down Vest [Category: men]
+2025-12-06 18:27:22,484 - INFO - Processing: oo2vz3qc01.html
+2025-12-06 18:27:22,484 - INFO - ============================================================
+2025-12-06 18:27:22,485 - INFO - Lululemon Product Information Extractor to Excel
+2025-12-06 18:27:22,485 - INFO - ============================================================
+2025-12-06 18:27:22,485 - INFO - Reading HTML from: /home/theafrazkhan/Desktop/scrappin/backend/data/men/oo2vz3qc01.html
+2025-12-06 18:27:22,485 - INFO - ✓ Successfully parsed __NEXT_DATA__ JSON
+2025-12-06 18:27:22,486 - INFO - ✓ Found product data
+2025-12-06 18:27:22,487 - INFO - ⚠ No inventory data found in HTML
+2025-12-06 18:27:22,487 - INFO - ⚠ No product image found
+2025-12-06 18:27:22,488 - INFO - ⚠ No color swatches found
+2025-12-06 18:27:22,488 - INFO -   ✓ Successfully extracted: Define Cropped Jacket *Nulu [Category: men]
+2025-12-06 18:27:22,488 - INFO - Processing: mc26jbe6ma.html
+2025-12-06 18:27:22,488 - INFO - ============================================================
+2025-12-06 18:27:22,489 - INFO - Lululemon Product Information Extractor to Excel
+2025-12-06 18:27:22,489 - INFO - ============================================================
+2025-12-06 18:27:22,489 - INFO - Reading HTML from: /home/theafrazkhan/Desktop/scrappin/backend/data/men/mc26jbe6ma.html
+2025-12-06 18:27:22,490 - INFO - ✓ Successfully parsed __NEXT_DATA__ JSON
+2025-12-06 18:27:22,490 - INFO - ✓ Found product data
+2025-12-06 18:27:22,491 - INFO - ⚠ No inventory data found in HTML
+2025-12-06 18:27:22,491 - INFO - ⚠ No product image found
+2025-12-06 18:27:22,491 - INFO - ⚠ No color swatches found
+2025-12-06 18:27:22,491 - INFO -   ✓ Successfully extracted: Cotton Terry Tennis Half Zip [Category: men]
+2025-12-06 18:27:22,491 - INFO - Processing: fnu1n3t43v.html
+2025-12-06 18:27:22,492 - INFO - ============================================================
+2025-12-06 18:27:22,492 - INFO - Lululemon Product Information Extractor to Excel
+2025-12-06 18:27:22,492 - INFO - ============================================================
+2025-12-06 18:27:22,492 - INFO - Reading HTML from: /home/theafrazkhan/Desktop/scrappin/backend/data/men/fnu1n3t43v.html
+2025-12-06 18:27:22,493 - INFO - ✓ Successfully parsed __NEXT_DATA__ JSON
+2025-12-06 18:27:22,493 - INFO - ✓ Found product data
+2025-12-06 18:27:22,493 - INFO - ⚠ No inventory data found in HTML
+2025-12-06 18:27:22,493 - INFO - ⚠ No product image found
+2025-12-06 18:27:22,494 - INFO - ⚠ No color swatches found
+2025-12-06 18:27:22,494 - INFO -   ✓ Successfully extracted: Smooth Spacer Jogger *Regular [Category: men]
+2025-12-06 18:27:22,494 - INFO - Processing: h534b5so2s.html
+2025-12-06 18:27:22,495 - INFO - ============================================================
+2025-12-06 18:27:22,495 - INFO - Lululemon Product Information Extractor to Excel
+2025-12-06 18:27:22,496 - INFO - ============================================================
+2025-12-06 18:27:22,496 - INFO - Reading HTML from: /home/theafrazkhan/Desktop/scrappin/backend/data/men/h534b5so2s.html
+2025-12-06 18:27:22,496 - INFO - ✓ Successfully parsed __NEXT_DATA__ JSON
+2025-12-06 18:27:22,496 - INFO - ✓ Found product data
+2025-12-06 18:27:22,497 - INFO - ⚠ No inventory data found in HTML
+2025-12-06 18:27:22,497 - INFO - ⚠ No product image found
+2025-12-06 18:27:22,497 - INFO - ⚠ No color swatches found
+2025-12-06 18:27:22,498 - INFO -   ✓ Successfully extracted: Define Cropped Jacket *Herringbone [Category: men]
+2025-12-06 18:27:22,498 - INFO - Processing: jd2tq0pqw6.html
+2025-12-06 18:27:22,498 - INFO - ============================================================
+2025-12-06 18:27:22,499 - INFO - Lululemon Product Information Extractor to Excel
+2025-12-06 18:27:22,500 - INFO - ============================================================
+2025-12-06 18:27:22,500 - INFO - Reading HTML from: /home/theafrazkhan/Desktop/scrappin/backend/data/women/jd2tq0pqw6.html
+2025-12-06 18:27:22,501 - INFO - ✓ Successfully parsed __NEXT_DATA__ JSON
+2025-12-06 18:27:22,501 - INFO - ✓ Found product data
+2025-12-06 18:27:22,501 - INFO - ⚠ No inventory data found in HTML
+2025-12-06 18:27:22,501 - INFO - ⚠ No product image found
+2025-12-06 18:27:22,502 - INFO - ⚠ No color swatches found
+2025-12-06 18:27:22,502 - INFO -   ✓ Successfully extracted: Pace Breaker Linerless Short 7" [Category: women]
+2025-12-06 18:27:22,502 - INFO - Processing: s1zlom3wpy.html
+2025-12-06 18:27:22,503 - INFO - ============================================================
+2025-12-06 18:27:22,503 - INFO - Lululemon Product Information Extractor to Excel
+2025-12-06 18:27:22,503 - INFO - ============================================================
+2025-12-06 18:27:23,340 - INFO - Reading HTML from: /home/theafrazkhan/Desktop/scrappin/backend/data/women/s1zlom3wpy.html
+2025-12-06 18:27:23,341 - INFO - ✓ Successfully parsed __NEXT_DATA__ JSON
+2025-12-06 18:27:23,342 - INFO - ✓ Found product data
+2025-12-06 18:27:23,343 - INFO - ⚠ No inventory data found in HTML
+2025-12-06 18:27:23,343 - INFO - ⚠ No product image found
+2025-12-06 18:27:23,346 - INFO - ⚠ No color swatches found
+2025-12-06 18:27:23,346 - INFO -   ✓ Successfully extracted: lululemon Align™ Dress [Category: women]
+2025-12-06 18:27:23,347 - INFO - Processing: hnsjuvo8dn.html
+2025-12-06 18:27:23,347 - INFO - ============================================================
+2025-12-06 18:27:23,348 - INFO - Lululemon Product Information Extractor to Excel
+2025-12-06 18:27:23,348 - INFO - ============================================================
+2025-12-06 18:27:23,348 - INFO - Reading HTML from: /home/theafrazkhan/Desktop/scrappin/backend/data/women/hnsjuvo8dn.html
+2025-12-06 18:27:23,349 - INFO - ✓ Successfully parsed __NEXT_DATA__ JSON
+2025-12-06 18:27:23,349 - INFO - ✓ Found product data
+2025-12-06 18:27:23,355 - INFO - ⚠ No inventory data found in HTML
+2025-12-06 18:27:23,355 - INFO - ⚠ No product image found
+2025-12-06 18:27:23,356 - INFO - ⚠ No color swatches found
+2025-12-06 18:27:23,356 - INFO -   ✓ Successfully extracted: Define Jacket *Nulu [Category: women]
+2025-12-06 18:27:23,359 - INFO - Processing: l39b1md52p.html
+2025-12-06 18:27:23,361 - INFO - ============================================================
+2025-12-06 18:27:23,361 - INFO - Lululemon Product Information Extractor to Excel
+2025-12-06 18:27:23,362 - INFO - ============================================================
+2025-12-06 18:27:23,362 - INFO - Reading HTML from: /home/theafrazkhan/Desktop/scrappin/backend/data/women/l39b1md52p.html
+2025-12-06 18:27:23,362 - INFO - ✓ Successfully parsed __NEXT_DATA__ JSON
+2025-12-06 18:27:23,362 - INFO - ✓ Found product data
+2025-12-06 18:27:23,363 - INFO - ⚠ No inventory data found in HTML
+2025-12-06 18:27:23,363 - INFO - ⚠ No product image found
+2025-12-06 18:27:23,363 - INFO - ⚠ No color swatches found
+2025-12-06 18:27:23,363 - INFO -   ✓ Successfully extracted: License to Train Jogger *Regular [Category: women]
+2025-12-06 18:27:23,364 - INFO - Processing: flm088ugr4.html
+2025-12-06 18:27:23,364 - INFO - ============================================================
+2025-12-06 18:27:23,366 - INFO - Lululemon Product Information Extractor to Excel
+2025-12-06 18:27:23,366 - INFO - ============================================================
+2025-12-06 18:27:23,367 - INFO - Reading HTML from: /home/theafrazkhan/Desktop/scrappin/backend/data/women/flm088ugr4.html
+2025-12-06 18:27:23,367 - INFO - ✓ Successfully parsed __NEXT_DATA__ JSON
+2025-12-06 18:27:23,367 - INFO - ✓ Found product data
+2025-12-06 18:27:23,368 - INFO - ⚠ No inventory data found in HTML
+2025-12-06 18:27:23,368 - INFO - ⚠ No product image found
+2025-12-06 18:27:23,368 - INFO - ⚠ No color swatches found
+2025-12-06 18:27:23,368 - INFO -   ✓ Successfully extracted: Pace Breaker Pant *Regular [Category: women]
+2025-12-06 18:27:23,368 - INFO - Processing: mi17prdzjn.html
+2025-12-06 18:27:23,369 - INFO - ============================================================
+2025-12-06 18:27:23,369 - INFO - Lululemon Product Information Extractor to Excel
+2025-12-06 18:27:23,369 - INFO - ============================================================
+2025-12-06 18:27:23,369 - INFO - Reading HTML from: /home/theafrazkhan/Desktop/scrappin/backend/data/women/mi17prdzjn.html
+2025-12-06 18:27:23,370 - INFO - ✓ Successfully parsed __NEXT_DATA__ JSON
+2025-12-06 18:27:23,370 - INFO - ✓ Found product data
+2025-12-06 18:27:23,370 - INFO - ⚠ No inventory data found in HTML
+2025-12-06 18:27:23,373 - INFO - ⚠ No product image found
+2025-12-06 18:27:23,374 - INFO - ⚠ No color swatches found
+2025-12-06 18:27:23,376 - INFO -   ✓ Successfully extracted: Pace Breaker Linerless Short 5" [Category: women]
+2025-12-06 18:27:23,377 - INFO - Processing: yse0idzlrl.html
+2025-12-06 18:27:23,378 - INFO - ============================================================
+2025-12-06 18:27:23,378 - INFO - Lululemon Product Information Extractor to Excel
+2025-12-06 18:27:23,378 - INFO - ============================================================
+2025-12-06 18:27:23,379 - INFO - Reading HTML from: /home/theafrazkhan/Desktop/scrappin/backend/data/women/yse0idzlrl.html
+2025-12-06 18:27:23,379 - INFO - ✓ Successfully parsed __NEXT_DATA__ JSON
+2025-12-06 18:27:23,379 - INFO - ✓ Found product data
+2025-12-06 18:27:23,380 - INFO - ⚠ No inventory data found in HTML
+2025-12-06 18:27:23,380 - INFO - ⚠ No product image found
+2025-12-06 18:27:23,380 - INFO - ⚠ No color swatches found
+2025-12-06 18:27:23,381 - INFO -   ✓ Successfully extracted: ABC Jogger *Regular [Category: women]
+2025-12-06 18:27:23,381 - INFO - Processing: ov5xe6ce71.html
+2025-12-06 18:27:23,381 - INFO - ============================================================
+2025-12-06 18:27:23,381 - INFO - Lululemon Product Information Extractor to Excel
+2025-12-06 18:27:23,382 - INFO - ============================================================
+2025-12-06 18:27:23,382 - INFO - Reading HTML from: /home/theafrazkhan/Desktop/scrappin/backend/data/women/ov5xe6ce71.html
+2025-12-06 18:27:23,382 - INFO - ✓ Successfully parsed __NEXT_DATA__ JSON
+2025-12-06 18:27:23,382 - INFO - ✓ Found product data
+2025-12-06 18:27:23,383 - INFO - ⚠ No inventory data found in HTML
+2025-12-06 18:27:23,383 - INFO - ⚠ No product image found
+2025-12-06 18:27:23,383 - INFO - ⚠ No color swatches found
+2025-12-06 18:27:23,383 - INFO -   ✓ Successfully extracted: Cold Weather Running Half Zip [Category: women]
+2025-12-06 18:27:23,384 - INFO - Processing: o33vn871q7.html
+2025-12-06 18:27:23,384 - INFO - ============================================================
+2025-12-06 18:27:23,384 - INFO - Lululemon Product Information Extractor to Excel
+2025-12-06 18:27:23,385 - INFO - ============================================================
+2025-12-06 18:27:23,385 - INFO - Reading HTML from: /home/theafrazkhan/Desktop/scrappin/backend/data/women/o33vn871q7.html
+2025-12-06 18:27:23,385 - INFO - ✓ Successfully parsed __NEXT_DATA__ JSON
+2025-12-06 18:27:23,385 - INFO - ✓ Found product data
+2025-12-06 18:27:23,385 - INFO - ⚠ No inventory data found in HTML
+2025-12-06 18:27:23,386 - INFO - ⚠ No product image found
+2025-12-06 18:27:23,386 - INFO - ⚠ No color swatches found
+2025-12-06 18:27:23,386 - INFO -   ✓ Successfully extracted: Brushed Softstreme Half Zip [Category: women]
+2025-12-06 18:27:23,387 - INFO - Processing: mu7d0x376w.html
+2025-12-06 18:27:23,387 - INFO - ============================================================
+2025-12-06 18:27:23,387 - INFO - Lululemon Product Information Extractor to Excel
+2025-12-06 18:27:23,387 - INFO - ============================================================
+2025-12-06 18:27:23,388 - INFO - Reading HTML from: /home/theafrazkhan/Desktop/scrappin/backend/data/women/mu7d0x376w.html
+2025-12-06 18:27:23,388 - INFO - ✓ Successfully parsed __NEXT_DATA__ JSON
+2025-12-06 18:27:23,389 - INFO - ✓ Found product data
+2025-12-06 18:27:23,389 - INFO - ⚠ No inventory data found in HTML
+2025-12-06 18:27:23,389 - INFO - ⚠ No product image found
+2025-12-06 18:27:23,389 - INFO - ⚠ No color swatches found
+2025-12-06 18:27:23,390 - INFO -   ✓ Successfully extracted: Pace Breaker Jogger *Regular [Category: women]
+2025-12-06 18:27:23,390 - INFO - Processing: d279l7o1tv.html
+2025-12-06 18:27:23,390 - INFO - ============================================================
+2025-12-06 18:27:23,390 - INFO - Lululemon Product Information Extractor to Excel
+2025-12-06 18:27:23,391 - INFO - ============================================================
+2025-12-06 18:27:23,391 - INFO - Reading HTML from: /home/theafrazkhan/Desktop/scrappin/backend/data/women/d279l7o1tv.html
+2025-12-06 18:27:23,391 - INFO - ✓ Successfully parsed __NEXT_DATA__ JSON
+2025-12-06 18:27:23,391 - INFO - ✓ Found product data
+2025-12-06 18:27:23,392 - INFO - ⚠ No inventory data found in HTML
+2025-12-06 18:27:23,392 - INFO - ⚠ No product image found
+2025-12-06 18:27:23,392 - INFO - ⚠ No color swatches found
+2025-12-06 18:27:23,392 - INFO -   ✓ Successfully extracted: Pace Breaker Lined Short 7" [Category: women]
+2025-12-06 18:27:23,393 - INFO - Processing: a9ruj7kk4x.html
+2025-12-06 18:27:23,393 - INFO - ============================================================
+2025-12-06 18:27:23,393 - INFO - Lululemon Product Information Extractor to Excel
+2025-12-06 18:27:23,393 - INFO - ============================================================
+2025-12-06 18:27:23,394 - INFO - Reading HTML from: /home/theafrazkhan/Desktop/scrappin/backend/data/women/a9ruj7kk4x.html
+2025-12-06 18:27:23,394 - INFO - ✓ Successfully parsed __NEXT_DATA__ JSON
+2025-12-06 18:27:23,394 - INFO - ✓ Found product data
+2025-12-06 18:27:23,394 - INFO - ⚠ No inventory data found in HTML
+2025-12-06 18:27:23,395 - INFO - ⚠ No product image found
+2025-12-06 18:27:23,395 - INFO - ⚠ No color swatches found
+2025-12-06 18:27:23,395 - INFO -   ✓ Successfully extracted: ABC Slim-Fit Fixed-Waist Jogger *Regular [Category: women]
+2025-12-06 18:27:23,396 - INFO - Processing: d7dkzkc4mb.html
+2025-12-06 18:27:23,396 - INFO - ============================================================
+2025-12-06 18:27:23,396 - INFO - Lululemon Product Information Extractor to Excel
+2025-12-06 18:27:23,396 - INFO - ============================================================
+2025-12-06 18:27:23,397 - INFO - Reading HTML from: /home/theafrazkhan/Desktop/scrappin/backend/data/women/d7dkzkc4mb.html
+2025-12-06 18:27:23,397 - INFO - ✓ Successfully parsed __NEXT_DATA__ JSON
+2025-12-06 18:27:23,397 - INFO - ✓ Found product data
+2025-12-06 18:27:23,398 - INFO - ⚠ No inventory data found in HTML
+2025-12-06 18:27:23,398 - INFO - ⚠ No product image found
+2025-12-06 18:27:23,398 - INFO - ⚠ No color swatches found
+2025-12-06 18:27:23,398 - INFO -   ✓ Successfully extracted: ABC Jogger Warpstreme *Tall [Category: women]
+2025-12-06 18:27:23,398 - INFO - Processing: vd1eldejjq.html
+2025-12-06 18:27:23,398 - INFO - ============================================================
+2025-12-06 18:27:23,399 - INFO - Lululemon Product Information Extractor to Excel
+2025-12-06 18:27:23,399 - INFO - ============================================================
+2025-12-06 18:27:23,399 - INFO - Reading HTML from: /home/theafrazkhan/Desktop/scrappin/backend/data/women/vd1eldejjq.html
+2025-12-06 18:27:23,399 - INFO - ✓ Successfully parsed __NEXT_DATA__ JSON
+2025-12-06 18:27:23,399 - INFO - ✓ Found product data
+2025-12-06 18:27:23,400 - INFO - ⚠ No inventory data found in HTML
+2025-12-06 18:27:23,400 - INFO - ⚠ No product image found
+2025-12-06 18:27:23,400 - INFO - ⚠ No color swatches found
+2025-12-06 18:27:23,400 - INFO -   ✓ Successfully extracted: Define Jacket *Luon [Category: women]
+2025-12-06 18:27:23,400 - INFO - Processing: v6tla28mp0.html
+2025-12-06 18:27:23,401 - INFO - ============================================================
+2025-12-06 18:27:23,401 - INFO - Lululemon Product Information Extractor to Excel
+2025-12-06 18:27:23,401 - INFO - ============================================================
+2025-12-06 18:27:23,401 - INFO - Reading HTML from: /home/theafrazkhan/Desktop/scrappin/backend/data/women/v6tla28mp0.html
+2025-12-06 18:27:23,401 - INFO - ✓ Successfully parsed __NEXT_DATA__ JSON
+2025-12-06 18:27:23,402 - INFO - ✓ Found product data
+2025-12-06 18:27:23,402 - INFO - ⚠ No inventory data found in HTML
+2025-12-06 18:27:23,402 - INFO - ⚠ No product image found
+2025-12-06 18:27:23,402 - INFO - ⚠ No color swatches found
+2025-12-06 18:27:23,402 - INFO -   ✓ Successfully extracted: Soft Jersey Jogger *Regular [Category: women]
+2025-12-06 18:27:23,403 - INFO - Processing: bxp4p3wn4r.html
+2025-12-06 18:27:23,403 - INFO - ============================================================
+2025-12-06 18:27:23,403 - INFO - Lululemon Product Information Extractor to Excel
+2025-12-06 18:27:23,403 - INFO - ============================================================
+2025-12-06 18:27:23,403 - INFO - Reading HTML from: /home/theafrazkhan/Desktop/scrappin/backend/data/women/bxp4p3wn4r.html
+2025-12-06 18:27:23,404 - INFO - ✓ Successfully parsed __NEXT_DATA__ JSON
+2025-12-06 18:27:23,404 - INFO - ✓ Found product data
+2025-12-06 18:27:23,404 - INFO - ⚠ No inventory data found in HTML
+2025-12-06 18:27:23,404 - INFO - ⚠ No product image found
+2025-12-06 18:27:23,404 - INFO - ⚠ No color swatches found
+2025-12-06 18:27:23,404 - INFO -   ✓ Successfully extracted: Define Jacket Nulu *Flocked [Category: women]
+2025-12-06 18:27:23,405 - INFO - Processing: g2faof1o98.html
+2025-12-06 18:27:23,405 - INFO - ============================================================
+2025-12-06 18:27:23,405 - INFO - Lululemon Product Information Extractor to Excel
+2025-12-06 18:27:23,405 - INFO - ============================================================
+2025-12-06 18:27:23,406 - INFO - Reading HTML from: /home/theafrazkhan/Desktop/scrappin/backend/data/women/g2faof1o98.html
+2025-12-06 18:27:23,406 - INFO - ✓ Successfully parsed __NEXT_DATA__ JSON
+2025-12-06 18:27:23,406 - INFO - ✓ Found product data
+2025-12-06 18:27:23,406 - INFO - ⚠ No inventory data found in HTML
+2025-12-06 18:27:23,406 - INFO - ⚠ No product image found
+2025-12-06 18:27:23,407 - INFO - ⚠ No color swatches found
+2025-12-06 18:27:24,226 - INFO -   ✓ Successfully extracted: Ebb to Street Cropped Racerback Tank Top *Light Support, B/C Cup [Category: women]
+2025-12-06 18:27:24,226 - INFO - Processing: ccjxzqin3c.html
+2025-12-06 18:27:24,227 - INFO - ============================================================
+2025-12-06 18:27:24,227 - INFO - Lululemon Product Information Extractor to Excel
+2025-12-06 18:27:24,227 - INFO - ============================================================
+2025-12-06 18:27:24,227 - INFO - Reading HTML from: /home/theafrazkhan/Desktop/scrappin/backend/data/women/ccjxzqin3c.html
+2025-12-06 18:27:24,227 - INFO - ✓ Successfully parsed __NEXT_DATA__ JSON
+2025-12-06 18:27:24,227 - INFO - ✓ Found product data
+2025-12-06 18:27:24,227 - INFO - ⚠ No inventory data found in HTML
+2025-12-06 18:27:24,228 - INFO - ⚠ No product image found
+2025-12-06 18:27:24,228 - INFO - ⚠ No color swatches found
+2025-12-06 18:27:24,228 - INFO -   ✓ Successfully extracted: Pack It Down Vest [Category: women]
+2025-12-06 18:27:24,228 - INFO - Processing: oo2vz3qc01.html
+2025-12-06 18:27:24,228 - INFO - ============================================================
+2025-12-06 18:27:24,228 - INFO - Lululemon Product Information Extractor to Excel
+2025-12-06 18:27:24,228 - INFO - ============================================================
+2025-12-06 18:27:24,228 - INFO - Reading HTML from: /home/theafrazkhan/Desktop/scrappin/backend/data/women/oo2vz3qc01.html
+2025-12-06 18:27:24,229 - INFO - ✓ Successfully parsed __NEXT_DATA__ JSON
+2025-12-06 18:27:24,229 - INFO - ✓ Found product data
+2025-12-06 18:27:24,229 - INFO - ⚠ No inventory data found in HTML
+2025-12-06 18:27:24,236 - INFO - ⚠ No product image found
+2025-12-06 18:27:24,236 - INFO - ⚠ No color swatches found
+2025-12-06 18:27:24,236 - INFO -   ✓ Successfully extracted: Define Cropped Jacket *Nulu [Category: women]
+2025-12-06 18:27:24,237 - INFO - Processing: mc26jbe6ma.html
+2025-12-06 18:27:24,241 - INFO - ============================================================
+2025-12-06 18:27:24,241 - INFO - Lululemon Product Information Extractor to Excel
+2025-12-06 18:27:24,242 - INFO - ============================================================
+2025-12-06 18:27:24,242 - INFO - Reading HTML from: /home/theafrazkhan/Desktop/scrappin/backend/data/women/mc26jbe6ma.html
+2025-12-06 18:27:24,242 - INFO - ✓ Successfully parsed __NEXT_DATA__ JSON
+2025-12-06 18:27:24,242 - INFO - ✓ Found product data
+2025-12-06 18:27:24,242 - INFO - ⚠ No inventory data found in HTML
+2025-12-06 18:27:24,243 - INFO - ⚠ No product image found
+2025-12-06 18:27:24,243 - INFO - ⚠ No color swatches found
+2025-12-06 18:27:24,243 - INFO -   ✓ Successfully extracted: Cotton Terry Tennis Half Zip [Category: women]
+2025-12-06 18:27:24,243 - INFO - Processing: fnu1n3t43v.html
+2025-12-06 18:27:24,245 - INFO - ============================================================
+2025-12-06 18:27:24,246 - INFO - Lululemon Product Information Extractor to Excel
+2025-12-06 18:27:24,246 - INFO - ============================================================
+2025-12-06 18:27:24,246 - INFO - Reading HTML from: /home/theafrazkhan/Desktop/scrappin/backend/data/women/fnu1n3t43v.html
+2025-12-06 18:27:24,246 - INFO - ✓ Successfully parsed __NEXT_DATA__ JSON
+2025-12-06 18:27:24,247 - INFO - ✓ Found product data
+2025-12-06 18:27:24,247 - INFO - ⚠ No inventory data found in HTML
+2025-12-06 18:27:24,247 - INFO - ⚠ No product image found
+2025-12-06 18:27:24,247 - INFO - ⚠ No color swatches found
+2025-12-06 18:27:24,247 - INFO -   ✓ Successfully extracted: Smooth Spacer Jogger *Regular [Category: women]
+2025-12-06 18:27:24,248 - INFO - Processing: h534b5so2s.html
+2025-12-06 18:27:24,248 - INFO - ============================================================
+2025-12-06 18:27:24,248 - INFO - Lululemon Product Information Extractor to Excel
+2025-12-06 18:27:24,253 - INFO - ============================================================
+2025-12-06 18:27:24,253 - INFO - Reading HTML from: /home/theafrazkhan/Desktop/scrappin/backend/data/women/h534b5so2s.html
+2025-12-06 18:27:24,254 - INFO - ✓ Successfully parsed __NEXT_DATA__ JSON
+2025-12-06 18:27:24,254 - INFO - ✓ Found product data
+2025-12-06 18:27:24,254 - INFO - ⚠ No inventory data found in HTML
+2025-12-06 18:27:24,254 - INFO - ⚠ No product image found
+2025-12-06 18:27:24,255 - INFO - ⚠ No color swatches found
+2025-12-06 18:27:24,255 - INFO -   ✓ Successfully extracted: Define Cropped Jacket *Herringbone [Category: women]
+2025-12-06 18:27:24,255 - INFO - Processing: jd2tq0pqw6.html
+2025-12-06 18:27:24,255 - INFO - ============================================================
+2025-12-06 18:27:24,255 - INFO - Lululemon Product Information Extractor to Excel
+2025-12-06 18:27:24,255 - INFO - ============================================================
+2025-12-06 18:27:24,256 - INFO - Reading HTML from: /home/theafrazkhan/Desktop/scrappin/backend/data/supplies/jd2tq0pqw6.html
+2025-12-06 18:27:24,256 - INFO - ✓ Successfully parsed __NEXT_DATA__ JSON
+2025-12-06 18:27:24,256 - INFO - ✓ Found product data
+2025-12-06 18:27:24,261 - INFO - ⚠ No inventory data found in HTML
+2025-12-06 18:27:24,261 - INFO - ⚠ No product image found
+2025-12-06 18:27:24,262 - INFO - ⚠ No color swatches found
+2025-12-06 18:27:24,262 - INFO -   ✓ Successfully extracted: Pace Breaker Linerless Short 7" [Category: supplies]
+2025-12-06 18:27:24,262 - INFO - Processing: s1zlom3wpy.html
+2025-12-06 18:27:24,262 - INFO - ============================================================
+2025-12-06 18:27:24,262 - INFO - Lululemon Product Information Extractor to Excel
+2025-12-06 18:27:24,263 - INFO - ============================================================
+2025-12-06 18:27:24,263 - INFO - Reading HTML from: /home/theafrazkhan/Desktop/scrappin/backend/data/supplies/s1zlom3wpy.html
+2025-12-06 18:27:24,263 - INFO - ✓ Successfully parsed __NEXT_DATA__ JSON
+2025-12-06 18:27:24,263 - INFO - ✓ Found product data
+2025-12-06 18:27:24,263 - INFO - ⚠ No inventory data found in HTML
+2025-12-06 18:27:24,263 - INFO - ⚠ No product image found
+2025-12-06 18:27:24,264 - INFO - ⚠ No color swatches found
+2025-12-06 18:27:24,264 - INFO -   ✓ Successfully extracted: lululemon Align™ Dress [Category: supplies]
+2025-12-06 18:27:24,264 - INFO - Processing: hnsjuvo8dn.html
+2025-12-06 18:27:24,264 - INFO - ============================================================
+2025-12-06 18:27:24,264 - INFO - Lululemon Product Information Extractor to Excel
+2025-12-06 18:27:24,265 - INFO - ============================================================
+2025-12-06 18:27:24,265 - INFO - Reading HTML from: /home/theafrazkhan/Desktop/scrappin/backend/data/supplies/hnsjuvo8dn.html
+2025-12-06 18:27:24,265 - INFO - ✓ Successfully parsed __NEXT_DATA__ JSON
+2025-12-06 18:27:24,268 - INFO - ✓ Found product data
+2025-12-06 18:27:24,268 - INFO - ⚠ No inventory data found in HTML
+2025-12-06 18:27:24,269 - INFO - ⚠ No product image found
+2025-12-06 18:27:24,269 - INFO - ⚠ No color swatches found
+2025-12-06 18:27:24,269 - INFO -   ✓ Successfully extracted: Define Jacket *Nulu [Category: supplies]
+2025-12-06 18:27:24,270 - INFO - Processing: l39b1md52p.html
+2025-12-06 18:27:24,270 - INFO - ============================================================
+2025-12-06 18:27:24,270 - INFO - Lululemon Product Information Extractor to Excel
+2025-12-06 18:27:24,270 - INFO - ============================================================
+2025-12-06 18:27:24,271 - INFO - Reading HTML from: /home/theafrazkhan/Desktop/scrappin/backend/data/supplies/l39b1md52p.html
+2025-12-06 18:27:24,271 - INFO - ✓ Successfully parsed __NEXT_DATA__ JSON
+2025-12-06 18:27:24,272 - INFO - ✓ Found product data
+2025-12-06 18:27:24,273 - INFO - ⚠ No inventory data found in HTML
+2025-12-06 18:27:24,273 - INFO - ⚠ No product image found
+2025-12-06 18:27:24,274 - INFO - ⚠ No color swatches found
+2025-12-06 18:27:24,274 - INFO -   ✓ Successfully extracted: License to Train Jogger *Regular [Category: supplies]
+2025-12-06 18:27:24,275 - INFO - Processing: flm088ugr4.html
+2025-12-06 18:27:24,275 - INFO - ============================================================
+2025-12-06 18:27:24,276 - INFO - Lululemon Product Information Extractor to Excel
+2025-12-06 18:27:24,276 - INFO - ============================================================
+2025-12-06 18:27:24,276 - INFO - Reading HTML from: /home/theafrazkhan/Desktop/scrappin/backend/data/supplies/flm088ugr4.html
+2025-12-06 18:27:24,277 - INFO - ✓ Successfully parsed __NEXT_DATA__ JSON
+2025-12-06 18:27:24,277 - INFO - ✓ Found product data
+2025-12-06 18:27:24,278 - INFO - ⚠ No inventory data found in HTML
+2025-12-06 18:27:24,278 - INFO - ⚠ No product image found
+2025-12-06 18:27:24,278 - INFO - ⚠ No color swatches found
+2025-12-06 18:27:24,278 - INFO -   ✓ Successfully extracted: Pace Breaker Pant *Regular [Category: supplies]
+2025-12-06 18:27:24,279 - INFO - Processing: mi17prdzjn.html
+2025-12-06 18:27:24,279 - INFO - ============================================================
+2025-12-06 18:27:24,279 - INFO - Lululemon Product Information Extractor to Excel
+2025-12-06 18:27:24,280 - INFO - ============================================================
+2025-12-06 18:27:24,280 - INFO - Reading HTML from: /home/theafrazkhan/Desktop/scrappin/backend/data/supplies/mi17prdzjn.html
+2025-12-06 18:27:24,281 - INFO - ✓ Successfully parsed __NEXT_DATA__ JSON
+2025-12-06 18:27:24,282 - INFO - ✓ Found product data
+2025-12-06 18:27:24,282 - INFO - ⚠ No inventory data found in HTML
+2025-12-06 18:27:24,282 - INFO - ⚠ No product image found
+2025-12-06 18:27:24,282 - INFO - ⚠ No color swatches found
+2025-12-06 18:27:24,283 - INFO -   ✓ Successfully extracted: Pace Breaker Linerless Short 5" [Category: supplies]
+2025-12-06 18:27:24,283 - INFO - Processing: yse0idzlrl.html
+2025-12-06 18:27:24,283 - INFO - ============================================================
+2025-12-06 18:27:24,283 - INFO - Lululemon Product Information Extractor to Excel
+2025-12-06 18:27:24,283 - INFO - ============================================================
+2025-12-06 18:27:24,283 - INFO - Reading HTML from: /home/theafrazkhan/Desktop/scrappin/backend/data/supplies/yse0idzlrl.html
+2025-12-06 18:27:24,284 - INFO - ✓ Successfully parsed __NEXT_DATA__ JSON
+2025-12-06 18:27:24,284 - INFO - ✓ Found product data
+2025-12-06 18:27:24,284 - INFO - ⚠ No inventory data found in HTML
+2025-12-06 18:27:24,284 - INFO - ⚠ No product image found
+2025-12-06 18:27:24,284 - INFO - ⚠ No color swatches found
+2025-12-06 18:27:24,284 - INFO -   ✓ Successfully extracted: ABC Jogger *Regular [Category: supplies]
+2025-12-06 18:27:24,285 - INFO - Processing: ov5xe6ce71.html
+2025-12-06 18:27:24,285 - INFO - ============================================================
+2025-12-06 18:27:24,287 - INFO - Lululemon Product Information Extractor to Excel
+2025-12-06 18:27:24,287 - INFO - ============================================================
+2025-12-06 18:27:24,288 - INFO - Reading HTML from: /home/theafrazkhan/Desktop/scrappin/backend/data/supplies/ov5xe6ce71.html
+2025-12-06 18:27:24,288 - INFO - ✓ Successfully parsed __NEXT_DATA__ JSON
+2025-12-06 18:27:24,291 - INFO - ✓ Found product data
+2025-12-06 18:27:24,292 - INFO - ⚠ No inventory data found in HTML
+2025-12-06 18:27:24,294 - INFO - ⚠ No product image found
+2025-12-06 18:27:24,294 - INFO - ⚠ No color swatches found
+2025-12-06 18:27:24,295 - INFO -   ✓ Successfully extracted: Cold Weather Running Half Zip [Category: supplies]
+2025-12-06 18:27:24,296 - INFO - Processing: o33vn871q7.html
+2025-12-06 18:27:24,297 - INFO - ============================================================
+2025-12-06 18:27:24,297 - INFO - Lululemon Product Information Extractor to Excel
+2025-12-06 18:27:24,297 - INFO - ============================================================
+2025-12-06 18:27:24,298 - INFO - Reading HTML from: /home/theafrazkhan/Desktop/scrappin/backend/data/supplies/o33vn871q7.html
+2025-12-06 18:27:24,298 - INFO - ✓ Successfully parsed __NEXT_DATA__ JSON
+2025-12-06 18:27:24,298 - INFO - ✓ Found product data
+2025-12-06 18:27:24,300 - INFO - ⚠ No inventory data found in HTML
+2025-12-06 18:27:24,300 - INFO - ⚠ No product image found
+2025-12-06 18:27:24,301 - INFO - ⚠ No color swatches found
+2025-12-06 18:27:24,302 - INFO -   ✓ Successfully extracted: Brushed Softstreme Half Zip [Category: supplies]
+2025-12-06 18:27:24,302 - INFO - Processing: mu7d0x376w.html
+2025-12-06 18:27:24,303 - INFO - ============================================================
+2025-12-06 18:27:24,304 - INFO - Lululemon Product Information Extractor to Excel
+2025-12-06 18:27:24,304 - INFO - ============================================================
+2025-12-06 18:27:24,304 - INFO - Reading HTML from: /home/theafrazkhan/Desktop/scrappin/backend/data/supplies/mu7d0x376w.html
+2025-12-06 18:27:24,305 - INFO - ✓ Successfully parsed __NEXT_DATA__ JSON
+2025-12-06 18:27:24,305 - INFO - ✓ Found product data
+2025-12-06 18:27:24,305 - INFO - ⚠ No inventory data found in HTML
+2025-12-06 18:27:24,306 - INFO - ⚠ No product image found
+2025-12-06 18:27:24,306 - INFO - ⚠ No color swatches found
+2025-12-06 18:27:24,306 - INFO -   ✓ Successfully extracted: Pace Breaker Jogger *Regular [Category: supplies]
+2025-12-06 18:27:24,306 - INFO - Processing: d279l7o1tv.html
+2025-12-06 18:27:24,307 - INFO - ============================================================
+2025-12-06 18:27:24,307 - INFO - Lululemon Product Information Extractor to Excel
+2025-12-06 18:27:29,701 - INFO - ============================================================
+2025-12-06 18:27:29,702 - INFO - Reading HTML from: /home/theafrazkhan/Desktop/scrappin/backend/data/supplies/d279l7o1tv.html
+2025-12-06 18:27:29,702 - INFO - ✓ Successfully parsed __NEXT_DATA__ JSON
+2025-12-06 18:27:29,702 - INFO - ✓ Found product data
+2025-12-06 18:27:29,704 - INFO - ⚠ No inventory data found in HTML
+2025-12-06 18:27:29,705 - INFO - ⚠ No product image found
+2025-12-06 18:27:29,705 - INFO - ⚠ No color swatches found
+2025-12-06 18:27:29,705 - INFO -   ✓ Successfully extracted: Pace Breaker Lined Short 7" [Category: supplies]
+2025-12-06 18:27:29,706 - INFO - Processing: a9ruj7kk4x.html
+2025-12-06 18:27:29,706 - INFO - ============================================================
+2025-12-06 18:27:29,706 - INFO - Lululemon Product Information Extractor to Excel
+2025-12-06 18:27:29,708 - INFO - ============================================================
+2025-12-06 18:27:29,708 - INFO - Reading HTML from: /home/theafrazkhan/Desktop/scrappin/backend/data/supplies/a9ruj7kk4x.html
+2025-12-06 18:27:29,709 - INFO - ✓ Successfully parsed __NEXT_DATA__ JSON
+2025-12-06 18:27:29,710 - INFO - ✓ Found product data
+2025-12-06 18:27:29,710 - INFO - ⚠ No inventory data found in HTML
+2025-12-06 18:27:29,711 - INFO - ⚠ No product image found
+2025-12-06 18:27:29,711 - INFO - ⚠ No color swatches found
+2025-12-06 18:27:29,712 - INFO -   ✓ Successfully extracted: ABC Slim-Fit Fixed-Waist Jogger *Regular [Category: supplies]
+2025-12-06 18:27:29,713 - INFO - Processing: d7dkzkc4mb.html
+2025-12-06 18:27:29,713 - INFO - ============================================================
+2025-12-06 18:27:29,713 - INFO - Lululemon Product Information Extractor to Excel
+2025-12-06 18:27:29,714 - INFO - ============================================================
+2025-12-06 18:27:29,714 - INFO - Reading HTML from: /home/theafrazkhan/Desktop/scrappin/backend/data/supplies/d7dkzkc4mb.html
+2025-12-06 18:27:29,714 - INFO - ✓ Successfully parsed __NEXT_DATA__ JSON
+2025-12-06 18:27:29,714 - INFO - ✓ Found product data
+2025-12-06 18:27:29,715 - INFO - ⚠ No inventory data found in HTML
+2025-12-06 18:27:29,715 - INFO - ⚠ No product image found
+2025-12-06 18:27:29,715 - INFO - ⚠ No color swatches found
+2025-12-06 18:27:29,716 - INFO -   ✓ Successfully extracted: ABC Jogger Warpstreme *Tall [Category: supplies]
+2025-12-06 18:27:29,716 - INFO - Processing: vd1eldejjq.html
+2025-12-06 18:27:29,717 - INFO - ============================================================
+2025-12-06 18:27:29,717 - INFO - Lululemon Product Information Extractor to Excel
+2025-12-06 18:27:29,717 - INFO - ============================================================
+2025-12-06 18:27:29,719 - INFO - Reading HTML from: /home/theafrazkhan/Desktop/scrappin/backend/data/supplies/vd1eldejjq.html
+2025-12-06 18:27:29,719 - INFO - ✓ Successfully parsed __NEXT_DATA__ JSON
+2025-12-06 18:27:29,719 - INFO - ✓ Found product data
+2025-12-06 18:27:29,720 - INFO - ⚠ No inventory data found in HTML
+2025-12-06 18:27:29,720 - INFO - ⚠ No product image found
+2025-12-06 18:27:29,720 - INFO - ⚠ No color swatches found
+2025-12-06 18:27:29,720 - INFO -   ✓ Successfully extracted: Define Jacket *Luon [Category: supplies]
+2025-12-06 18:27:29,721 - INFO - Processing: v6tla28mp0.html
+2025-12-06 18:27:29,721 - INFO - ============================================================
+2025-12-06 18:27:29,721 - INFO - Lululemon Product Information Extractor to Excel
+2025-12-06 18:27:29,721 - INFO - ============================================================
+2025-12-06 18:27:29,721 - INFO - Reading HTML from: /home/theafrazkhan/Desktop/scrappin/backend/data/supplies/v6tla28mp0.html
+2025-12-06 18:27:29,722 - INFO - ✓ Successfully parsed __NEXT_DATA__ JSON
+2025-12-06 18:27:29,722 - INFO - ✓ Found product data
+2025-12-06 18:27:29,722 - INFO - ⚠ No inventory data found in HTML
+2025-12-06 18:27:29,723 - INFO - ⚠ No product image found
+2025-12-06 18:27:29,723 - INFO - ⚠ No color swatches found
+2025-12-06 18:27:29,723 - INFO -   ✓ Successfully extracted: Soft Jersey Jogger *Regular [Category: supplies]
+2025-12-06 18:27:29,724 - INFO - Processing: bxp4p3wn4r.html
+2025-12-06 18:27:29,724 - INFO - ============================================================
+2025-12-06 18:27:29,724 - INFO - Lululemon Product Information Extractor to Excel
+2025-12-06 18:27:29,724 - INFO - ============================================================
+2025-12-06 18:27:29,724 - INFO - Reading HTML from: /home/theafrazkhan/Desktop/scrappin/backend/data/supplies/bxp4p3wn4r.html
+2025-12-06 18:27:29,724 - INFO - ✓ Successfully parsed __NEXT_DATA__ JSON
+2025-12-06 18:27:29,725 - INFO - ✓ Found product data
+2025-12-06 18:27:29,725 - INFO - ⚠ No inventory data found in HTML
+2025-12-06 18:27:29,725 - INFO - ⚠ No product image found
+2025-12-06 18:27:29,725 - INFO - ⚠ No color swatches found
+2025-12-06 18:27:29,725 - INFO -   ✓ Successfully extracted: Define Jacket Nulu *Flocked [Category: supplies]
+2025-12-06 18:27:29,725 - INFO - Processing: g2faof1o98.html
+2025-12-06 18:27:29,726 - INFO - ============================================================
+2025-12-06 18:27:29,726 - INFO - Lululemon Product Information Extractor to Excel
+2025-12-06 18:27:29,726 - INFO - ============================================================
+2025-12-06 18:27:29,726 - INFO - Reading HTML from: /home/theafrazkhan/Desktop/scrappin/backend/data/supplies/g2faof1o98.html
+2025-12-06 18:27:29,726 - INFO - ✓ Successfully parsed __NEXT_DATA__ JSON
+2025-12-06 18:27:29,726 - INFO - ✓ Found product data
+2025-12-06 18:27:29,727 - INFO - ⚠ No inventory data found in HTML
+2025-12-06 18:27:29,727 - INFO - ⚠ No product image found
+2025-12-06 18:27:29,728 - INFO - ⚠ No color swatches found
+2025-12-06 18:27:29,728 - INFO -   ✓ Successfully extracted: Ebb to Street Cropped Racerback Tank Top *Light Support, B/C Cup [Category: supplies]
+2025-12-06 18:27:29,728 - INFO - Processing: ccjxzqin3c.html
+2025-12-06 18:27:29,728 - INFO - ============================================================
+2025-12-06 18:27:29,729 - INFO - Lululemon Product Information Extractor to Excel
+2025-12-06 18:27:29,729 - INFO - ============================================================
+2025-12-06 18:27:29,729 - INFO - Reading HTML from: /home/theafrazkhan/Desktop/scrappin/backend/data/supplies/ccjxzqin3c.html
+2025-12-06 18:27:29,730 - INFO - ✓ Successfully parsed __NEXT_DATA__ JSON
+2025-12-06 18:27:29,731 - INFO - ✓ Found product data
+2025-12-06 18:27:29,731 - INFO - ⚠ No inventory data found in HTML
+2025-12-06 18:27:29,732 - INFO - ⚠ No product image found
+2025-12-06 18:27:29,732 - INFO - ⚠ No color swatches found
+2025-12-06 18:27:29,732 - INFO -   ✓ Successfully extracted: Pack It Down Vest [Category: supplies]
+2025-12-06 18:27:29,732 - INFO - Processing: oo2vz3qc01.html
+2025-12-06 18:27:29,733 - INFO - ============================================================
+2025-12-06 18:27:29,733 - INFO - Lululemon Product Information Extractor to Excel
+2025-12-06 18:27:29,733 - INFO - ============================================================
+2025-12-06 18:27:29,734 - INFO - Reading HTML from: /home/theafrazkhan/Desktop/scrappin/backend/data/supplies/oo2vz3qc01.html
+2025-12-06 18:27:29,735 - INFO - ✓ Successfully parsed __NEXT_DATA__ JSON
+2025-12-06 18:27:29,735 - INFO - ✓ Found product data
+2025-12-06 18:27:29,735 - INFO - ⚠ No inventory data found in HTML
+2025-12-06 18:27:29,736 - INFO - ⚠ No product image found
+2025-12-06 18:27:29,737 - INFO - ⚠ No color swatches found
+2025-12-06 18:27:29,737 - INFO -   ✓ Successfully extracted: Define Cropped Jacket *Nulu [Category: supplies]
+2025-12-06 18:27:29,738 - INFO - Processing: mc26jbe6ma.html
+2025-12-06 18:27:29,739 - INFO - ============================================================
+2025-12-06 18:27:29,739 - INFO - Lululemon Product Information Extractor to Excel
+2025-12-06 18:27:29,739 - INFO - ============================================================
+2025-12-06 18:27:29,740 - INFO - Reading HTML from: /home/theafrazkhan/Desktop/scrappin/backend/data/supplies/mc26jbe6ma.html
+2025-12-06 18:27:29,741 - INFO - ✓ Successfully parsed __NEXT_DATA__ JSON
+2025-12-06 18:27:29,741 - INFO - ✓ Found product data
+2025-12-06 18:27:29,742 - INFO - ⚠ No inventory data found in HTML
+2025-12-06 18:27:29,742 - INFO - ⚠ No product image found
+2025-12-06 18:27:29,743 - INFO - ⚠ No color swatches found
+2025-12-06 18:27:29,743 - INFO -   ✓ Successfully extracted: Cotton Terry Tennis Half Zip [Category: supplies]
+2025-12-06 18:27:29,743 - INFO - Processing: fnu1n3t43v.html
+2025-12-06 18:27:29,744 - INFO - ============================================================
+2025-12-06 18:27:29,744 - INFO - Lululemon Product Information Extractor to Excel
+2025-12-06 18:27:29,744 - INFO - ============================================================
+2025-12-06 18:27:29,745 - INFO - Reading HTML from: /home/theafrazkhan/Desktop/scrappin/backend/data/supplies/fnu1n3t43v.html
+2025-12-06 18:27:29,745 - INFO - ✓ Successfully parsed __NEXT_DATA__ JSON
+2025-12-06 18:27:29,745 - INFO - ✓ Found product data
+2025-12-06 18:27:29,746 - INFO - ⚠ No inventory data found in HTML
+2025-12-06 18:27:29,746 - INFO - ⚠ No product image found
+2025-12-06 18:27:29,746 - INFO - ⚠ No color swatches found
+2025-12-06 18:27:29,746 - INFO -   ✓ Successfully extracted: Smooth Spacer Jogger *Regular [Category: supplies]
+2025-12-06 18:27:29,747 - INFO - Processing: h534b5so2s.html
+2025-12-06 18:27:29,747 - INFO - ============================================================
+2025-12-06 18:27:29,747 - INFO - Lululemon Product Information Extractor to Excel
+2025-12-06 18:27:29,747 - INFO - ============================================================
+2025-12-06 18:27:29,748 - INFO - Reading HTML from: /home/theafrazkhan/Desktop/scrappin/backend/data/supplies/h534b5so2s.html
+2025-12-06 18:27:29,748 - INFO - ✓ Successfully parsed __NEXT_DATA__ JSON
+2025-12-06 18:27:29,748 - INFO - ✓ Found product data
+2025-12-06 18:27:29,748 - INFO - ⚠ No inventory data found in HTML
+2025-12-06 18:27:29,749 - INFO - ⚠ No product image found
+2025-12-06 18:27:29,749 - INFO - ⚠ No color swatches found
+2025-12-06 18:27:29,749 - INFO -   ✓ Successfully extracted: Define Cropped Jacket *Herringbone [Category: supplies]
+2025-12-06 18:27:29,750 - INFO - ============================================================
+2025-12-06 18:27:29,750 - INFO - Creating Excel file with category sheets + Summary...
+2025-12-06 18:27:29,750 - INFO - ============================================================
+2025-12-06 18:27:29,751 - INFO - Products added to sheets:
+2025-12-06 18:27:29,751 - INFO -   Summary: 88 product(s)
+2025-12-06 18:27:29,752 - INFO -   Accessories: 22 product(s)
+2025-12-06 18:27:29,752 - INFO -   Men: 22 product(s)
+2025-12-06 18:27:29,752 - INFO -   Women: 22 product(s)
+2025-12-06 18:27:29,752 - INFO -   Supplies: 22 product(s)
+2025-12-06 18:27:29,753 - INFO - ✓ Excel file saved to: /home/theafrazkhan/Desktop/scrappin/backend/all_products_20251206_182724.xlsx
+2025-12-06 18:27:29,753 - INFO - ============================================================
+2025-12-06 18:27:29,753 - INFO - BATCH EXTRACTION COMPLETE
+2025-12-06 18:27:29,753 - INFO - ============================================================
+2025-12-06 18:27:29,754 - INFO - Total HTML files processed: 88
+2025-12-06 18:27:29,754 - INFO - Successfully extracted: 88
+2025-12-06 18:27:29,754 - INFO - Failed: 0
+2025-12-06 18:27:29,754 - INFO - Total products in Excel: 88
+2025-12-06 18:27:29,755 - INFO - ============================================================
+2025-12-06 18:27:29,908 - INFO - ✓ extract_to_excel.py completed successfully
+2025-12-06 18:27:29,917 - INFO - 
+======================================================================
+2025-12-06 18:27:29,918 - INFO - ✅ PIPELINE COMPLETED SUCCESSFULLY!
+2025-12-06 18:27:29,918 - INFO - ======================================================================
+2025-12-06 18:27:29,921 - INFO - 
+📊 Excel report generated: all_products_20251206_182724.xlsx
+2025-12-06 18:27:29,921 - INFO - 📁 Full path: /home/theafrazkhan/Desktop/scrappin/backend/all_products_20251206_182724.xlsx
+2025-12-06 18:27:29,922 - INFO - 
+📝 Log file saved: /home/theafrazkhan/Desktop/scrappin/backend/logs/scraper_20251206_182216.log
+2025-12-06 18:27:29,922 - INFO - 
+🎉 All done! Your product data is ready.

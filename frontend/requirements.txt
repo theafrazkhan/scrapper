@@ -1,0 +1,45 @@
+# Frontend Requirements for Lululemon Scraper Web Interface
+
+# Flask Web Framework
+Flask==3.0.0
+Flask-SocketIO==5.3.5
+Flask-CORS==4.0.0
+Flask-Login==0.6.3
+
+# WebSocket support
+python-socketio==5.10.0
+python-engineio==4.8.0
+
+# Async support
+eventlet==0.33.3
+
+# HTTP client
+requests==2.31.0
+
+# Email sending
+resend==0.8.0
+
+# Environment variables
+python-dotenv==1.0.0
+
+# Scheduling
+APScheduler==3.10.4
+
+# Password hashing (included in werkzeug, part of Flask)
+# werkzeug==3.0.1
+
+# Selenium for browser automation (already in backend requirements)
+selenium==4.16.0
+
+# Playwright for async scraping (already in backend requirements)
+playwright==1.40.0
+
+# Excel generation (already in backend requirements)
+openpyxl==3.1.2
+
+# HTML parsing (already in backend requirements)
+beautifulsoup4==4.12.2
+lxml==4.9.4
+
+# Install with: pip install -r requirements.txt
+# After installing, run: playwright install chromium
