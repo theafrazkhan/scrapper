@@ -13,12 +13,12 @@ from datetime import datetime
 
 
 class CategoryDownloader:
-    def __init__(self, cookies_file, categories_folder, data_folder, max_concurrent=50, max_contexts=5):
+    def __init__(self, cookies_file, categories_folder, data_folder, max_concurrent=20, max_contexts=3):
         self.cookies_file = cookies_file
         self.categories_folder = categories_folder
         self.data_folder = data_folder
-        self.max_concurrent = max_concurrent  # Increased for high-speed VPS
-        self.max_contexts = max_contexts  # Multiple browser contexts for better parallelism
+        self.max_concurrent = max_concurrent  # Reduced to 20 for server stability
+        self.max_contexts = max_contexts  # Reduced to 3 contexts for better reliability
         self.cookies = []
         
     def load_cookies(self):
@@ -68,24 +68,38 @@ class CategoryDownloader:
             product_id = url.rstrip('/').split('/')[-1]
             output_file = os.path.join(category_folder, f"{product_id}.html")
             
+            page = None
             try:
                 # Create a new page in the context
                 page = await context.new_page()
                 
-                # Optimized for high-speed connection: reduced timeout, faster wait strategy
-                await page.goto(url, wait_until='domcontentloaded', timeout=30000)
+                # Longer timeout and better wait strategy for server reliability
+                await page.goto(url, wait_until='networkidle', timeout=45000)
                 
-                # Wait for key content to be visible (product data should be rendered)
+                # Wait for the product data script to load
                 try:
-                    await page.wait_for_selector('script#__NEXT_DATA__', timeout=5000)
-                    # Minimal wait - data is already loaded
-                    await asyncio.sleep(0.5)
+                    await page.wait_for_selector('script#__NEXT_DATA__', timeout=8000)
+                    # Wait for content to fully render
+                    await asyncio.sleep(1.5)
                 except:
-                    # If selector times out, brief wait for dynamic content
-                    await asyncio.sleep(1)
+                    # If __NEXT_DATA__ not found, try alternative selectors and wait longer
+                    try:
+                        await page.wait_for_selector('[data-testid="product-details"]', timeout=5000)
+                    except:
+                        pass
+                    # Extra wait for dynamic content
+                    await asyncio.sleep(2)
+                
+                # Ensure all JavaScript has executed
+                await page.wait_for_load_state('domcontentloaded')
+                await asyncio.sleep(1)
                 
                 # Get the HTML
                 html = await page.content()
+                
+                # Verify we got actual content (not error page)
+                if len(html) < 1000:
+                    raise Exception(f"Page content too short ({len(html)} bytes) - might be an error page")
                 
                 # Save to file
                 with open(output_file, 'w', encoding='utf-8') as f:
@@ -95,16 +109,23 @@ class CategoryDownloader:
                 
                 stats['downloaded'] += 1
                 
-                if stats['downloaded'] % 10 == 0:
+                # More frequent progress updates
+                if stats['downloaded'] % 5 == 0:
                     print(f"  [Progress] {stats['downloaded']}/{stats['total']} pages downloaded")
+                
+                # Delay between downloads to avoid rate limiting
+                await asyncio.sleep(1.0)
                 
                 return True
                 
             except Exception as e:
                 print(f"  ❌ Error downloading {product_id}: {e}")
                 stats['failed'] += 1
-                if 'page' in locals():
+                if page:
                     await page.close()
+                
+                # Longer delay after error
+                await asyncio.sleep(3)
                 return False
     
     async def download_category(self, browser, category_name, urls):
