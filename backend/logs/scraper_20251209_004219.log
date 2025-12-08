@@ -1,0 +1,235 @@
+2025-12-09 00:42:19,045 - INFO - Pipeline started
+2025-12-09 00:42:19,046 - INFO - Log file: /home/theafrazkhan/Desktop/scrappin/backend/logs/scraper_20251209_004219.log
+2025-12-09 00:42:21,176 - INFO - ✓ Found credentials for: Joe@aureaclubs.com
+2025-12-09 00:42:21,177 - INFO - 
+======================================================================
+2025-12-09 00:42:21,177 - INFO - STEP 1: Login & Save Cookies
+2025-12-09 00:42:21,178 - INFO - ======================================================================
+2025-12-09 00:42:21,179 - INFO - 🚀 Running: login_and_save_cookies.py
+2025-12-09 00:44:20,499 - INFO - ============================================================
+2025-12-09 00:44:20,500 - INFO - Lululemon Wholesale Portal - Login & Cookie Extractor
+2025-12-09 00:44:20,500 - INFO - ============================================================
+2025-12-09 00:44:20,500 - INFO - [1/4] Setting up Chrome WebDriver...
+2025-12-09 00:44:20,500 - INFO - Setting up Chrome WebDriver...
+2025-12-09 00:44:20,500 - INFO - Installing/updating ChromeDriver...
+2025-12-09 00:44:20,501 - INFO - ✓ Chrome WebDriver initialized successfully
+2025-12-09 00:44:20,501 - INFO - [Step 1/4] Logging in to wholesale portal...
+2025-12-09 00:44:20,501 - INFO - Navigating to https://wholesale.lululemon.com/...
+2025-12-09 00:44:20,501 - INFO - Looking for email input field...
+2025-12-09 00:44:20,501 - INFO - Entering email: Joe@aureaclubs.com
+2025-12-09 00:44:20,502 - INFO - Entering password...
+2025-12-09 00:44:20,502 - INFO - Clicking login button...
+2025-12-09 00:44:20,502 - INFO - Waiting for login to complete...
+2025-12-09 00:44:20,502 - INFO - ✓ Login successful!
+2025-12-09 00:44:20,502 - INFO - Current URL: https://wholesale.lululemon.com/
+2025-12-09 00:44:20,502 - INFO - [Step 2/4] Discovering categories...
+2025-12-09 00:44:20,502 - INFO - [2/4] Discovering categories from navigation...
+2025-12-09 00:44:20,503 - INFO -   ✓ Found: WHAT'S NEW → whats-new
+2025-12-09 00:44:20,503 - INFO -   ✓ Found: WOMEN → women
+2025-12-09 00:44:20,503 - INFO -   ✓ Found: MEN → men
+2025-12-09 00:44:20,503 - INFO -   ✓ Found: ACCESSORIES → accessories
+2025-12-09 00:44:20,503 - INFO -   ✓ Found: SUPPLIES → supplies
+2025-12-09 00:44:20,503 - INFO -   ✓ Discovered 5 categories: whats-new, women, men, accessories, supplies
+2025-12-09 00:44:20,504 - INFO - [Step 3/4] Extracting product counts from category pages...
+2025-12-09 00:44:20,504 - INFO -   Navigating to whats-new...
+2025-12-09 00:44:20,504 - INFO -   Found text: Showing 12 of 131 items
+2025-12-09 00:44:20,504 - INFO -   ✓ Total products in whats-new: 131
+2025-12-09 00:44:20,504 - INFO -   Navigating to women...
+2025-12-09 00:44:20,504 - INFO -   Found text: Showing 12 of 265 items
+2025-12-09 00:44:20,505 - INFO -   ✓ Total products in women: 265
+2025-12-09 00:44:20,505 - INFO -   Navigating to men...
+2025-12-09 00:44:20,505 - INFO -   Found text: Showing 12 of 169 items
+2025-12-09 00:44:20,505 - INFO -   ✓ Total products in men: 169
+2025-12-09 00:44:20,505 - INFO -   Navigating to accessories...
+2025-12-09 00:44:20,506 - INFO -   Found text: Showing 12 of 85 items
+2025-12-09 00:44:20,506 - INFO -   ✓ Total products in accessories: 85
+2025-12-09 00:44:20,506 - INFO -   Navigating to supplies...
+2025-12-09 00:44:20,506 - INFO -   Found text: Showing 9 of 9 items
+2025-12-09 00:44:20,506 - INFO -   ✓ Total products in supplies: 9
+2025-12-09 00:44:20,506 - INFO - [Step 3.5/4] Saving cookies...
+2025-12-09 00:44:20,507 - INFO - Found 5 cookies
+2025-12-09 00:44:20,507 - INFO - ✓ Cookies saved to: /home/theafrazkhan/Desktop/scrappin/backend/data/cookie/cookie.json
+2025-12-09 00:44:20,507 - INFO - Important cookies found:
+2025-12-09 00:44:20,507 - INFO -   - frontastic-session: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiIsImtpZCI6IjZiMm...
+2025-12-09 00:44:20,507 - INFO - [4/4] Updating links.csv file...
+2025-12-09 00:44:20,508 - INFO -   - whats-new: limit=141
+2025-12-09 00:44:20,508 - INFO -   - women: limit=275
+2025-12-09 00:44:20,508 - INFO -   - men: limit=179
+2025-12-09 00:44:20,508 - INFO -   - accessories: limit=95
+2025-12-09 00:44:20,508 - INFO -   - supplies: limit=19
+2025-12-09 00:44:20,509 - INFO - ✓ Links saved to: /home/theafrazkhan/Desktop/scrappin/backend/data/links.csv
+2025-12-09 00:44:20,509 - INFO - ============================================================
+2025-12-09 00:44:20,509 - INFO - ✓ SUCCESS! All tasks completed.
+2025-12-09 00:44:20,509 - INFO - ============================================================
+2025-12-09 00:44:20,510 - INFO - Cookie file: /home/theafrazkhan/Desktop/scrappin/backend/data/cookie/cookie.json
+2025-12-09 00:44:20,510 - INFO - Links file: /home/theafrazkhan/Desktop/scrappin/backend/data/links.csv
+2025-12-09 00:44:20,510 - INFO - You can now use these cookies and links with your download scripts.
+2025-12-09 00:44:20,510 - INFO - Closing browser...
+2025-12-09 00:44:20,764 - INFO - ✓ login_and_save_cookies.py completed successfully
+2025-12-09 00:44:20,764 - INFO - 
+======================================================================
+2025-12-09 00:44:20,765 - INFO - STEP 2: Extract Product Links
+2025-12-09 00:44:20,765 - INFO - ======================================================================
+2025-12-09 00:44:20,765 - INFO - 🚀 Running: extract_product_links.py
+2025-12-09 00:46:13,466 - INFO - ======================================================================
+2025-12-09 00:46:13,466 - INFO - Category Page Downloader & Product Link Extractor
+2025-12-09 00:46:13,467 - INFO - ======================================================================
+2025-12-09 00:46:13,467 - INFO - 📖 Reading category links from CSV...
+2025-12-09 00:46:13,467 - INFO - ✓ Found 4 categories: women, men, accessories, supplies
+2025-12-09 00:46:13,467 - INFO - 🍪 Loading session cookies...
+2025-12-09 00:46:13,467 - INFO - ✓ Loaded 5 cookies
+2025-12-09 00:46:13,468 - INFO - ======================================================================
+2025-12-09 00:46:13,468 - INFO - STEP 1: Downloading Category Pages
+2025-12-09 00:46:13,468 - INFO - ======================================================================
+2025-12-09 00:46:13,468 - INFO - 📥 Downloading: women
+2025-12-09 00:46:13,468 - INFO -    URL: https://wholesale.lululemon.com/lululemon/women?limit=275&pic=14ffd75b-6d75-49dd-8ea5-811f163e6c06&prc=a1eb736a-58d3-43fb-b99a-e435e30b5b4c
+2025-12-09 00:46:13,469 - INFO -    ⏳ Loading page...
+2025-12-09 00:46:13,469 - INFO -    ⏳ Waiting for products to load...
+2025-12-09 00:46:13,469 - INFO -    ✓ Products loaded in DOM
+2025-12-09 00:46:13,469 - INFO -    ✓ Saved to: /home/theafrazkhan/Desktop/scrappin/backend/data/women.html
+2025-12-09 00:46:13,469 - INFO - 📥 Downloading: men
+2025-12-09 00:46:13,470 - INFO -    URL: https://wholesale.lululemon.com/lululemon/men?limit=179&pic=14ffd75b-6d75-49dd-8ea5-811f163e6c06&prc=a1eb736a-58d3-43fb-b99a-e435e30b5b4c
+2025-12-09 00:46:13,470 - INFO -    ⏳ Loading page...
+2025-12-09 00:46:13,470 - INFO -    ⏳ Waiting for products to load...
+2025-12-09 00:46:13,470 - INFO -    ✓ Products loaded in DOM
+2025-12-09 00:46:13,470 - INFO -    ✓ Saved to: /home/theafrazkhan/Desktop/scrappin/backend/data/men.html
+2025-12-09 00:46:13,471 - INFO - 📥 Downloading: accessories
+2025-12-09 00:46:13,471 - INFO -    URL: https://wholesale.lululemon.com/lululemon/accessories?limit=95&pic=14ffd75b-6d75-49dd-8ea5-811f163e6c06&prc=a1eb736a-58d3-43fb-b99a-e435e30b5b4c
+2025-12-09 00:46:13,471 - INFO -    ⏳ Loading page...
+2025-12-09 00:46:13,471 - INFO -    ⏳ Waiting for products to load...
+2025-12-09 00:46:13,471 - INFO -    ✓ Products loaded in DOM
+2025-12-09 00:46:13,471 - INFO -    ✓ Saved to: /home/theafrazkhan/Desktop/scrappin/backend/data/accessories.html
+2025-12-09 00:46:13,472 - INFO - 📥 Downloading: supplies
+2025-12-09 00:46:13,472 - INFO -    URL: https://wholesale.lululemon.com/lululemon/supplies?limit=19&pic=14ffd75b-6d75-49dd-8ea5-811f163e6c06&prc=a1eb736a-58d3-43fb-b99a-e435e30b5b4c
+2025-12-09 00:46:13,472 - INFO -    ⏳ Loading page...
+2025-12-09 00:46:13,472 - INFO -    ⏳ Waiting for products to load...
+2025-12-09 00:46:13,473 - INFO -    ✓ Products loaded in DOM
+2025-12-09 00:46:13,473 - INFO -    ✓ Saved to: /home/theafrazkhan/Desktop/scrappin/backend/data/supplies.html
+2025-12-09 00:46:13,473 - INFO - ======================================================================
+2025-12-09 00:46:13,473 - INFO - STEP 2: Extracting Product Links
+2025-12-09 00:46:13,474 - INFO - ======================================================================
+2025-12-09 00:46:13,474 - INFO - 🔍 Extracting links from: women.html
+2025-12-09 00:46:13,474 - INFO -    📦 Found 0 products in JSON data
+2025-12-09 00:46:13,474 - INFO -    ℹ️  Falling back to HTML parsing...
+2025-12-09 00:46:13,474 - INFO -    ✓ Found 265 unique product links
+2025-12-09 00:46:13,475 - INFO -    ✓ Saved to: /home/theafrazkhan/Desktop/scrappin/backend/data/categories/women.csv
+2025-12-09 00:46:13,475 - INFO - 🔍 Extracting links from: men.html
+2025-12-09 00:46:13,475 - INFO -    📦 Found 0 products in JSON data
+2025-12-09 00:46:13,475 - INFO -    ℹ️  Falling back to HTML parsing...
+2025-12-09 00:46:13,475 - INFO -    ✓ Found 169 unique product links
+2025-12-09 00:46:13,475 - INFO -    ✓ Saved to: /home/theafrazkhan/Desktop/scrappin/backend/data/categories/men.csv
+2025-12-09 00:46:13,476 - INFO - 🔍 Extracting links from: accessories.html
+2025-12-09 00:46:13,476 - INFO -    📦 Found 0 products in JSON data
+2025-12-09 00:46:13,476 - INFO -    ℹ️  Falling back to HTML parsing...
+2025-12-09 00:46:13,476 - INFO -    ✓ Found 85 unique product links
+2025-12-09 00:46:13,476 - INFO -    ✓ Saved to: /home/theafrazkhan/Desktop/scrappin/backend/data/categories/accessories.csv
+2025-12-09 00:46:13,477 - INFO - 🔍 Extracting links from: supplies.html
+2025-12-09 00:46:13,477 - INFO -    📦 Found 0 products in JSON data
+2025-12-09 00:46:13,477 - INFO -    ℹ️  Falling back to HTML parsing...
+2025-12-09 00:46:13,477 - INFO -    ✓ Found 9 unique product links
+2025-12-09 00:46:13,477 - INFO -    ✓ Saved to: /home/theafrazkhan/Desktop/scrappin/backend/data/categories/supplies.csv
+2025-12-09 00:46:13,477 - INFO - ======================================================================
+2025-12-09 00:46:13,478 - INFO - STEP 3: Cleaning Up HTML Files
+2025-12-09 00:46:13,478 - INFO - ======================================================================
+2025-12-09 00:46:13,478 - INFO - 🗑️  Deleted: women.html
+2025-12-09 00:46:13,478 - INFO - 🗑️  Deleted: men.html
+2025-12-09 00:46:13,478 - INFO - 🗑️  Deleted: accessories.html
+2025-12-09 00:46:13,479 - INFO - 🗑️  Deleted: supplies.html
+2025-12-09 00:46:13,479 - INFO - ======================================================================
+2025-12-09 00:46:13,479 - INFO - EXTRACTION COMPLETE!
+2025-12-09 00:46:13,479 - INFO - ======================================================================
+2025-12-09 00:46:13,479 - INFO - ✓ Women: 265 product links
+2025-12-09 00:46:13,480 - INFO - ✓ Men: 169 product links
+2025-12-09 00:46:13,480 - INFO - ✓ Accessories: 85 product links
+2025-12-09 00:46:13,480 - INFO - ✓ Supplies: 9 product links
+2025-12-09 00:46:13,480 - INFO - 🔗 Total unique product links: 528
+2025-12-09 00:46:13,480 - INFO - 📁 CSV files saved in: /home/theafrazkhan/Desktop/scrappin/backend/data/categories/
+2025-12-09 00:46:13,480 - INFO - ======================================================================
+2025-12-09 00:46:13,682 - INFO - ✓ extract_product_links.py completed successfully
+2025-12-09 00:46:13,683 - INFO - 
+======================================================================
+2025-12-09 00:46:13,683 - INFO - STEP 3: Download Product Pages
+2025-12-09 00:46:13,683 - INFO - ======================================================================
+2025-12-09 00:46:13,684 - INFO - 🚀 Running: download_by_category.py
+2025-12-09 00:46:14,211 - INFO - 00:46:14 [INFO] Script directory: /home/theafrazkhan/Desktop/scrappin/backend
+2025-12-09 00:46:14,212 - INFO - 00:46:14 [INFO] Config: MAX_CONCURRENT=10, PAGE_TIMEOUT=30000ms, WAIT_FOR=networkidle
+2025-12-09 00:46:14,212 - INFO - 00:46:14 [INFO] Starting download_by_category.py
+2025-12-09 00:46:14,212 - INFO - 00:46:14 [INFO] Working directory: /home/theafrazkhan/Desktop/scrappin/backend
+2025-12-09 00:46:14,213 - INFO - 00:46:14 [INFO] PageDownloader initialized
+2025-12-09 00:46:14,214 - INFO - 00:46:14 [INFO]   Cookies: /home/theafrazkhan/Desktop/scrappin/backend/data/cookie/cookie.json
+2025-12-09 00:46:14,214 - INFO - 00:46:14 [INFO]   Categories: /home/theafrazkhan/Desktop/scrappin/backend/data/categories
+2025-12-09 00:46:14,215 - INFO - 00:46:14 [INFO]   Output: /home/theafrazkhan/Desktop/scrappin/backend/data/html
+2025-12-09 00:46:14,215 - INFO - 00:46:14 [INFO] ==================================================
+2025-12-09 00:46:14,215 - INFO - 00:46:14 [INFO] DOWNLOAD BY CATEGORY - PLAYWRIGHT
+2025-12-09 00:46:14,216 - INFO - 00:46:14 [INFO] Downloading fully rendered HTML pages
+2025-12-09 00:46:14,216 - INFO - 00:46:14 [INFO] ==================================================
+2025-12-09 00:46:14,217 - INFO - 00:46:14 [INFO] Checking prerequisites...
+2025-12-09 00:46:14,217 - INFO - 00:46:14 [INFO] ✓ Cookie file exists
+2025-12-09 00:46:14,217 - INFO - 00:46:14 [INFO] ✓ Categories folder: ['supplies.csv', 'women.csv', 'accessories.csv', 'men.csv']
+2025-12-09 00:46:14,218 - INFO - 00:46:14 [INFO] Loading cookies...
+2025-12-09 00:46:14,218 - INFO - 00:46:14 [INFO] ✓ Loaded 5 cookies
+2025-12-09 00:46:14,218 - INFO - 00:46:14 [INFO]
+2025-12-09 00:46:14,219 - INFO - Loading categories...
+2025-12-09 00:46:14,219 - INFO - 00:46:14 [INFO]   accessories: 85 products
+2025-12-09 00:46:14,219 - INFO - 00:46:14 [INFO]   men: 169 products
+2025-12-09 00:46:14,220 - INFO - 00:46:14 [INFO]   supplies: 9 products
+2025-12-09 00:46:14,220 - INFO - 00:46:14 [INFO]   women: 265 products
+2025-12-09 00:46:14,221 - INFO - 00:46:14 [INFO]
+2025-12-09 00:46:14,221 - INFO - Total: 528 products to download
+2025-12-09 00:46:15,127 - INFO - 00:46:15 [INFO]
+2025-12-09 00:46:15,128 - INFO - Launching browser...
+2025-12-09 00:46:15,630 - INFO - 00:46:15 [INFO] ✓ Browser ready
+2025-12-09 00:46:15,631 - INFO - 00:46:15 [INFO]   Concurrency: 10
+2025-12-09 00:46:15,634 - INFO - 00:46:15 [INFO]   Timeout: 30000ms
+2025-12-09 00:46:15,636 - INFO - 00:46:15 [INFO]
+2025-12-09 00:46:15,638 - INFO - ========================================
+2025-12-09 00:46:15,640 - INFO - 00:46:15 [INFO] CATEGORY: ACCESSORIES (85 products)
+2025-12-09 00:46:15,641 - INFO - 00:46:15 [INFO] ========================================
+2025-12-09 00:46:15,642 - INFO - 00:46:15 [INFO] Output: /home/theafrazkhan/Desktop/scrappin/backend/data/html/accessories
+2025-12-09 00:46:35,145 - INFO - 00:46:35 [INFO] Progress: 20/528 done, 0 failed
+2025-12-09 00:47:01,452 - INFO - 00:47:01 [INFO] Progress: 40/528 done, 0 failed
+2025-12-09 00:47:05,307 - INFO - 00:47:05 [ERROR] [accessories] ✗ n4g2nr4v61: TimeoutError: Timeout 30000ms exceeded.
+2025-12-09 00:47:30,461 - INFO - 00:47:30 [INFO] Progress: 60/528 done, 1 failed
+2025-12-09 00:47:51,590 - INFO - 00:47:51 [INFO] Progress: 80/528 done, 1 failed
+2025-12-09 00:48:02,301 - INFO - 00:48:02 [INFO] ✓ accessories: 84/85 downloaded in 106.6s
+2025-12-09 00:48:02,401 - INFO - 00:48:02 [INFO]
+2025-12-09 00:48:02,402 - INFO - ========================================
+2025-12-09 00:48:02,405 - INFO - 00:48:02 [INFO] CATEGORY: MEN (169 products)
+2025-12-09 00:48:02,407 - INFO - 00:48:02 [INFO] ========================================
+2025-12-09 00:48:02,411 - INFO - 00:48:02 [INFO] Output: /home/theafrazkhan/Desktop/scrappin/backend/data/html/men
+2025-12-09 00:48:30,039 - INFO - 00:48:30 [INFO] Progress: 100/528 done, 1 failed
+2025-12-09 00:48:47,769 - INFO - 00:48:47 [INFO] Progress: 120/528 done, 1 failed
+2025-12-09 00:49:12,468 - INFO - 00:49:12 [INFO] Progress: 140/528 done, 1 failed
+2025-12-09 00:49:40,240 - INFO - 00:49:40 [INFO] Progress: 160/528 done, 1 failed
+2025-12-09 00:50:11,220 - INFO - 00:50:11 [INFO] Progress: 180/528 done, 1 failed
+2025-12-09 00:50:38,607 - INFO - 00:50:38 [INFO] Progress: 200/528 done, 1 failed
+2025-12-09 00:51:04,442 - INFO - 00:51:04 [INFO] Progress: 220/528 done, 1 failed
+2025-12-09 00:51:29,307 - INFO - 00:51:29 [INFO] Progress: 240/528 done, 1 failed
+2025-12-09 00:51:55,203 - INFO - 00:51:55 [INFO] ✓ men: 169/169 downloaded in 232.7s
+2025-12-09 00:51:55,264 - INFO - 00:51:55 [INFO]
+2025-12-09 00:51:55,264 - INFO - ========================================
+2025-12-09 00:51:55,264 - INFO - 00:51:55 [INFO] CATEGORY: SUPPLIES (9 products)
+2025-12-09 00:51:55,264 - INFO - 00:51:55 [INFO] ========================================
+2025-12-09 00:51:55,265 - INFO - 00:51:55 [INFO] Output: /home/theafrazkhan/Desktop/scrappin/backend/data/html/supplies
+2025-12-09 00:52:06,226 - INFO - 00:52:06 [INFO] Progress: 260/528 done, 1 failed
+2025-12-09 00:52:06,674 - INFO - 00:52:06 [INFO] ✓ supplies: 9/9 downloaded in 11.3s
+2025-12-09 00:52:06,789 - INFO - 00:52:06 [INFO]
+2025-12-09 00:52:06,789 - INFO - ========================================
+2025-12-09 00:52:06,789 - INFO - 00:52:06 [INFO] CATEGORY: WOMEN (265 products)
+2025-12-09 00:52:06,789 - INFO - 00:52:06 [INFO] ========================================
+2025-12-09 00:52:06,790 - INFO - 00:52:06 [INFO] Output: /home/theafrazkhan/Desktop/scrappin/backend/data/html/women
+2025-12-09 00:52:26,286 - INFO - 00:52:26 [INFO] Progress: 280/528 done, 1 failed
+2025-12-09 00:52:50,359 - INFO - 00:52:50 [INFO] Progress: 300/528 done, 1 failed
+2025-12-09 00:53:14,271 - INFO - 00:53:14 [INFO] Progress: 320/528 done, 1 failed
+2025-12-09 00:53:40,051 - INFO - 00:53:40 [INFO] Progress: 340/528 done, 1 failed
+2025-12-09 00:54:00,200 - INFO - 00:54:00 [INFO] Progress: 360/528 done, 1 failed
+2025-12-09 00:54:25,333 - INFO - 00:54:25 [INFO] Progress: 380/528 done, 1 failed
+2025-12-09 00:54:50,993 - INFO - 00:54:50 [INFO] Progress: 400/528 done, 1 failed
+2025-12-09 00:55:23,916 - INFO - 00:55:23 [INFO] Progress: 420/528 done, 1 failed
+2025-12-09 00:55:46,826 - INFO - 00:55:46 [ERROR] [women] ✗ x7nbc0rzml: TimeoutError: Timeout 30000ms exceeded.
+2025-12-09 00:55:59,764 - INFO - 00:55:59 [ERROR] [women] ✗ w7mwxj057g: TimeoutError: Timeout 30000ms exceeded.
+2025-12-09 00:56:08,169 - INFO - 00:56:08 [ERROR] [women] ✗ moq4z18vis: TimeoutError: Timeout 30000ms exceeded.
+2025-12-09 00:56:17,069 - INFO - 00:56:17 [ERROR] [women] ✗ x7o7oqg51b: TimeoutError: Timeout 30000ms exceeded.
+2025-12-09 00:56:25,340 - INFO - 00:56:25 [INFO] Progress: 440/528 done, 5 failed
+2025-12-09 00:56:33,067 - WARNING - 
+⚠️  Pipeline interrupted by user

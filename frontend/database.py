@@ -158,6 +158,23 @@ class LululemonCredentials(db.Model):
 
 def init_db(app):
     """Initialize database and create all tables"""
+    import os
+    from pathlib import Path
+    
     with app.app_context():
+        # Create all tables
         db.create_all()
-        print("✅ Database initialized successfully")
+        
+        # Ensure database file has proper permissions
+        try:
+            db_uri = app.config['SQLALCHEMY_DATABASE_URI']
+            if db_uri.startswith('sqlite:///'):
+                db_path = db_uri.replace('sqlite:///', '')
+                if os.path.exists(db_path):
+                    os.chmod(db_path, 0o666)  # rw-rw-rw-
+                    print(f"✅ Database initialized: {db_path}")
+                else:
+                    print(f"✅ Database will be created: {db_path}")
+        except Exception as e:
+            print(f"⚠️  Database initialized but could not set permissions: {e}")
+

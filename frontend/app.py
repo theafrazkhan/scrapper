@@ -30,9 +30,23 @@ sys.path.insert(0, str(backend_dir))
 # Initialize Flask app
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'change-this-secret-key-in-production')
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///scraper.db'
+
+# Ensure instance folder exists with proper permissions
+instance_path = Path(__file__).parent / 'instance'
+instance_path.mkdir(exist_ok=True, mode=0o775)
+
+# Set database path explicitly with absolute path
+db_path = instance_path / 'scraper.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_path}'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
+
+# Ensure database file has write permissions if it exists
+if db_path.exists():
+    try:
+        os.chmod(db_path, 0o666)
+    except Exception as e:
+        print(f"⚠️  Warning: Could not set database permissions: {e}")
 
 # Initialize extensions
 db.init_app(app)
