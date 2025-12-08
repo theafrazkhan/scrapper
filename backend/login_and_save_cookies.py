@@ -48,13 +48,8 @@ if not EMAIL or not PASSWORD:
 COOKIE_FILE = SCRIPT_DIR / "data" / "cookie" / "cookie.json"
 LINKS_FILE = SCRIPT_DIR / "data" / "links.csv"
 
-# Category URLs (with limit=12 initially to check product count)
-CATEGORY_URLS = {
-    "women": "https://wholesale.lululemon.com/lululemon/women?limit=12&pic=14ffd75b-6d75-49dd-8ea5-811f163e6c06&prc=a1eb736a-58d3-43fb-b99a-e435e30b5b4c",
-    "men": "https://wholesale.lululemon.com/lululemon/men?limit=12&pic=14ffd75b-6d75-49dd-8ea5-811f163e6c06&prc=a1eb736a-58d3-43fb-b99a-e435e30b5b4c",
-    "accessories": "https://wholesale.lululemon.com/lululemon/accessories?limit=12&pic=14ffd75b-6d75-49dd-8ea5-811f163e6c06&prc=a1eb736a-58d3-43fb-b99a-e435e30b5b4c",
-    "supplies": "https://wholesale.lululemon.com/lululemon/supplies?limit=12&pic=14ffd75b-6d75-49dd-8ea5-811f163e6c06&prc=a1eb736a-58d3-43fb-b99a-e435e30b5b4c"
-}
+# Base URL - categories will be discovered dynamically
+BASE_URL = "https://wholesale.lululemon.com"
 
 def setup_driver():
     """Set up Chrome WebDriver with appropriate options."""
@@ -146,6 +141,90 @@ def login_to_wholesale(driver):
         print(f"Current URL: {driver.current_url}")
         return False
 
+def discover_categories(driver):
+    """Dynamically discover categories from the navigation menu."""
+    print("\n[2/4] Discovering categories from navigation...")
+    
+    try:
+        # Navigate to home page if not already there
+        if driver.current_url == LOGIN_URL or "/login" in driver.current_url:
+            driver.get(BASE_URL)
+            time.sleep(3)
+        
+        # Find the primary navigation with all category links
+        # Look for: class="primary-nav_primaryNavAnchor__A22xB"
+        nav_links = driver.find_elements(By.CSS_SELECTOR, "a.primary-nav_primaryNavAnchor__A22xB")
+        
+        categories = {}
+        
+        for link in nav_links:
+            try:
+                href = link.get_attribute('href')
+                text = link.text.strip()
+                
+                if href and text:
+                    # Extract category name from URL or link text
+                    # URLs like: /lululemon/women, /lululemon/men, /whats-new
+                    if '/lululemon/' in href:
+                        # Standard category: women, men, accessories, supplies
+                        category_name = href.split('/lululemon/')[-1].split('?')[0]
+                    elif '/whats-new' in href:
+                        # Special category: what's new
+                        category_name = 'whats-new'
+                    else:
+                        continue
+                    
+                    # Make full URL if relative
+                    if href.startswith('/'):
+                        href = BASE_URL + href
+                    
+                    # Ensure it has the limit parameter (start with 12 to check count)
+                    if 'limit=' not in href:
+                        href += '?limit=12' if '?' not in href else '&limit=12'
+                    else:
+                        # Replace existing limit with 12
+                        href = re.sub(r'limit=\d+', 'limit=12', href)
+                    
+                    categories[category_name] = {
+                        'url': href,
+                        'display_name': text
+                    }
+                    
+                    print(f"  ✓ Found: {text} → {category_name}")
+            except Exception as e:
+                print(f"  ⚠ Error processing link: {e}")
+                continue
+        
+        if not categories:
+            print("  ⚠ No categories found, using fallback defaults")
+            # Fallback to basic categories
+            categories = {
+                'women': {
+                    'url': f'{BASE_URL}/lululemon/women?limit=12&pic=14ffd75b-6d75-49dd-8ea5-811f163e6c06&prc=a1eb736a-58d3-43fb-b99a-e435e30b5b4c',
+                    'display_name': 'Women'
+                },
+                'men': {
+                    'url': f'{BASE_URL}/lululemon/men?limit=12&pic=14ffd75b-6d75-49dd-8ea5-811f163e6c06&prc=a1eb736a-58d3-43fb-b99a-e435e30b5b4c',
+                    'display_name': 'Men'
+                },
+                'accessories': {
+                    'url': f'{BASE_URL}/lululemon/accessories?limit=12&pic=14ffd75b-6d75-49dd-8ea5-811f163e6c06&prc=a1eb736a-58d3-43fb-b99a-e435e30b5b4c',
+                    'display_name': 'Accessories'
+                },
+                'supplies': {
+                    'url': f'{BASE_URL}/lululemon/supplies?limit=12&pic=14ffd75b-6d75-49dd-8ea5-811f163e6c06&prc=a1eb736a-58d3-43fb-b99a-e435e30b5b4c',
+                    'display_name': 'Supplies'
+                }
+            }
+        
+        print(f"\n  ✓ Discovered {len(categories)} categories: {', '.join(categories.keys())}")
+        return categories
+        
+    except Exception as e:
+        print(f"  ❌ Error discovering categories: {e}")
+        # Return empty dict, will use fallback
+        return {}
+
 def extract_product_count(driver, category_name, url):
     """Navigate to a category page and extract the total product count."""
     print(f"\n  Navigating to {category_name}...")
@@ -201,12 +280,14 @@ def update_links_file(category_counts):
     
     # Build updated URLs
     updated_urls = []
-    for category, count in category_counts.items():
-        base_url = CATEGORY_URLS[category]
+    for category_name, data in category_counts.items():
+        url = data['url']
+        count = data['count']
+        
         # Replace limit=12 with the actual count
-        updated_url = re.sub(r'limit=\d+', f'limit={count}', base_url)
+        updated_url = re.sub(r'limit=\d+', f'limit={count}', url)
         updated_urls.append(updated_url)
-        print(f"  - {category}: limit={count}")
+        print(f"  - {category_name}: limit={count}")
     
     # Save to CSV file (overwrite if exists)
     with open(LINKS_FILE, 'w', newline='') as f:
@@ -281,24 +362,36 @@ def main():
         driver = setup_driver()
         
         # Perform login
-        print("\n[2/4] Logging in to wholesale portal...")
+        print("\n[Step 1/4] Logging in to wholesale portal...")
         if not login_to_wholesale(driver):
             print("\n✗ Login failed. Please check credentials and try again.")
             return
         
-        # Save cookies
-        print("\n[3/4] Saving cookies...")
-        save_cookies(driver, COOKIE_FILE)
+        # Discover categories dynamically
+        print("\n[Step 2/4] Discovering categories...")
+        categories = discover_categories(driver)
+        
+        if not categories:
+            print("\n✗ No categories discovered. Exiting.")
+            return
         
         # Extract product counts from category pages
-        print("\n[4/4] Extracting product counts from category pages...")
-        category_counts = {}
-        for category_name, url in CATEGORY_URLS.items():
-            count = extract_product_count(driver, category_name, url)
-            category_counts[category_name] = count
+        print("\n[Step 3/4] Extracting product counts from category pages...")
+        category_data = {}
+        for category_name, cat_info in categories.items():
+            count = extract_product_count(driver, category_name, cat_info['url'])
+            category_data[category_name] = {
+                'url': cat_info['url'],
+                'count': count,
+                'display_name': cat_info['display_name']
+            }
+        
+        # Save cookies
+        print("\n[Step 3.5/4] Saving cookies...")
+        save_cookies(driver, COOKIE_FILE)
         
         # Update links.csv file
-        update_links_file(category_counts)
+        update_links_file(category_data)
         
         print("\n" + "=" * 60)
         print("✓ SUCCESS! All tasks completed.")

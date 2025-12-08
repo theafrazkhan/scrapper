@@ -24,7 +24,7 @@ log = logging.getLogger(__name__)
 
 # Configuration
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-MAX_CONCURRENT = 5  # 5 concurrent downloads
+MAX_CONCURRENT = 10 # 10 concurrent downloads
 PAGE_TIMEOUT = 30000  # 30 seconds
 WAIT_FOR = 'networkidle'  # Wait for network to be idle for fully rendered content
 
@@ -104,6 +104,20 @@ class PageDownloader:
             next(reader, None)  # Skip header
             return [r[0] for r in reader if r]
     
+    def discover_categories(self):
+        """Discover all available categories from CSV files"""
+        if not os.path.exists(self.categories_folder):
+            return []
+        
+        categories = []
+        for file in os.listdir(self.categories_folder):
+            if file.endswith('.csv'):
+                # Get category name from filename (e.g., 'women.csv' -> 'women')
+                category = file[:-4]
+                categories.append(category)
+        
+        return sorted(categories)
+    
     def ensure_output_dir(self, cat):
         """Create output directory for category"""
         cat_dir = os.path.join(self.output_folder, cat)
@@ -172,8 +186,13 @@ class PageDownloader:
         
         self.load_cookies()
         
-        # Load all category URLs
-        cats = ['women', 'men', 'accessories', 'supplies']
+        # Discover all available categories dynamically
+        cats = self.discover_categories()
+        
+        if not cats:
+            log.error("No category CSV files found!")
+            return
+        
         urls = {}
         
         log.info("\nLoading categories...")

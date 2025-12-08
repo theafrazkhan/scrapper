@@ -38,7 +38,7 @@ from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
 # Use relative paths for portability (works on local machine and server)
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 WEB_FOLDER = os.path.join(SCRIPT_DIR, "web")  # Folder containing HTML files
-DATA_FOLDER = os.path.join(SCRIPT_DIR, "data")  # Alternative: data folder with subfolders
+DATA_FOLDER = os.path.join(SCRIPT_DIR, "data", "html")  # HTML files from download_by_category.py
 ROW_HEIGHT = 80             # Row height in Excel units (points) - reduced for compact view
 
 # Set to True to use IMAGE formulas (works in Google Sheets & Excel 365+)
@@ -777,16 +777,22 @@ def main():
     
     if not html_files and os.path.exists(DATA_FOLDER):
         print(f"\n✓ Checking data folder: {DATA_FOLDER}")
-        # Look in all subfolders of data folder and track category
+        # Look in all subfolders of data folder and track category (dynamically discover)
         html_files_with_category = []
-        for subfolder in ['accessories', 'men', 'women', 'supplies']:
-            subfolder_path = os.path.join(DATA_FOLDER, subfolder)
-            if os.path.exists(subfolder_path):
+        
+        # Discover all subfolders in data/html/
+        if os.path.isdir(DATA_FOLDER):
+            subfolders = [f for f in os.listdir(DATA_FOLDER) 
+                         if os.path.isdir(os.path.join(DATA_FOLDER, f))]
+            
+            for subfolder in subfolders:
+                subfolder_path = os.path.join(DATA_FOLDER, subfolder)
                 subfolder_files = glob.glob(os.path.join(subfolder_path, "*.html"))
                 # Store tuple of (file_path, category)
                 for file_path in subfolder_files:
                     html_files_with_category.append((file_path, subfolder))
-                print(f"  Found {len(subfolder_files)} files in {subfolder}")
+                if subfolder_files:
+                    print(f"  Found {len(subfolder_files)} files in {subfolder}")
         
         # Convert to simple list for counting, keep category mapping
         html_files = [f[0] for f in html_files_with_category]
