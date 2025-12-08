@@ -1,238 +1,282 @@
 #!/usr/bin/env python3
-"""Product page downloader using Playwright - gets rendered DOM."""
+"""
+Download fully rendered HTML pages from Lululemon using Playwright.
+Downloads pages with 5 concurrent connections for optimal speed.
+"""
 
 import csv
 import json
 import os
+import sys
 import asyncio
-import random
-from playwright.async_api import async_playwright
+import logging
 from datetime import datetime
+from playwright.async_api import async_playwright
+
+# Setup logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s [%(levelname)s] %(message)s',
+    datefmt='%H:%M:%S',
+    handlers=[logging.StreamHandler(sys.stdout)]
+)
+log = logging.getLogger(__name__)
+
+# Configuration
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+MAX_CONCURRENT = 5  # 5 concurrent downloads
+PAGE_TIMEOUT = 30000  # 30 seconds
+WAIT_FOR = 'networkidle'  # Wait for network to be idle for fully rendered content
+
+log.info(f"Script directory: {SCRIPT_DIR}")
+log.info(f"Config: MAX_CONCURRENT={MAX_CONCURRENT}, PAGE_TIMEOUT={PAGE_TIMEOUT}ms, WAIT_FOR={WAIT_FOR}")
 
 
-class ProductDownloader:
-    
-    def __init__(self, cookies_file, categories_folder, data_folder, max_concurrent=12):
+class PageDownloader:
+    def __init__(self, cookies_file, categories_folder, output_folder):
         self.cookies_file = cookies_file
         self.categories_folder = categories_folder
-        self.data_folder = data_folder
-        self.max_concurrent = max_concurrent
+        self.output_folder = output_folder
         self.cookies = []
-        self.stats = {'downloaded': 0, 'failed': 0, 'total': 0}
+        self.stats = {'done': 0, 'fail': 0, 'total': 0}
         
-    def load_cookies(self):
-        with open(self.cookies_file, 'r') as f:
-            raw_cookies = json.load(f)
-        
-        for c in raw_cookies:
-            cookie = {
-                'name': c['name'],
-                'value': c['value'],
-                'domain': c.get('domain', '.lululemon.com'),
-                'path': c.get('path', '/'),
-            }
-            if 'sameSite' in c and c['sameSite'] in ['Strict', 'Lax', 'None']:
-                cookie['sameSite'] = c['sameSite']
-            self.cookies.append(cookie)
-        
-        print(f"Loaded {len(self.cookies)} cookies", flush=True)
+        log.info(f"PageDownloader initialized")
+        log.info(f"  Cookies: {cookies_file}")
+        log.info(f"  Categories: {categories_folder}")
+        log.info(f"  Output: {output_folder}")
     
-    def load_urls(self, category):
-        csv_path = os.path.join(self.categories_folder, f"{category}.csv")
-        urls = []
+    def check_prerequisites(self):
+        """Check required files exist"""
+        log.info("Checking prerequisites...")
+        errors = []
         
-        if not os.path.exists(csv_path):
-            return urls
+        if not os.path.exists(self.cookies_file):
+            errors.append(f"Cookie file NOT FOUND: {self.cookies_file}")
+            log.error(f"❌ Cookie file missing: {self.cookies_file}")
+            log.error(f"   Run: python login_and_save_cookies.py")
+        else:
+            log.info(f"✓ Cookie file exists")
         
-        with open(csv_path, 'r') as f:
-            reader = csv.reader(f)
-            next(reader, None)
-            urls = [row[0] for row in reader if row]
+        if not os.path.exists(self.categories_folder):
+            errors.append(f"Categories folder NOT FOUND: {self.categories_folder}")
+            log.error(f"❌ Categories folder missing: {self.categories_folder}")
+        else:
+            csv_files = [f for f in os.listdir(self.categories_folder) if f.endswith('.csv')]
+            if csv_files:
+                log.info(f"✓ Categories folder: {csv_files}")
+            else:
+                errors.append("No CSV files in categories folder")
+                log.error(f"❌ No CSV files found")
         
-        return urls
-    
-    async def block_resources(self, route):
-        if route.request.resource_type in ['image', 'media', 'font', 'stylesheet']:
-            await route.abort()
-            return
-        
-        url = route.request.url.lower()
-        blocked = [
-            'google-analytics', 'googletagmanager', 'facebook.net', 
-            'doubleclick', 'segment.', 'hotjar', 'mixpanel',
-            '.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg',
-            '.woff', '.woff2', '.ttf', '.mp4', '.webm'
-        ]
-        
-        for pattern in blocked:
-            if pattern in url:
-                await route.abort()
-                return
-        
-        await route.continue_()
-    
-    async def download_page(self, context, url, output_folder, semaphore):
-        product_id = url.rstrip('/').split('/')[-1]
-        output_file = os.path.join(output_folder, f"{product_id}.html")
-        
-        async with semaphore:
-            page = None
-            for attempt in range(2):
-                try:
-                    page = await context.new_page()
-                    
-                    response = await page.goto(url, wait_until='domcontentloaded', timeout=25000)
-                    
-                    if not response or response.status >= 400:
-                        raise Exception(f"HTTP {response.status if response else 'none'}")
-                    
-                    # Wait for React hydration
-                    try:
-                        await page.wait_for_selector('script#__NEXT_DATA__', timeout=8000)
-                    except:
-                        pass
-                    
-                    try:
-                        await page.wait_for_selector('[class*="product"]', timeout=5000)
-                    except:
-                        pass
-                    
-                    await asyncio.sleep(0.5)
-                    
-                    # Get rendered DOM
-                    html = await page.content()
-                    
-                    if len(html) < 5000:
-                        raise Exception(f"Too small ({len(html)} bytes)")
-                    
-                    with open(output_file, 'w', encoding='utf-8') as f:
-                        f.write(html)
-                    
-                    self.stats['downloaded'] += 1
-                    
-                    if self.stats['downloaded'] % 20 == 0:
-                        print(f"  Progress: {self.stats['downloaded']}/{self.stats['total']}", flush=True)
-                    
-                    await page.close()
-                    return True
-                    
-                except Exception as e:
-                    if page:
-                        try:
-                            await page.close()
-                        except:
-                            pass
-                    
-                    if attempt == 0:
-                        await asyncio.sleep(1 + random.random())
-                        continue
-                    else:
-                        self.stats['failed'] += 1
-                        if self.stats['failed'] <= 10:
-                            print(f"  Error {product_id}: {str(e)[:40]}", flush=True)
-                        return False
-            
+        if errors:
+            log.error("="*50)
+            log.error("PREREQUISITES FAILED - Run these first:")
+            log.error("  1. python login_and_save_cookies.py")
+            log.error("  2. python extract_product_links.py")
+            log.error("="*50)
             return False
+        
+        return True
     
-    async def download_category(self, browser, category, urls):
-        if not urls:
-            return
+    def load_cookies(self):
+        """Load cookies from file"""
+        log.info(f"Loading cookies...")
+        with open(self.cookies_file) as f:
+            for c in json.load(f):
+                cookie = {
+                    'name': c['name'],
+                    'value': c['value'],
+                    'domain': c.get('domain', '.lululemon.com'),
+                    'path': c.get('path', '/')
+                }
+                if c.get('sameSite') in ['Strict', 'Lax', 'None']:
+                    cookie['sameSite'] = c['sameSite']
+                self.cookies.append(cookie)
+        log.info(f"✓ Loaded {len(self.cookies)} cookies")
+    
+    def load_urls(self, cat):
+        """Load product URLs for a category"""
+        path = os.path.join(self.categories_folder, f"{cat}.csv")
+        if not os.path.exists(path):
+            return []
+        with open(path) as f:
+            reader = csv.reader(f)
+            next(reader, None)  # Skip header
+            return [r[0] for r in reader if r]
+    
+    def ensure_output_dir(self, cat):
+        """Create output directory for category"""
+        cat_dir = os.path.join(self.output_folder, cat)
+        os.makedirs(cat_dir, exist_ok=True)
+        return cat_dir
+    
+    async def download_page(self, context, url, cat, output_dir, sem):
+        """Download a single fully rendered page"""
+        pid = url.rstrip('/').split('/')[-1]
+        output_file = os.path.join(output_dir, f"{pid}.html")
         
-        output_folder = os.path.join(self.data_folder, category)
-        if os.path.exists(output_folder):
-            for f in os.listdir(output_folder):
-                fp = os.path.join(output_folder, f)
-                if os.path.isfile(fp):
-                    os.remove(fp)
-        os.makedirs(output_folder, exist_ok=True)
+        # Skip if already exists
+        if os.path.exists(output_file):
+            self.stats['done'] += 1
+            log.debug(f"[{cat}] ⏭️  Already exists: {pid}")
+            return True
         
-        context = await browser.new_context(
-            viewport={'width': 1280, 'height': 720},
-            java_script_enabled=True,
-        )
-        await context.add_cookies(self.cookies)
-        await context.route('**/*', self.block_resources)
-        
-        semaphore = asyncio.Semaphore(self.max_concurrent)
-        
-        tasks = [
-            self.download_page(context, url, output_folder, semaphore)
-            for url in urls
-        ]
-        
-        await asyncio.gather(*tasks)
-        await context.close()
+        async with sem:
+            page = None
+            try:
+                page = await context.new_page()
+                
+                # Navigate to page and wait for full render
+                log.debug(f"[{cat}] 📥 Downloading: {pid}")
+                await page.goto(url, wait_until=WAIT_FOR, timeout=PAGE_TIMEOUT)
+                
+                # Small delay to ensure everything is loaded
+                await asyncio.sleep(1)
+                
+                # Get fully rendered HTML
+                html = await page.content()
+                await page.close()
+                
+                # Save to file
+                with open(output_file, 'w', encoding='utf-8') as f:
+                    f.write(html)
+                
+                self.stats['done'] += 1
+                log.debug(f"[{cat}] ✓ Saved: {pid} ({len(html)} bytes)")
+                
+                # Progress update every 20 files
+                if self.stats['done'] % 20 == 0:
+                    log.info(f"Progress: {self.stats['done']}/{self.stats['total']} done, {self.stats['fail']} failed")
+                
+                return True
+                
+            except Exception as e:
+                self.stats['fail'] += 1
+                log.error(f"[{cat}] ✗ {pid}: {type(e).__name__}: {str(e)[:100]}")
+                if page:
+                    try:
+                        await page.close()
+                    except:
+                        pass
+                return False
     
     async def run(self):
-        print("\n" + "=" * 50, flush=True)
-        print("Product Page Downloader", flush=True)
-        print("=" * 50, flush=True)
+        """Main download loop"""
+        log.info("="*50)
+        log.info("DOWNLOAD BY CATEGORY - PLAYWRIGHT")
+        log.info("Downloading fully rendered HTML pages")
+        log.info("="*50)
+        
+        if not self.check_prerequisites():
+            return
         
         self.load_cookies()
         
-        categories = ['women', 'men', 'accessories', 'supplies']
-        category_urls = {}
+        # Load all category URLs
+        cats = ['women', 'men', 'accessories', 'supplies']
+        urls = {}
         
-        for cat in categories:
-            urls = self.load_urls(cat)
-            category_urls[cat] = urls
-            self.stats['total'] += len(urls)
-            print(f"  {cat}: {len(urls)} products", flush=True)
+        log.info("\nLoading categories...")
+        for c in cats:
+            urls[c] = self.load_urls(c)
+            self.stats['total'] += len(urls[c])
+            if urls[c]:
+                log.info(f"  {c}: {len(urls[c])} products")
         
-        print(f"\nTotal: {self.stats['total']} products", flush=True)
+        log.info(f"\nTotal: {self.stats['total']} products to download")
         
-        start_time = datetime.now()
+        if self.stats['total'] == 0:
+            log.error("No products found! Check category CSV files.")
+            return
         
-        async with async_playwright() as p:
-            browser = await p.chromium.launch(
-                headless=True,
-                args=[
-                    '--headless=new',
-                    '--disable-gpu',
-                    '--disable-dev-shm-usage',
-                    '--no-sandbox',
-                    '--disable-setuid-sandbox',
-                ]
-            )
-            
-            print(f"\nBrowser ready ({self.max_concurrent} concurrent)", flush=True)
-            
-            for cat in categories:
-                urls = category_urls[cat]
-                if urls:
-                    print(f"\n{cat.upper()} ({len(urls)} pages)", flush=True)
-                    await self.download_category(browser, cat, urls)
-            
-            await browser.close()
+        start = datetime.now()
         
-        duration = (datetime.now() - start_time).total_seconds()
+        try:
+            async with async_playwright() as p:
+                log.info("\nLaunching browser...")
+                browser = await p.chromium.launch(
+                    headless=True,
+                    args=[
+                        '--headless=new',
+                        '--disable-gpu',
+                        '--no-sandbox',
+                        '--disable-dev-shm-usage'
+                    ]
+                )
+                log.info(f"✓ Browser ready")
+                log.info(f"  Concurrency: {MAX_CONCURRENT}")
+                log.info(f"  Timeout: {PAGE_TIMEOUT}ms")
+                
+                for cat in cats:
+                    if not urls[cat]:
+                        continue
+                    
+                    log.info(f"\n{'='*40}")
+                    log.info(f"CATEGORY: {cat.upper()} ({len(urls[cat])} products)")
+                    log.info(f"{'='*40}")
+                    
+                    # Create output directory
+                    output_dir = self.ensure_output_dir(cat)
+                    log.info(f"Output: {output_dir}")
+                    
+                    # Create browser context with cookies
+                    ctx = await browser.new_context(java_script_enabled=True)
+                    await ctx.add_cookies(self.cookies)
+                    
+                    # Semaphore for concurrency control
+                    sem = asyncio.Semaphore(MAX_CONCURRENT)
+                    cat_start = datetime.now()
+                    
+                    # Download all pages concurrently
+                    results = await asyncio.gather(*[
+                        self.download_page(ctx, u, cat, output_dir, sem) 
+                        for u in urls[cat]
+                    ], return_exceptions=True)
+                    
+                    success = sum(1 for r in results if r is True)
+                    cat_dur = (datetime.now() - cat_start).total_seconds()
+                    log.info(f"✓ {cat}: {success}/{len(urls[cat])} downloaded in {cat_dur:.1f}s")
+                    
+                    await ctx.close()
+                
+                await browser.close()
+                log.info("\n✓ Browser closed")
         
-        print("\n" + "=" * 50, flush=True)
-        print("COMPLETE", flush=True)
-        print(f"Downloaded: {self.stats['downloaded']}/{self.stats['total']}", flush=True)
-        if self.stats['failed'] > 0:
-            print(f"Failed: {self.stats['failed']}", flush=True)
-        print(f"Time: {duration:.0f}s ({duration/60:.1f} min)", flush=True)
-        if self.stats['downloaded'] > 0:
-            print(f"Speed: {self.stats['downloaded']/duration:.1f} pages/sec", flush=True)
-        print("=" * 50, flush=True)
+        except Exception as e:
+            log.error(f"Browser error: {type(e).__name__}: {str(e)}")
+            raise
+        
+        # Final summary
+        duration = (datetime.now() - start).total_seconds()
+        log.info("\n" + "="*50)
+        log.info("DOWNLOAD COMPLETE")
+        log.info("="*50)
+        log.info(f"Total: {self.stats['done']}/{self.stats['total']} downloaded")
+        log.info(f"Failed: {self.stats['fail']}")
+        log.info(f"Duration: {duration:.1f}s")
+        log.info(f"Average: {duration/self.stats['total']:.2f}s per page")
+        log.info("="*50)
 
 
 async def main():
-    import sys
+    """Entry point"""
+    cookies_file = os.path.join(SCRIPT_DIR, 'data', 'cookie', 'cookie.json')
+    categories_folder = os.path.join(SCRIPT_DIR, 'data', 'categories')
+    output_folder = os.path.join(SCRIPT_DIR, 'data', 'html')
     
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-    max_concurrent = int(sys.argv[1]) if len(sys.argv) > 1 else 12
-    
-    downloader = ProductDownloader(
-        cookies_file=os.path.join(script_dir, "data/cookie/cookie.json"),
-        categories_folder=os.path.join(script_dir, "data/categories"),
-        data_folder=os.path.join(script_dir, "data"),
-        max_concurrent=max_concurrent
-    )
-    
+    downloader = PageDownloader(cookies_file, categories_folder, output_folder)
     await downloader.run()
 
 
-if __name__ == "__main__":
-    asyncio.run(main())
+if __name__ == '__main__':
+    log.info("Starting download_by_category.py")
+    log.info(f"Working directory: {os.getcwd()}")
+    try:
+        asyncio.run(main())
+        log.info("✓ Script completed successfully")
+    except KeyboardInterrupt:
+        log.warning("\n⚠️  Interrupted by user")
+        sys.exit(130)
+    except Exception as e:
+        log.error(f"✗ Script failed: {type(e).__name__}: {str(e)}")
+        sys.exit(1)
