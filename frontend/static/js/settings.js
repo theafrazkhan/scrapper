@@ -19,6 +19,8 @@ function switchTab(tabName) {
         loadEmailConfig();
     } else if (tabName === 'lululemon-creds') {
         loadLululemonCredentials();
+    } else if (tabName === 'schedules') {
+        loadSchedules();
     }
 }
 
@@ -84,6 +86,8 @@ async function addUser(event) {
 }
 
 async function deleteUser(userId, userEmail) {
+    console.log('deleteUser called:', userId, userEmail); // Debug log
+    
     const result = await Swal.fire({
         title: 'Are you sure?',
         text: `Delete user ${userEmail}?`,
@@ -97,12 +101,15 @@ async function deleteUser(userId, userEmail) {
     if (result.isConfirmed) {
         try {
             const response = await fetch(`/api/admin/users/${userId}`, {
-                method: 'DELETE'
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
             });
             
             const data = await response.json();
             
-            if (data.success) {
+            if (response.ok && data.success) {
                 Swal.fire({
                     icon: 'success',
                     title: 'Deleted!',
@@ -120,15 +127,19 @@ async function deleteUser(userId, userEmail) {
                 });
             }
         } catch (error) {
+            console.error('Delete user error:', error); // Debug log
             Swal.fire({
                 icon: 'error',
                 title: 'Error',
-                text: 'Failed to delete user',
+                text: 'Failed to delete user: ' + error.message,
                 confirmButtonColor: '#ff6b35'
             });
         }
     }
 }
+
+// Make sure function is globally accessible
+window.deleteUser = deleteUser;
 
 // Email Recipient Management
 async function addRecipient(event) {
@@ -578,3 +589,334 @@ if (window.location.hash === '#email-config') {
 if (window.location.hash === '#lululemon-creds') {
     loadLululemonCredentials();
 }
+
+
+// ============================================================================
+// SCHEDULE MANAGEMENT
+// ============================================================================
+
+async function loadSchedules() {
+    try {
+        const response = await fetch('/api/admin/schedules');
+        const data = await response.json();
+        
+        const tbody = document.getElementById('schedulesTableBody');
+        
+        if (!data.success || data.schedules.length === 0) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="9" style="text-align: center; padding: var(--spacing-xl);">
+                        <div class="empty-state">
+                            <i class="fas fa-clock"></i>
+                            <p>No schedules configured yet</p>
+                        </div>
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+        
+        tbody.innerHTML = data.schedules.map(s => {
+            const nextRun = s.next_run ? new Date(s.next_run).toLocaleString() : 'N/A';
+            const lastRun = s.last_run ? new Date(s.last_run).toLocaleString() : 'Never';
+            const statusClass = s.is_enabled ? 'status-enabled' : 'status-disabled';
+            const statusText = s.is_enabled ? 'Enabled' : 'Disabled';
+            const toggleIcon = s.is_enabled ? 'fa-pause' : 'fa-play';
+            const toggleTitle = s.is_enabled ? 'Disable' : 'Enable';
+            
+            return `
+                <tr>
+                    <td><strong>${s.name}</strong></td>
+                    <td><span class="badge">${s.frequency}</span></td>
+                    <td>${s.time_of_day}</td>
+                    <td>${s.timezone}</td>
+                    <td>${nextRun}</td>
+                    <td>${lastRun}</td>
+                    <td>
+                        ${s.send_email ? '<i class="fas fa-check" style="color: var(--success);"></i>' : '<i class="fas fa-times" style="color: var(--gray-400);"></i>'}
+                    </td>
+                    <td><span class="badge ${statusClass}">${statusText}</span></td>
+                    <td>
+                        <div class="action-buttons">
+                            <button class="btn-icon" onclick="toggleSchedule(${s.id})" title="${toggleTitle}">
+                                <i class="fas ${toggleIcon}"></i>
+                            </button>
+                            <button class="btn-icon" onclick="editSchedule(${s.id})" title="Edit">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn-icon" onclick="deleteSchedule(${s.id}, '${s.name}')" title="Delete">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+        
+    } catch (error) {
+        console.error('Load schedules error:', error);
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'Failed to load schedules',
+            confirmButtonColor: '#ff6b35'
+        });
+    }
+}
+
+async function addSchedule(event) {
+    event.preventDefault();
+    
+    const form = event.target;
+    const formData = {
+        name: form.name.value,
+        frequency: form.frequency.value,
+        time_of_day: form.time_of_day.value,
+        timezone: form.timezone.value,
+        send_email: form.send_email.checked
+    };
+    
+    try {
+        const response = await fetch('/api/admin/schedules', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(formData)
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok && data.success) {
+            Swal.fire({
+                icon: 'success',
+                title: 'Schedule Created',
+                text: `Schedule "${formData.name}" has been created successfully`,
+                confirmButtonColor: '#ff6b35'
+            }).then(() => {
+                form.reset();
+                loadSchedules();
+            });
+        } else {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: data.error || 'Failed to create schedule',
+                confirmButtonColor: '#ff6b35'
+            });
+        }
+    } catch (error) {
+        console.error('Add schedule error:', error);
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'Failed to create schedule: ' + error.message,
+            confirmButtonColor: '#ff6b35'
+        });
+    }
+}
+
+async function toggleSchedule(scheduleId) {
+    try {
+        const response = await fetch(`/api/admin/schedules/${scheduleId}/toggle`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok && data.success) {
+            Swal.fire({
+                icon: 'success',
+                title: data.message,
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false,
+                timer: 2000
+            });
+            loadSchedules();
+        } else {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: data.error || 'Failed to toggle schedule',
+                confirmButtonColor: '#ff6b35'
+            });
+        }
+    } catch (error) {
+        console.error('Toggle schedule error:', error);
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'Failed to toggle schedule: ' + error.message,
+            confirmButtonColor: '#ff6b35'
+        });
+    }
+}
+
+async function editSchedule(scheduleId) {
+    // Get current schedule data
+    const response = await fetch('/api/admin/schedules');
+    const data = await response.json();
+    const schedule = data.schedules.find(s => s.id === scheduleId);
+    
+    if (!schedule) return;
+    
+    const { value: formValues } = await Swal.fire({
+        title: 'Edit Schedule',
+        html: `
+            <div style="text-align: left;">
+                <div style="margin-bottom: 15px;">
+                    <label style="display: block; margin-bottom: 5px; font-weight: 500;">Name</label>
+                    <input id="edit-name" class="swal2-input" value="${schedule.name}" style="width: 90%; margin: 0;">
+                </div>
+                <div style="margin-bottom: 15px;">
+                    <label style="display: block; margin-bottom: 5px; font-weight: 500;">Frequency</label>
+                    <select id="edit-frequency" class="swal2-input" style="width: 95%; margin: 0;">
+                        <option value="daily" ${schedule.frequency === 'daily' ? 'selected' : ''}>Daily</option>
+                        <option value="3-day" ${schedule.frequency === '3-day' ? 'selected' : ''}>Every 3 Days</option>
+                        <option value="weekly" ${schedule.frequency === 'weekly' ? 'selected' : ''}>Weekly</option>
+                        <option value="monthly" ${schedule.frequency === 'monthly' ? 'selected' : ''}>Monthly</option>
+                    </select>
+                </div>
+                <div style="margin-bottom: 15px;">
+                    <label style="display: block; margin-bottom: 5px; font-weight: 500;">Time</label>
+                    <input id="edit-time" type="time" class="swal2-input" value="${schedule.time_of_day}" style="width: 90%; margin: 0;">
+                </div>
+                <div style="margin-bottom: 15px;">
+                    <label style="display: block; margin-bottom: 5px; font-weight: 500;">Timezone</label>
+                    <select id="edit-timezone" class="swal2-input" style="width: 95%; margin: 0;">
+                        <option value="UTC" ${schedule.timezone === 'UTC' ? 'selected' : ''}>UTC</option>
+                        <option value="America/New_York" ${schedule.timezone === 'America/New_York' ? 'selected' : ''}>Eastern Time (ET)</option>
+                        <option value="America/Chicago" ${schedule.timezone === 'America/Chicago' ? 'selected' : ''}>Central Time (CT)</option>
+                        <option value="America/Denver" ${schedule.timezone === 'America/Denver' ? 'selected' : ''}>Mountain Time (MT)</option>
+                        <option value="America/Los_Angeles" ${schedule.timezone === 'America/Los_Angeles' ? 'selected' : ''}>Pacific Time (PT)</option>
+                        <option value="America/Toronto" ${schedule.timezone === 'America/Toronto' ? 'selected' : ''}>Toronto</option>
+                        <option value="Europe/London" ${schedule.timezone === 'Europe/London' ? 'selected' : ''}>London</option>
+                    </select>
+                </div>
+                <div style="margin-bottom: 15px;">
+                    <label style="display: flex; align-items: center;">
+                        <input id="edit-send-email" type="checkbox" ${schedule.send_email ? 'checked' : ''} style="margin-right: 8px;">
+                        <span>Send email after scraping</span>
+                    </label>
+                </div>
+            </div>
+        `,
+        focusConfirm: false,
+        showCancelButton: true,
+        confirmButtonColor: '#ff6b35',
+        confirmButtonText: 'Update',
+        preConfirm: () => {
+            return {
+                name: document.getElementById('edit-name').value,
+                frequency: document.getElementById('edit-frequency').value,
+                time_of_day: document.getElementById('edit-time').value,
+                timezone: document.getElementById('edit-timezone').value,
+                send_email: document.getElementById('edit-send-email').checked
+            };
+        }
+    });
+    
+    if (formValues) {
+        try {
+            const response = await fetch(`/api/admin/schedules/${scheduleId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(formValues)
+            });
+            
+            const data = await response.json();
+            
+            if (response.ok && data.success) {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Schedule Updated',
+                    confirmButtonColor: '#ff6b35'
+                }).then(() => {
+                    loadSchedules();
+                });
+            } else {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: data.error || 'Failed to update schedule',
+                    confirmButtonColor: '#ff6b35'
+                });
+            }
+        } catch (error) {
+            console.error('Update schedule error:', error);
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'Failed to update schedule: ' + error.message,
+                confirmButtonColor: '#ff6b35'
+            });
+        }
+    }
+}
+
+async function deleteSchedule(scheduleId, scheduleName) {
+    console.log('deleteSchedule called:', scheduleId, scheduleName);
+    
+    const result = await Swal.fire({
+        title: 'Are you sure?',
+        text: `Delete schedule "${scheduleName}"?`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#ff6b35',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Yes, delete it!'
+    });
+    
+    if (result.isConfirmed) {
+        try {
+            const response = await fetch(`/api/admin/schedules/${scheduleId}`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            const data = await response.json();
+            
+            if (response.ok && data.success) {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Deleted!',
+                    text: 'Schedule has been deleted',
+                    confirmButtonColor: '#ff6b35'
+                }).then(() => {
+                    loadSchedules();
+                });
+            } else {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: data.error || 'Failed to delete schedule',
+                    confirmButtonColor: '#ff6b35'
+                });
+            }
+        } catch (error) {
+            console.error('Delete schedule error:', error);
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'Failed to delete schedule: ' + error.message,
+                confirmButtonColor: '#ff6b35'
+            });
+        }
+    }
+}
+
+// Make sure functions are globally accessible
+window.addSchedule = addSchedule;
+window.editSchedule = editSchedule;
+window.deleteSchedule = deleteSchedule;
+window.toggleSchedule = toggleSchedule;
+window.loadSchedules = loadSchedules;
+

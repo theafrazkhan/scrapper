@@ -11,12 +11,15 @@ import subprocess
 import glob
 import re
 from pathlib import Path
-from datetime import datetime
+from datetime import datetime, timedelta
+import pytz
 from flask import Flask, render_template, jsonify, request, send_file, redirect, url_for, flash
 from flask_socketio import SocketIO, emit
 from flask_cors import CORS
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash
+from apscheduler.schedulers.background import BackgroundScheduler
+from apscheduler.triggers.cron import CronTrigger
 
 # ⚠️ CRITICAL: Load environment variables FIRST (for DATABASE_URL, etc.)
 from dotenv import load_dotenv
@@ -86,6 +89,12 @@ login_manager.login_view = 'login'
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))
+
+
+# Initialize APScheduler
+scheduler = BackgroundScheduler(timezone='UTC')
+scheduler.start()
+print("✅ APScheduler initialized and started")
 
 
 # Global state
@@ -701,6 +710,10 @@ def api_login():
         # Log the user in with Flask-Login
         login_user(user, remember=True)
         
+        # Update last login timestamp
+        user.last_login = datetime.now()
+        db.session.commit()
+        
         return jsonify({
             'success': True,
             'message': 'Login successful',
@@ -793,7 +806,250 @@ def reset_password():
     })
 
 
+# ============================================================================
+# SCHEDULER FUNCTIONS
+# ============================================================================
+
+def run_scheduled_scraping(schedule_id):
+    """Execute scraping for a scheduled job"""
+    with app.app_context():
+        try:
+            schedule = Schedule.query.get(schedule_id)
+            if not schedule or not schedule.is_enabled:
+                print(f"⚠️ Schedule {schedule_id} not found or disabled")
+                return
+            
+            print(f"🕒 Running scheduled scrape: {schedule.name} (ID: {schedule_id})")
+            
+            # Update last_run timestamp
+            schedule.last_run = datetime.now(pytz.UTC)
+            
+            # Calculate next_run based on frequency
+            schedule.next_run = calculate_next_run(schedule)
+            db.session.commit()
+            
+            # Start scraping (this will use the existing start_scraping logic)
+            # We'll call the scraping subprocess directly
+            backend_dir = Path(__file__).parent.parent / 'backend'
+            
+            # Create history record
+            history = ScrapingHistory(
+                trigger_type='scheduled',
+                triggered_by=schedule.created_by,
+                status='running',
+                started_at=datetime.now()
+            )
+            db.session.add(history)
+            db.session.commit()
+            
+            try:
+                # Run the scraping pipeline
+                result = subprocess.run(
+                    ['python3', str(backend_dir / 'run_pipeline.py')],
+                    cwd=str(backend_dir),
+                    capture_output=True,
+                    text=True,
+                    timeout=7200  # 2 hour timeout
+                )
+                
+                # Update history
+                history.status = 'completed' if result.returncode == 0 else 'failed'
+                history.completed_at = datetime.now()
+                history.products_count = extract_products_count(result.stdout)
+                
+                # Find the generated Excel file
+                excel_file = find_latest_excel_file()
+                history.file_path = excel_file
+                
+                db.session.commit()
+                
+                print(f"✅ Scheduled scrape completed: {schedule.name}")
+                
+                # Send email if enabled
+                if schedule.send_email and excel_file and os.path.exists(excel_file):
+                    send_scheduled_email(schedule, excel_file)
+                
+            except subprocess.TimeoutExpired:
+                history.status = 'failed'
+                history.completed_at = datetime.now()
+                history.error_message = 'Scraping timeout (exceeded 2 hours)'
+                db.session.commit()
+                print(f"❌ Scheduled scrape timeout: {schedule.name}")
+                
+            except Exception as scrape_error:
+                history.status = 'failed'
+                history.completed_at = datetime.now()
+                history.error_message = str(scrape_error)
+                db.session.commit()
+                print(f"❌ Scheduled scrape error: {schedule.name} - {scrape_error}")
+                
+        except Exception as e:
+            print(f"❌ Scheduler error for schedule {schedule_id}: {e}")
+            import traceback
+            traceback.print_exc()
+
+
+def calculate_next_run(schedule):
+    """Calculate the next run time for a schedule"""
+    tz = pytz.timezone(schedule.timezone)
+    now = datetime.now(tz)
+    
+    # Parse time_of_day (HH:MM format)
+    hour, minute = map(int, schedule.time_of_day.split(':'))
+    
+    # Start with tomorrow at the scheduled time
+    next_run = now.replace(hour=hour, minute=minute, second=0, microsecond=0)
+    
+    # If time has passed today, start with tomorrow
+    if next_run <= now:
+        next_run += timedelta(days=1)
+    
+    # Apply frequency
+    if schedule.frequency == 'daily':
+        # Already set to next day
+        pass
+    elif schedule.frequency == '3-day':
+        # Find next occurrence (every 3 days)
+        days_since_last = (now - schedule.last_run).days if schedule.last_run else 0
+        if days_since_last < 3:
+            next_run += timedelta(days=(3 - days_since_last))
+    elif schedule.frequency == 'weekly':
+        next_run += timedelta(days=7)
+    elif schedule.frequency == 'monthly':
+        # Same day next month
+        if next_run.month == 12:
+            next_run = next_run.replace(year=next_run.year + 1, month=1)
+        else:
+            next_run = next_run.replace(month=next_run.month + 1)
+    
+    return next_run.astimezone(pytz.UTC)
+
+
+def send_scheduled_email(schedule, excel_file):
+    """Send email for scheduled scraping"""
+    try:
+        recipients = EmailRecipient.query.filter_by(is_active=True).all()
+        if not recipients:
+            print("⚠️ No active email recipients configured")
+            return
+        
+        email_list = [r.email for r in recipients]
+        
+        # Get email config
+        config = get_email_config()
+        if not config:
+            print("⚠️ Email not configured")
+            return
+        
+        # Send email
+        success = send_excel_email(
+            to_emails=email_list,
+            excel_path=excel_file,
+            subject=f"Scheduled Lululemon Report - {schedule.name}",
+            body=f"Automated scraping report from schedule: {schedule.name}"
+        )
+        
+        if success:
+            print(f"✅ Email sent for schedule: {schedule.name}")
+        else:
+            print(f"❌ Failed to send email for schedule: {schedule.name}")
+            
+    except Exception as e:
+        print(f"❌ Email error for schedule {schedule.name}: {e}")
+
+
+def extract_products_count(output):
+    """Extract product count from scraper output"""
+    match = re.search(r'(\d+)\s+products?', output, re.IGNORECASE)
+    return int(match.group(1)) if match else None
+
+
+def find_latest_excel_file():
+    """Find the most recently created Excel file"""
+    results_dir = Path(__file__).parent.parent / 'backend' / 'data' / 'results'
+    if not results_dir.exists():
+        return None
+    
+    excel_files = list(results_dir.glob('*.xlsx'))
+    if not excel_files:
+        return None
+    
+    # Return the most recent file
+    latest = max(excel_files, key=lambda p: p.stat().st_mtime)
+    return str(latest)
+
+
+def add_schedule_to_scheduler(schedule):
+    """Add a schedule to APScheduler"""
+    try:
+        tz = pytz.timezone(schedule.timezone)
+        hour, minute = map(int, schedule.time_of_day.split(':'))
+        
+        # Create cron trigger based on frequency
+        if schedule.frequency == 'daily':
+            trigger = CronTrigger(hour=hour, minute=minute, timezone=tz)
+        elif schedule.frequency == '3-day':
+            # Run every 3 days at the specified time
+            trigger = CronTrigger(day='*/3', hour=hour, minute=minute, timezone=tz)
+        elif schedule.frequency == 'weekly':
+            # Run once a week (same day as created)
+            day_of_week = datetime.now(tz).weekday()
+            trigger = CronTrigger(day_of_week=day_of_week, hour=hour, minute=minute, timezone=tz)
+        elif schedule.frequency == 'monthly':
+            # Run on the same day each month
+            day_of_month = datetime.now(tz).day
+            trigger = CronTrigger(day=day_of_month, hour=hour, minute=minute, timezone=tz)
+        else:
+            print(f"❌ Unknown frequency: {schedule.frequency}")
+            return False
+        
+        # Add job to scheduler
+        job_id = f"schedule_{schedule.id}"
+        scheduler.add_job(
+            func=run_scheduled_scraping,
+            trigger=trigger,
+            id=job_id,
+            args=[schedule.id],
+            replace_existing=True,
+            name=schedule.name
+        )
+        
+        print(f"✅ Added schedule to APScheduler: {schedule.name} (ID: {schedule.id})")
+        return True
+        
+    except Exception as e:
+        print(f"❌ Failed to add schedule {schedule.id} to APScheduler: {e}")
+        return False
+
+
+def remove_schedule_from_scheduler(schedule_id):
+    """Remove a schedule from APScheduler"""
+    try:
+        job_id = f"schedule_{schedule_id}"
+        scheduler.remove_job(job_id)
+        print(f"✅ Removed schedule {schedule_id} from APScheduler")
+        return True
+    except Exception as e:
+        print(f"❌ Failed to remove schedule {schedule_id}: {e}")
+        return False
+
+
+def reload_all_schedules():
+    """Reload all enabled schedules into APScheduler (called on app startup)"""
+    with app.app_context():
+        try:
+            schedules = Schedule.query.filter_by(is_enabled=True).all()
+            count = 0
+            for schedule in schedules:
+                if add_schedule_to_scheduler(schedule):
+                    count += 1
+            print(f"✅ Loaded {count} active schedules into APScheduler")
+        except Exception as e:
+            print(f"❌ Failed to reload schedules: {e}")
+
+
 @app.route('/api/start_scraping', methods=['POST'])
+
 def start_scraping():
     """Start the scraping process"""
     global scraping_active
@@ -1233,6 +1489,268 @@ def manage_recipient(recipient_id):
         db.session.delete(recipient)
         db.session.commit()
         return jsonify({'success': True, 'message': 'Recipient deleted'})
+
+
+# ============================================================================
+# SCHEDULE MANAGEMENT API
+# ============================================================================
+
+@app.route('/api/admin/schedules', methods=['GET'])
+@login_required
+def get_schedules():
+    """Get all schedules (admin only)"""
+    if current_user.role != 'admin':
+        return jsonify({'error': 'Unauthorized'}), 403
+    
+    schedules = Schedule.query.all()
+    return jsonify({
+        'success': True,
+        'schedules': [{
+            'id': s.id,
+            'name': s.name,
+            'frequency': s.frequency,
+            'time_of_day': s.time_of_day,
+            'timezone': s.timezone,
+            'is_enabled': s.is_enabled,
+            'send_email': s.send_email,
+            'last_run': s.last_run.isoformat() if s.last_run else None,
+            'next_run': s.next_run.isoformat() if s.next_run else None,
+            'created_at': s.created_at.isoformat() if s.created_at else None
+        } for s in schedules]
+    })
+
+
+@app.route('/api/admin/schedules', methods=['POST'])
+@login_required
+def create_schedule():
+    """Create a new schedule (admin only)"""
+    if current_user.role != 'admin':
+        return jsonify({'error': 'Unauthorized'}), 403
+    
+    data = request.get_json()
+    
+    # Validate required fields
+    required_fields = ['name', 'frequency', 'time_of_day', 'timezone']
+    for field in required_fields:
+        if not data.get(field):
+            return jsonify({'success': False, 'error': f'Missing required field: {field}'}), 400
+    
+    # Validate frequency
+    valid_frequencies = ['daily', '3-day', 'weekly', 'monthly']
+    if data['frequency'] not in valid_frequencies:
+        return jsonify({'success': False, 'error': f'Invalid frequency. Must be one of: {valid_frequencies}'}), 400
+    
+    # Validate time format (HH:MM)
+    try:
+        hour, minute = map(int, data['time_of_day'].split(':'))
+        if not (0 <= hour <= 23 and 0 <= minute <= 59):
+            raise ValueError()
+    except:
+        return jsonify({'success': False, 'error': 'Invalid time format. Use HH:MM (24-hour)'}), 400
+    
+    # Validate timezone
+    try:
+        pytz.timezone(data['timezone'])
+    except:
+        return jsonify({'success': False, 'error': 'Invalid timezone'}), 400
+    
+    try:
+        # Create schedule
+        schedule = Schedule(
+            name=data['name'],
+            frequency=data['frequency'],
+            time_of_day=data['time_of_day'],
+            timezone=data['timezone'],
+            is_enabled=data.get('is_enabled', True),
+            send_email=data.get('send_email', True),
+            created_by=current_user.id
+        )
+        
+        # Calculate next run
+        schedule.next_run = calculate_next_run(schedule)
+        
+        db.session.add(schedule)
+        db.session.commit()
+        
+        # Add to APScheduler if enabled
+        if schedule.is_enabled:
+            add_schedule_to_scheduler(schedule)
+        
+        return jsonify({
+            'success': True,
+            'message': 'Schedule created successfully',
+            'schedule': {
+                'id': schedule.id,
+                'name': schedule.name,
+                'frequency': schedule.frequency,
+                'time_of_day': schedule.time_of_day,
+                'timezone': schedule.timezone,
+                'is_enabled': schedule.is_enabled,
+                'send_email': schedule.send_email,
+                'next_run': schedule.next_run.isoformat() if schedule.next_run else None
+            }
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/admin/schedules/<int:schedule_id>', methods=['PUT'])
+@login_required
+def update_schedule(schedule_id):
+    """Update a schedule (admin only)"""
+    if current_user.role != 'admin':
+        return jsonify({'error': 'Unauthorized'}), 403
+    
+    schedule = Schedule.query.get(schedule_id)
+    if not schedule:
+        return jsonify({'success': False, 'error': 'Schedule not found'}), 404
+    
+    data = request.get_json()
+    was_enabled = schedule.is_enabled
+    
+    try:
+        # Update fields if provided
+        if 'name' in data:
+            schedule.name = data['name']
+        if 'frequency' in data:
+            schedule.frequency = data['frequency']
+        if 'time_of_day' in data:
+            schedule.time_of_day = data['time_of_day']
+        if 'timezone' in data:
+            schedule.timezone = data['timezone']
+        if 'is_enabled' in data:
+            schedule.is_enabled = data['is_enabled']
+        if 'send_email' in data:
+            schedule.send_email = data['send_email']
+        
+        # Recalculate next run if time/frequency changed
+        if any(k in data for k in ['frequency', 'time_of_day', 'timezone']):
+            schedule.next_run = calculate_next_run(schedule)
+        
+        db.session.commit()
+        
+        # Update APScheduler
+        if schedule.is_enabled:
+            add_schedule_to_scheduler(schedule)
+        elif was_enabled and not schedule.is_enabled:
+            remove_schedule_from_scheduler(schedule_id)
+        
+        return jsonify({
+            'success': True,
+            'message': 'Schedule updated successfully',
+            'schedule': {
+                'id': schedule.id,
+                'name': schedule.name,
+                'frequency': schedule.frequency,
+                'time_of_day': schedule.time_of_day,
+                'timezone': schedule.timezone,
+                'is_enabled': schedule.is_enabled,
+                'send_email': schedule.send_email,
+                'next_run': schedule.next_run.isoformat() if schedule.next_run else None
+            }
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/admin/schedules/<int:schedule_id>', methods=['DELETE'])
+@login_required
+def delete_schedule(schedule_id):
+    """Delete a schedule (admin only)"""
+    if current_user.role != 'admin':
+        return jsonify({'error': 'Unauthorized'}), 403
+    
+    schedule = Schedule.query.get(schedule_id)
+    if not schedule:
+        return jsonify({'success': False, 'error': 'Schedule not found'}), 404
+    
+    try:
+        # Remove from APScheduler
+        if schedule.is_enabled:
+            remove_schedule_from_scheduler(schedule_id)
+        
+        db.session.delete(schedule)
+        db.session.commit()
+        
+        return jsonify({'success': True, 'message': 'Schedule deleted successfully'})
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/admin/schedules/<int:schedule_id>/toggle', methods=['POST'])
+@login_required
+def toggle_schedule(schedule_id):
+    """Toggle schedule enabled/disabled (admin only)"""
+    if current_user.role != 'admin':
+        return jsonify({'error': 'Unauthorized'}), 403
+    
+    schedule = Schedule.query.get(schedule_id)
+    if not schedule:
+        return jsonify({'success': False, 'error': 'Schedule not found'}), 404
+    
+    try:
+        schedule.is_enabled = not schedule.is_enabled
+        
+        # Update APScheduler
+        if schedule.is_enabled:
+            schedule.next_run = calculate_next_run(schedule)
+            add_schedule_to_scheduler(schedule)
+        else:
+            remove_schedule_from_scheduler(schedule_id)
+        
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': f"Schedule {'enabled' if schedule.is_enabled else 'disabled'}",
+            'is_enabled': schedule.is_enabled,
+            'next_run': schedule.next_run.isoformat() if schedule.next_run else None
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/admin/timezones', methods=['GET'])
+@login_required
+def get_timezones():
+    """Get list of common timezones"""
+    if current_user.role != 'admin':
+        return jsonify({'error': 'Unauthorized'}), 403
+    
+    # Return a curated list of common timezones
+    common_timezones = [
+        'UTC',
+        'America/New_York',
+        'America/Chicago',
+        'America/Denver',
+        'America/Los_Angeles',
+        'America/Toronto',
+        'America/Vancouver',
+        'Europe/London',
+        'Europe/Paris',
+        'Europe/Berlin',
+        'Asia/Tokyo',
+        'Asia/Shanghai',
+        'Asia/Hong_Kong',
+        'Asia/Singapore',
+        'Asia/Dubai',
+        'Australia/Sydney',
+        'Australia/Melbourne',
+        'Pacific/Auckland'
+    ]
+    
+    return jsonify({
+        'success': True,
+        'timezones': common_timezones
+    })
 
 
 # ============================================================================
@@ -1693,4 +2211,9 @@ if __name__ == '__main__':
     print("🚀 Starting Lululemon Scraper - Enterprise Edition")
     print("📍 Server running at: http://localhost:5000")
     print("👤 Default admin: Joe@aureaclubs.com / Joeilaspa455!")
+    
+    # Load all active schedules into APScheduler
+    print("\n🕒 Loading scheduled tasks...")
+    reload_all_schedules()
+    
     socketio.run(app, host='0.0.0.0', port=5000, debug=False, allow_unsafe_werkzeug=True)

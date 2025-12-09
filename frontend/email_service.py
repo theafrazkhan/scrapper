@@ -50,282 +50,134 @@ def send_excel_email(to_emails, excel_path, scraping_stats=None):
         
         # Build email subject and body
         timestamp = datetime.now().strftime("%B %d, %Y at %I:%M %p")
-        subject = f"Lululemon Product Scraping Results - {timestamp}"
+        subject = f"Lululemon Report - {timestamp}"
         
-        # Build HTML email body with modern design
+        # Build minimal HTML email body
         html_body = f"""
         <!DOCTYPE html>
         <html lang="en">
         <head>
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
             <style>
                 * {{ margin: 0; padding: 0; box-sizing: border-box; }}
                 body {{ 
-                    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
+                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
                     line-height: 1.6; 
-                    color: #212121;
-                    background: #FAFAFA;
-                    padding: 40px 20px;
+                    color: #333;
+                    background: #f5f5f5;
+                    padding: 20px;
                 }}
-                .email-wrapper {{ 
-                    max-width: 650px; 
+                .email-container {{ 
+                    max-width: 600px; 
                     margin: 0 auto; 
                     background: white;
-                    border-radius: 16px;
+                    border-radius: 8px;
                     overflow: hidden;
-                    box-shadow: 0 20px 60px -15px rgba(0, 0, 0, 0.15);
+                    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
                 }}
                 .header {{ 
                     background: linear-gradient(135deg, #FF6B35 0%, #FFB84D 100%);
-                    padding: 50px 40px;
+                    padding: 30px 20px;
                     text-align: center;
-                    position: relative;
-                    overflow: hidden;
-                }}
-                .header::before {{
-                    content: '';
-                    position: absolute;
-                    top: -50%;
-                    right: -50%;
-                    width: 200%;
-                    height: 200%;
-                    background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
-                }}
-                .header-icon {{
-                    font-size: 56px;
-                    margin-bottom: 16px;
-                    display: inline-block;
-                    animation: bounce 2s infinite;
-                }}
-                @keyframes bounce {{
-                    0%, 100% {{ transform: translateY(0); }}
-                    50% {{ transform: translateY(-10px); }}
                 }}
                 .header h1 {{ 
                     color: white;
-                    font-size: 28px;
-                    font-weight: 800;
+                    font-size: 24px;
+                    font-weight: 600;
                     margin: 0;
-                    letter-spacing: -0.5px;
-                    position: relative;
-                    z-index: 1;
-                }}
-                .header-subtitle {{
-                    color: rgba(255, 255, 255, 0.95);
-                    font-size: 15px;
-                    margin-top: 8px;
-                    font-weight: 500;
                 }}
                 .content {{ 
-                    padding: 40px;
-                    background: white;
-                }}
-                .greeting {{
-                    font-size: 18px;
-                    font-weight: 600;
-                    color: #212121;
-                    margin-bottom: 16px;
+                    padding: 30px 20px;
                 }}
                 .message {{
-                    font-size: 15px;
-                    color: #616161;
-                    margin-bottom: 32px;
-                    line-height: 1.7;
-                }}
-                .stats-card {{ 
-                    background: linear-gradient(180deg, #FAFAFA 0%, #F5F5F5 100%);
-                    border-radius: 12px;
-                    padding: 28px;
-                    margin: 32px 0;
-                    border: 1px solid #EEEEEE;
-                    position: relative;
-                    overflow: hidden;
-                }}
-                .stats-card::before {{
-                    content: '';
-                    position: absolute;
-                    top: 0;
-                    left: 0;
-                    width: 4px;
-                    height: 100%;
-                    background: linear-gradient(135deg, #FF6B35 0%, #FFB84D 100%);
-                }}
-                .stats-title {{
-                    font-size: 18px;
-                    font-weight: 700;
-                    color: #212121;
+                    font-size: 16px;
+                    color: #555;
                     margin-bottom: 20px;
-                    display: flex;
-                    align-items: center;
-                    gap: 8px;
                 }}
-                .stat-row {{ 
-                    display: flex; 
-                    justify-content: space-between; 
-                    align-items: center;
-                    padding: 14px 0;
-                    border-bottom: 1px solid #E0E0E0;
+                .file-info {{ 
+                    background: #f9f9f9;
+                    border-left: 4px solid #FF6B35;
+                    border-radius: 4px;
+                    padding: 15px;
+                    margin: 20px 0;
                 }}
-                .stat-row:last-child {{ border-bottom: none; }}
-                .stat-label {{ 
-                    font-weight: 500; 
-                    color: #757575;
-                    font-size: 14px;
-                }}
-                .stat-value {{ 
-                    color: #FF6B35;
-                    font-weight: 700;
-                    font-size: 15px;
-                    background: linear-gradient(135deg, #FF6B35 0%, #FFB84D 100%);
-                    -webkit-background-clip: text;
-                    -webkit-text-fill-color: transparent;
-                    background-clip: text;
-                }}
-                .attachment-card {{ 
-                    background: linear-gradient(135deg, rgba(255, 107, 53, 0.08) 0%, rgba(255, 184, 77, 0.08) 100%);
-                    border: 2px solid rgba(255, 107, 53, 0.2);
-                    border-radius: 12px;
-                    padding: 24px;
-                    margin: 28px 0;
-                    position: relative;
-                }}
-                .attachment-header {{
-                    display: flex;
-                    align-items: center;
-                    gap: 12px;
-                    margin-bottom: 16px;
-                }}
-                .attachment-icon {{
-                    font-size: 32px;
-                }}
-                .attachment-title {{
-                    font-weight: 700;
-                    color: #212121;
-                    font-size: 16px;
-                }}
-                .attachment-details {{
-                    display: flex;
-                    gap: 24px;
-                    margin-top: 12px;
-                }}
-                .attachment-detail {{
-                    display: flex;
-                    align-items: center;
-                    gap: 8px;
-                    color: #616161;
-                    font-size: 14px;
-                }}
-                .attachment-detail-icon {{
-                    font-size: 18px;
-                }}
-                .features {{
-                    margin: 32px 0;
-                }}
-                .features-title {{
-                    font-size: 16px;
+                .file-name {{
                     font-weight: 600;
-                    color: #212121;
-                    margin-bottom: 16px;
-                }}
-                .features-list {{
-                    list-style: none;
-                    padding: 0;
-                }}
-                .features-list li {{
-                    padding: 10px 0;
-                    padding-left: 32px;
-                    position: relative;
-                    color: #616161;
+                    color: #333;
                     font-size: 14px;
-                    line-height: 1.6;
+                    margin-bottom: 5px;
                 }}
-                .features-list li::before {{
-                    content: '✓';
-                    position: absolute;
-                    left: 0;
-                    color: #10B981;
-                    font-weight: 700;
-                    font-size: 18px;
+                .file-size {{
+                    color: #777;
+                    font-size: 13px;
                 }}
-                .signature {{
-                    margin-top: 40px;
-                    padding-top: 24px;
-                    border-top: 1px solid #EEEEEE;
+        """
+        
+        # Add stats styling only if stats provided
+        if scraping_stats:
+            html_body += """
+                .stats {{
+                    margin: 20px 0;
                 }}
-                .signature-text {{
-                    color: #616161;
+                .stat-item {{
+                    display: flex;
+                    justify-content: space-between;
+                    padding: 8px 0;
+                    border-bottom: 1px solid #eee;
                     font-size: 14px;
-                    margin-bottom: 8px;
                 }}
-                .signature-name {{
-                    color: #212121;
-                    font-weight: 700;
-                    font-size: 15px;
-                }}
+                .stat-item:last-child {{ border-bottom: none; }}
+                .stat-label {{ color: #666; }}
+                .stat-value {{ color: #FF6B35; font-weight: 600; }}
+            """
+        
+        html_body += """
                 .footer {{ 
-                    background: #FAFAFA;
+                    background: #f9f9f9;
                     text-align: center; 
-                    color: #9E9E9E; 
-                    font-size: 13px; 
-                    padding: 32px 40px;
-                    border-top: 1px solid #EEEEEE;
+                    color: #999; 
+                    font-size: 12px; 
+                    padding: 20px;
+                    border-top: 1px solid #eee;
                 }}
-                .footer-logo {{
-                    font-size: 24px;
-                    margin-bottom: 12px;
-                }}
-                .footer p {{
-                    margin: 8px 0;
-                    line-height: 1.5;
-                }}
-                .footer-links {{
-                    margin-top: 16px;
-                }}
-                .footer-link {{
+                .footer a {{
                     color: #FF6B35;
                     text-decoration: none;
-                    margin: 0 12px;
-                    font-weight: 500;
                 }}
             </style>
         </head>
         <body>
-            <div class="email-wrapper">
+            <div class="email-container">
                 <div class="header">
-                    <div class="header-icon">✨</div>
-                    <h1>Scraping Complete!</h1>
-                    <div class="header-subtitle">Your Lululemon product data is ready</div>
+                    <h1>🍋 Lululemon Report</h1>
                 </div>
                 <div class="content">
-                    <div class="greeting">Hello there! 👋</div>
                     <div class="message">
-                        Great news! Your Lululemon wholesale product scraping has completed successfully. 
-                        We've compiled all the product data into a comprehensive Excel file that's attached to this email.
+                        Your Lululemon product scraping has completed successfully. The Excel file is attached below.
                     </div>
         """
         
-        # Add stats if provided
+        # Add stats if provided (minimal version)
         if scraping_stats:
             html_body += """
-                    <div class="stats-card">
-                        <div class="stats-title">📊 Scraping Statistics</div>
+                    <div class="stats">
             """
             
-            stats_items = [
-                ('Total Products', scraping_stats.get('total_products', 'N/A')),
-                ('Categories Scraped', scraping_stats.get('categories', 'N/A')),
-                ('Time Taken', scraping_stats.get('elapsed_time', 'N/A')),
-                ('Started At', scraping_stats.get('started_at', 'N/A')),
-                ('Completed At', scraping_stats.get('completed_at', 'N/A'))
-            ]
-            
-            for label, value in stats_items:
+            # Only show essential stats
+            if scraping_stats.get('total_products'):
                 html_body += f"""
-                        <div class="stat-row">
-                            <span class="stat-label">{label}</span>
-                            <span class="stat-value">{value}</span>
+                        <div class="stat-item">
+                            <span class="stat-label">Products</span>
+                            <span class="stat-value">{scraping_stats['total_products']}</span>
+                        </div>
+                """
+            
+            if scraping_stats.get('elapsed_time'):
+                html_body += f"""
+                        <div class="stat-item">
+                            <span class="stat-label">Time</span>
+                            <span class="stat-value">{scraping_stats['elapsed_time']}</span>
                         </div>
                 """
             
@@ -335,45 +187,14 @@ def send_excel_email(to_emails, excel_path, scraping_stats=None):
         
         # File info
         html_body += f"""
-                    <div class="attachment-card">
-                        <div class="attachment-header">
-                            <div class="attachment-icon">📎</div>
-                            <div class="attachment-title">Attachment Details</div>
-                        </div>
-                        <div class="attachment-details">
-                            <div class="attachment-detail">
-                                <span class="attachment-detail-icon">📄</span>
-                                <span>{file_name}</span>
-                            </div>
-                            <div class="attachment-detail">
-                                <span class="attachment-detail-icon">💾</span>
-                                <span>{file_size_mb} MB</span>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="features">
-                        <div class="features-title">What's included in your Excel file:</div>
-                        <ul class="features-list">
-                            <li>Complete product catalog with names and SKUs</li>
-                            <li>Detailed pricing and wholesale rates</li>
-                            <li>Full color and size availability</li>
-                            <li>Organized by product categories</li>
-                            <li>Direct links to product pages</li>
-                            <li>Ready-to-use structured data</li>
-                        </ul>
-                    </div>
-                    
-                    <div class="signature">
-                        <div class="signature-text">Need help or have questions? We're here for you!</div>
-                        <div class="signature-name">Lululemon Scraper Team</div>
+                    <div class="file-info">
+                        <div class="file-name">📎 {file_name}</div>
+                        <div class="file-size">Size: {file_size_mb} MB</div>
                     </div>
                 </div>
                 <div class="footer">
-                    <div class="footer-logo">⚡</div>
-                    <p><strong>Lululemon Scraper Enterprise Edition</strong></p>
-                    <p>Automated product intelligence for wholesale operations</p>
-                    <p style="margin-top: 16px; color: #BDBDBD;">© {datetime.now().year} All rights reserved.</p>
+                    <p>Lululemon Scraper</p>
+                    <p style="margin-top: 8px;">Built at <a href="https://afrazkhan.dev" target="_blank">afrazkhan.dev</a></p>
                 </div>
             </div>
         </body>

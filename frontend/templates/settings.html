@@ -327,6 +327,25 @@
         .test-email-form input {
             flex: 1;
         }
+        
+        /* Schedule status badges */
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+        
+        .status-enabled {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .status-disabled {
+            background: #f8d7da;
+            color: #721c24;
+        }
     </style>
 </head>
 <body>
@@ -406,6 +425,9 @@
                 </button>
                 <button class="tab-btn" onclick="switchTab('recipients')">
                     <i class="fas fa-envelope"></i> Email Recipients
+                </button>
+                <button class="tab-btn" onclick="switchTab('schedules')">
+                    <i class="fas fa-clock"></i> Schedules
                 </button>
                 <button class="tab-btn" onclick="switchTab('email-config')">
                     <i class="fas fa-cog"></i> Email Configuration
@@ -510,6 +532,149 @@
                                     </td>
                                 </tr>
                             {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Schedules Tab -->
+            <div class="tab-content" id="schedules-tab">
+                <div class="settings-section">
+                    <h3><i class="fas fa-clock"></i> Scraping Schedules</h3>
+                    <p style="color: var(--gray-600); margin-bottom: var(--spacing-lg);">
+                        Configure automatic scraping schedules with timezone support and email delivery.
+                    </p>
+                    
+                    <!-- Add New Schedule Form -->
+                    <div style="background: var(--gray-50); padding: var(--spacing-lg); border-radius: var(--radius-lg); margin-bottom: var(--spacing-lg);">
+                        <h4 style="margin-top: 0; margin-bottom: var(--spacing-md);">
+                            <i class="fas fa-plus-circle"></i> Create New Schedule
+                        </h4>
+                        <form id="addScheduleForm" onsubmit="addSchedule(event)">
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--spacing-md); margin-bottom: var(--spacing-md);">
+                                <div>
+                                    <label style="display: block; margin-bottom: 5px; font-weight: 500;">
+                                        Schedule Name <span style="color: var(--danger);">*</span>
+                                    </label>
+                                    <input 
+                                        type="text" 
+                                        name="name" 
+                                        id="scheduleName"
+                                        placeholder="e.g., Daily Morning Scrape" 
+                                        required
+                                        style="width: 100%; padding: 8px 12px; border: 1px solid var(--gray-300); border-radius: var(--radius-md);"
+                                    >
+                                </div>
+                                
+                                <div>
+                                    <label style="display: block; margin-bottom: 5px; font-weight: 500;">
+                                        Frequency <span style="color: var(--danger);">*</span>
+                                    </label>
+                                    <select 
+                                        name="frequency" 
+                                        id="scheduleFrequency"
+                                        required
+                                        style="width: 100%; padding: 8px 12px; border: 1px solid var(--gray-300); border-radius: var(--radius-md);"
+                                    >
+                                        <option value="daily">Daily</option>
+                                        <option value="3-day">Every 3 Days</option>
+                                        <option value="weekly">Weekly</option>
+                                        <option value="monthly">Monthly</option>
+                                    </select>
+                                </div>
+                                
+                                <div>
+                                    <label style="display: block; margin-bottom: 5px; font-weight: 500;">
+                                        Time <span style="color: var(--danger);">*</span>
+                                    </label>
+                                    <input 
+                                        type="time" 
+                                        name="time_of_day" 
+                                        id="scheduleTime"
+                                        required
+                                        style="width: 100%; padding: 8px 12px; border: 1px solid var(--gray-300); border-radius: var(--radius-md);"
+                                    >
+                                </div>
+                                
+                                <div>
+                                    <label style="display: block; margin-bottom: 5px; font-weight: 500;">
+                                        Timezone <span style="color: var(--danger);">*</span>
+                                    </label>
+                                    <select 
+                                        name="timezone" 
+                                        id="scheduleTimezone"
+                                        required
+                                        style="width: 100%; padding: 8px 12px; border: 1px solid var(--gray-300); border-radius: var(--radius-md);"
+                                    >
+                                        <option value="UTC">UTC</option>
+                                        <option value="America/New_York">Eastern Time (ET)</option>
+                                        <option value="America/Chicago">Central Time (CT)</option>
+                                        <option value="America/Denver">Mountain Time (MT)</option>
+                                        <option value="America/Los_Angeles">Pacific Time (PT)</option>
+                                        <option value="America/Toronto">Toronto</option>
+                                        <option value="America/Vancouver">Vancouver</option>
+                                        <option value="Europe/London">London</option>
+                                        <option value="Europe/Paris">Paris</option>
+                                        <option value="Europe/Berlin">Berlin</option>
+                                        <option value="Asia/Tokyo">Tokyo</option>
+                                        <option value="Asia/Shanghai">Shanghai</option>
+                                        <option value="Asia/Hong_Kong">Hong Kong</option>
+                                        <option value="Asia/Singapore">Singapore</option>
+                                        <option value="Asia/Dubai">Dubai</option>
+                                        <option value="Australia/Sydney">Sydney</option>
+                                        <option value="Australia/Melbourne">Melbourne</option>
+                                        <option value="Pacific/Auckland">Auckland</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div style="margin-bottom: var(--spacing-md);">
+                                <label style="display: flex; align-items: center; cursor: pointer;">
+                                    <input 
+                                        type="checkbox" 
+                                        name="send_email" 
+                                        id="scheduleSendEmail"
+                                        checked
+                                        style="margin-right: 8px; cursor: pointer;"
+                                    >
+                                    <span style="font-weight: 500;">Send email after scraping</span>
+                                </label>
+                            </div>
+                            
+                            <button 
+                                type="submit" 
+                                class="btn-primary"
+                                style="padding: 10px 24px; border: none; border-radius: var(--radius-md); cursor: pointer; font-weight: 500;"
+                            >
+                                <i class="fas fa-plus"></i> Create Schedule
+                            </button>
+                        </form>
+                    </div>
+                    
+                    <!-- Schedules Table -->
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Frequency</th>
+                                <th>Time</th>
+                                <th>Timezone</th>
+                                <th>Next Run</th>
+                                <th>Last Run</th>
+                                <th>Email</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="schedulesTableBody">
+                            <tr>
+                                <td colspan="9" style="text-align: center; padding: var(--spacing-xl);">
+                                    <div class="empty-state">
+                                        <i class="fas fa-clock"></i>
+                                        <p>Loading schedules...</p>
+                                    </div>
+                                </td>
+                            </tr>
                         </tbody>
                     </table>
                 </div>

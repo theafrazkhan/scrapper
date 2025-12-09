@@ -104,20 +104,23 @@ class EmailRecipient(db.Model):
 
 
 class Schedule(db.Model):
-    """Scraping schedules"""
+    """Scraping schedules with timezone support"""
     __tablename__ = 'schedules'
     
     id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)  # User-friendly schedule name
     frequency = db.Column(db.String(20), nullable=False)  # 'daily', '3-day', 'weekly', 'monthly'
-    time_of_day = db.Column(db.String(5))  # HH:MM format (24-hour)
+    time_of_day = db.Column(db.String(5), nullable=False)  # HH:MM format (24-hour)
+    timezone = db.Column(db.String(50), nullable=False, default='UTC')  # IANA timezone (e.g., 'America/New_York')
     is_enabled = db.Column(db.Boolean, default=True)
+    send_email = db.Column(db.Boolean, default=True)  # Whether to send email after scraping
     created_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.now)
     last_run = db.Column(db.DateTime)
     next_run = db.Column(db.DateTime)
     
     def __repr__(self):
-        return f'<Schedule {self.frequency} - {"enabled" if self.is_enabled else "disabled"}>'
+        return f'<Schedule {self.name} ({self.frequency}) - {"enabled" if self.is_enabled else "disabled"}>'
 
 
 class EmailSettings(db.Model):
