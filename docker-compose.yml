@@ -8,20 +8,20 @@ services:
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-scraper}
       POSTGRES_USER: ${POSTGRES_USER:-scraper_user}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change_this_password}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-supersecretpassword123}
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
     restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-scraper_user}"]
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - scraper-network
 
   # Lululemon Scraper Application
-  lululemon-scraper:
+  scraper:
     build: .
     container_name: lululemon-scraper
     depends_on:
@@ -30,14 +30,15 @@ services:
     ports:
       - "5000:5000"
     volumes:
-      # Persist scraped data
-      - ./backend/data:/app/backend/data
+      # Persist scraped data and Excel files
+      - scraper_data:/app/backend/data
       # Persist logs
-      - ./backend/logs:/app/backend/logs
+      - scraper_logs:/app/backend/logs
     environment:
       - FLASK_ENV=production
       - SECRET_KEY=${SECRET_KEY:-change-this-secret-key-in-production}
-      - DATABASE_URL=postgresql://${POSTGRES_USER:-scraper_user}:${POSTGRES_PASSWORD:-change_this_password}@postgres:5432/${POSTGRES_DB:-scraper}
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-scraper_user}:${POSTGRES_PASSWORD:-supersecretpassword123}@postgres:5432/${POSTGRES_DB:-scraper}
+      - RESEND_API_KEY=${RESEND_API_KEY:-}
       - PYTHONUNBUFFERED=1
     restart: unless-stopped
     healthcheck:
@@ -45,8 +46,18 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 40s
+      start_period: 60s
+    networks:
+      - scraper-network
+
+networks:
+  scraper-network:
+    driver: bridge
 
 volumes:
   postgres_data:
+    driver: local
+  scraper_data:
+    driver: local
+  scraper_logs:
     driver: local

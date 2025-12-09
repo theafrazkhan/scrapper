@@ -4,24 +4,13 @@ FROM python:3.10-slim
 # Set working directory
 WORKDIR /app
 
-# Set environment variables early
+# Set environment variables
 ENV PYTHONUNBUFFERED=1 \
     FLASK_APP=frontend/app.py \
     PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=0 \
     PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
 
-# Copy requirements files
-COPY frontend/requirements.txt /app/frontend/requirements.txt
-COPY backend/requirements.txt /app/backend/requirements.txt
-
-# Install Python dependencies
-RUN pip install --no-cache-dir -r frontend/requirements.txt && \
-    pip install --no-cache-dir -r backend/requirements.txt
-
-# Install Playwright browser only (skip system deps, we'll install manually)
-RUN playwright install chromium
-
-# Install system dependencies manually for Debian
+# Install system dependencies for Playwright
 RUN apt-get update && apt-get install -y \
     libnss3 \
     libnspr4 \
@@ -40,27 +29,34 @@ RUN apt-get update && apt-get install -y \
     libasound2 \
     libpango-1.0-0 \
     libcairo2 \
+    curl \
     && rm -rf /var/lib/apt/lists/*
+
+# Copy requirements files
+COPY frontend/requirements.txt /app/frontend/requirements.txt
+COPY backend/requirements.txt /app/backend/requirements.txt
+
+# Install Python dependencies
+RUN pip install --no-cache-dir -r frontend/requirements.txt && \
+    pip install --no-cache-dir -r backend/requirements.txt
+
+# Install Playwright browser
+RUN playwright install chromium
 
 # Copy application code
 COPY frontend/ /app/frontend/
 COPY backend/ /app/backend/
 
 # Create necessary directories
-RUN mkdir -p /app/frontend/instance \
-    /app/backend/data/results \
+RUN mkdir -p /app/backend/data/results \
     /app/backend/logs
-
-# Copy initialization script
-COPY docker-init.sh /app/docker-init.sh
-RUN chmod +x /app/docker-init.sh
 
 # Expose Flask port
 EXPOSE 5000
 
-# Set environment variables
-ENV PYTHONUNBUFFERED=1
-ENV FLASK_APP=frontend/app.py
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+    CMD curl -f http://localhost:5000/ || exit 1
 
-# Command to run the application
-CMD ["/app/docker-init.sh"]
+# Start the application
+CMD ["python", "frontend/app.py"]
