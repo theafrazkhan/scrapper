@@ -843,19 +843,36 @@ def run_scheduled_scraping(schedule_id):
             db.session.commit()
             
             try:
-                # Run the scraping pipeline
+                # Run the scraping pipeline with proper environment
+                print(f"📍 Backend directory: {backend_dir}")
+                print(f"📍 Running: python3 {backend_dir / 'run_pipeline.py'}")
+                
+                # Use sys.executable to get the current Python interpreter
+                python_executable = sys.executable
+                
                 result = subprocess.run(
-                    ['python3', str(backend_dir / 'run_pipeline.py')],
+                    [python_executable, str(backend_dir / 'run_pipeline.py')],
                     cwd=str(backend_dir),
                     capture_output=True,
                     text=True,
-                    timeout=7200  # 2 hour timeout
+                    timeout=7200,  # 2 hour timeout
+                    env=os.environ.copy()  # Pass environment variables
                 )
+                
+                print(f"📊 Return code: {result.returncode}")
+                if result.stdout:
+                    print(f"📝 Output: {result.stdout[:500]}")  # First 500 chars
+                if result.stderr:
+                    print(f"❌ Errors: {result.stderr[:500]}")  # First 500 chars
                 
                 # Update history
                 history.status = 'completed' if result.returncode == 0 else 'failed'
                 history.completed_at = datetime.now()
                 history.products_count = extract_products_count(result.stdout)
+                
+                # Store error message if failed
+                if result.returncode != 0:
+                    history.error_message = result.stderr[:500] if result.stderr else 'Unknown error'
                 
                 # Find the generated Excel file
                 excel_file = find_latest_excel_file()
@@ -863,10 +880,13 @@ def run_scheduled_scraping(schedule_id):
                 
                 db.session.commit()
                 
-                print(f"✅ Scheduled scrape completed: {schedule.name}")
+                if result.returncode == 0:
+                    print(f"✅ Scheduled scrape completed: {schedule.name}")
+                else:
+                    print(f"❌ Scheduled scrape failed: {schedule.name}")
                 
-                # Send email if enabled
-                if schedule.send_email and excel_file and os.path.exists(excel_file):
+                # Send email if enabled and successful
+                if schedule.send_email and excel_file and os.path.exists(excel_file) and result.returncode == 0:
                     send_scheduled_email(schedule, excel_file)
                 
             except subprocess.TimeoutExpired:

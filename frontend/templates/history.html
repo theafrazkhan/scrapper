@@ -324,6 +324,11 @@
                                         <i class="fas fa-check-circle"></i> Completed
                                     {% elif h.status == 'failed' %}
                                         <i class="fas fa-times-circle"></i> Failed
+                                        {% if h.error_message %}
+                                        <i class="fas fa-info-circle" 
+                                           style="margin-left: 5px; cursor: help;" 
+                                           title="{{ h.error_message }}"></i>
+                                        {% endif %}
                                     {% elif h.status == 'running' %}
                                         <i class="fas fa-spinner fa-spin"></i> Running
                                     {% else %}
