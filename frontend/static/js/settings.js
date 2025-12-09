@@ -596,11 +596,19 @@ if (window.location.hash === '#lululemon-creds') {
 // ============================================================================
 
 async function loadSchedules() {
+    console.log('loadSchedules() called'); // Debug log
+    const tbody = document.getElementById('schedulesTableBody');
+    
     try {
         const response = await fetch('/api/admin/schedules');
-        const data = await response.json();
+        console.log('API response status:', response.status); // Debug log
         
-        const tbody = document.getElementById('schedulesTableBody');
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        console.log('API data:', data); // Debug log
         
         if (!data.success || data.schedules.length === 0) {
             tbody.innerHTML = `
@@ -655,12 +663,21 @@ async function loadSchedules() {
         
     } catch (error) {
         console.error('Load schedules error:', error);
-        Swal.fire({
-            icon: 'error',
-            title: 'Error',
-            text: 'Failed to load schedules',
-            confirmButtonColor: '#ff6b35'
-        });
+        const tbody = document.getElementById('schedulesTableBody');
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="9" style="text-align: center; padding: var(--spacing-xl);">
+                    <div class="empty-state">
+                        <i class="fas fa-exclamation-triangle" style="color: var(--danger);"></i>
+                        <p style="color: var(--danger);">Failed to load schedules</p>
+                        <p style="font-size: 0.9em; color: var(--gray-600);">${error.message}</p>
+                        <button onclick="loadSchedules()" class="btn-primary" style="margin-top: 10px;">
+                            <i class="fas fa-sync"></i> Retry
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `;
     }
 }
 
