@@ -965,8 +965,7 @@ def send_scheduled_email(schedule, excel_file):
         success = send_excel_email(
             to_emails=email_list,
             excel_path=excel_file,
-            subject=f"Scheduled Lululemon Report - {schedule.name}",
-            body=f"Automated scraping report from schedule: {schedule.name}"
+            scraping_stats=None
         )
         
         if success:

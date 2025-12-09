@@ -711,6 +711,37 @@ body {
     transform: none !important;
 }
 
+/* Icon Buttons */
+.btn-icon {
+    background: transparent;
+    border: none;
+    color: var(--gray-600);
+    cursor: pointer;
+    padding: var(--spacing-sm);
+    border-radius: var(--radius-md);
+    transition: all var(--transition-base);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    font-size: 0.875rem;
+}
+
+.btn-icon:hover {
+    background: var(--gray-100);
+    color: var(--primary);
+    transform: scale(1.1);
+}
+
+.btn-icon:active {
+    transform: scale(0.95);
+}
+
+.btn-icon i {
+    pointer-events: none;
+}
+
 /* Stats Grid */
 .stats-grid {
     display: grid;
