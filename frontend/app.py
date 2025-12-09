@@ -663,10 +663,6 @@ def history():
 @login_required
 def settings():
     """Settings page - includes user management, email & schedule configuration"""
-    if current_user.role != 'admin':
-        flash('Access denied. Admin privileges required.', 'error')
-        return redirect(url_for('index'))
-    
     users = User.query.all()
     email_recipients = EmailRecipient.query.filter_by(is_active=True).all()
     schedules = Schedule.query.all()
@@ -745,19 +741,11 @@ def forgot_password():
     # Find user by email
     user = User.query.filter_by(email=email).first()
     
-    # Check if user exists and is admin
     if not user:
         # Don't reveal if email exists for security (timing-safe response)
         return jsonify({
             'success': True, 
-            'message': 'If this email exists and is an admin account, an OTP has been sent to your email.'
-        })
-    
-    if not user.is_admin():
-        # Same generic message for security
-        return jsonify({
-            'success': True, 
-            'message': 'If this email exists and is an admin account, an OTP has been sent to your email.'
+            'message': 'If this email exists, an OTP has been sent to your email.'
         })
     
     # Generate reset token (OTP)
@@ -801,9 +789,6 @@ def reset_password():
     
     if not user:
         return jsonify({'success': False, 'message': 'Invalid OTP code'}), 400
-    
-    if not user.is_admin():
-        return jsonify({'success': False, 'message': 'Password reset is only available for admin accounts'}), 403
     
     # Verify OTP
     if not user.verify_reset_token(otp):
@@ -1281,9 +1266,6 @@ def email_config():
 @login_required
 def test_email():
     """Send test email"""
-    if current_user.role != 'admin':
-        return jsonify({'success': False, 'error': 'Admin access required'}), 403
-    
     try:
         data = request.get_json()
         email = data.get('email')
