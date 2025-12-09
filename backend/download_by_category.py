@@ -150,15 +150,16 @@ class PageDownloader:
                 # Wait for critical elements to load
                 if VERIFY_INVENTORY:
                     try:
-                        # Wait for either inventory table OR "out of stock" indicator
-                        # This ensures the page is fully rendered
+                        # Just wait for the main product script to be present
+                        # This is more reliable than specific UI elements
                         await page.wait_for_selector(
-                            'details.inventory-grid_accordionItem__XXIck, .product-info, h1',
-                            timeout=10000
+                            'script#__NEXT_DATA__',
+                            timeout=15000  # 15 seconds should be enough
                         )
-                        log.debug(f"[{cat}] ✓ Page elements loaded: {pid}")
+                        log.debug(f"[{cat}] ✓ Page data loaded: {pid}")
                     except Exception as wait_err:
-                        log.warning(f"[{cat}] ⚠️  Timeout waiting for elements: {pid}")
+                        # If even __NEXT_DATA__ isn't present, this is a problem
+                        log.warning(f"[{cat}] ⚠️  Data script timeout: {pid}")
                 
                 # Extra delay to ensure dynamic content is loaded
                 await asyncio.sleep(EXTRA_WAIT / 1000)  # Convert ms to seconds
