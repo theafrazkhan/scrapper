@@ -25,11 +25,14 @@ log = logging.getLogger(__name__)
 # Configuration
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 MAX_CONCURRENT = 10 # 10 concurrent downloads
-PAGE_TIMEOUT = 30000  # 30 seconds
+PAGE_TIMEOUT = 60000  # 60 seconds (increased from 30)
 WAIT_FOR = 'networkidle'  # Wait for network to be idle for fully rendered content
+EXTRA_WAIT = 2000  # Extra wait in milliseconds after page load (increased from 1s to 2s)
+VERIFY_INVENTORY = True  # Verify that inventory table is present before saving
 
 log.info(f"Script directory: {SCRIPT_DIR}")
 log.info(f"Config: MAX_CONCURRENT={MAX_CONCURRENT}, PAGE_TIMEOUT={PAGE_TIMEOUT}ms, WAIT_FOR={WAIT_FOR}")
+log.info(f"        EXTRA_WAIT={EXTRA_WAIT}ms, VERIFY_INVENTORY={VERIFY_INVENTORY}")
 
 
 class PageDownloader:
@@ -125,7 +128,7 @@ class PageDownloader:
         return cat_dir
     
     async def download_page(self, context, url, cat, output_dir, sem):
-        """Download a single fully rendered page"""
+        """Download a single fully rendered page with verification"""
         pid = url.rstrip('/').split('/')[-1]
         output_file = os.path.join(output_dir, f"{pid}.html")
         
@@ -144,11 +147,35 @@ class PageDownloader:
                 log.debug(f"[{cat}] 📥 Downloading: {pid}")
                 await page.goto(url, wait_until=WAIT_FOR, timeout=PAGE_TIMEOUT)
                 
-                # Small delay to ensure everything is loaded
-                await asyncio.sleep(1)
+                # Wait for critical elements to load
+                if VERIFY_INVENTORY:
+                    try:
+                        # Wait for either inventory table OR "out of stock" indicator
+                        # This ensures the page is fully rendered
+                        await page.wait_for_selector(
+                            'details.inventory-grid_accordionItem__XXIck, .product-info, h1',
+                            timeout=10000
+                        )
+                        log.debug(f"[{cat}] ✓ Page elements loaded: {pid}")
+                    except Exception as wait_err:
+                        log.warning(f"[{cat}] ⚠️  Timeout waiting for elements: {pid}")
                 
-                # Get fully rendered HTML
+                # Extra delay to ensure dynamic content is loaded
+                await asyncio.sleep(EXTRA_WAIT / 1000)  # Convert ms to seconds
+                
+                # Verify page has essential content
                 html = await page.content()
+                
+                # Basic verification - check if page has product data
+                if '__NEXT_DATA__' not in html:
+                    log.warning(f"[{cat}] ⚠️  Missing __NEXT_DATA__: {pid}")
+                    raise Exception("Page missing essential data (__NEXT_DATA__)")
+                
+                # Check if page has inventory table (optional - just log if missing)
+                has_inventory = 'inventory-grid_accordionItem__XXIck' in html
+                if not has_inventory:
+                    log.debug(f"[{cat}] ⚠️  No inventory table: {pid}")
+                
                 await page.close()
                 
                 # Save to file
@@ -156,7 +183,8 @@ class PageDownloader:
                     f.write(html)
                 
                 self.stats['done'] += 1
-                log.debug(f"[{cat}] ✓ Saved: {pid} ({len(html)} bytes)")
+                inv_status = "✓" if has_inventory else "⚠"
+                log.debug(f"[{cat}] {inv_status} Saved: {pid} ({len(html)} bytes)")
                 
                 # Progress update every 20 files
                 if self.stats['done'] % 20 == 0:
