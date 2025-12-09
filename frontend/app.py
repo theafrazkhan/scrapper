@@ -18,6 +18,15 @@ from flask_cors import CORS
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash
 
+# ⚠️ CRITICAL: Load environment variables FIRST (for DATABASE_URL, etc.)
+from dotenv import load_dotenv
+env_path = Path(__file__).parent.parent / '.env'
+if env_path.exists():
+    load_dotenv(env_path)
+    print(f"✅ Loaded environment variables from {env_path}")
+else:
+    print(f"⚠️  No .env file found at {env_path} - using defaults")
+
 # ⚠️ CRITICAL: Set umask to 0 IMMEDIATELY so all files are created with open permissions
 # This prevents SQLite temporary files from being created with restrictive permissions
 os.umask(0)
