@@ -1386,6 +1386,14 @@ def manage_users():
         if User.query.filter_by(email=email).first():
             return jsonify({'error': 'User already exists'}), 400
         
+        # Enforce single admin policy
+        if role == 'admin':
+            existing_admin = User.query.filter_by(role='admin').first()
+            if existing_admin:
+                return jsonify({
+                    'error': f'Only one admin account is allowed. Admin account already exists: {existing_admin.email}'
+                }), 400
+        
         user = User(email=email, role=role)
         user.set_password(password)
         db.session.add(user)
@@ -1400,29 +1408,6 @@ def manage_users():
                 'role': user.role
             }
         })
-    
-    elif request.method == 'DELETE':
-        data = request.get_json()
-        user_id = data.get('id')
-        
-        if not user_id:
-            return jsonify({'error': 'User ID required'}), 400
-        
-        # Can't delete yourself or the main admin
-        if user_id == current_user.id:
-            return jsonify({'error': 'Cannot delete your own account'}), 400
-        
-        user = User.query.get(user_id)
-        if not user:
-            return jsonify({'error': 'User not found'}), 404
-        
-        if user.email == 'Joe@aureaclubs.com':
-            return jsonify({'error': 'Cannot delete main admin'}), 400
-        
-        db.session.delete(user)
-        db.session.commit()
-        
-        return jsonify({'success': True, 'message': 'User deleted'})
 
 
 @app.route('/api/admin/users/<int:user_id>', methods=['DELETE'])
@@ -1432,7 +1417,7 @@ def delete_user(user_id):
     if current_user.role != 'admin':
         return jsonify({'success': False, 'error': 'Unauthorized'}), 403
     
-    # Can't delete yourself or the main admin
+    # Can't delete yourself
     if user_id == current_user.id:
         return jsonify({'success': False, 'error': 'Cannot delete your own account'}), 400
     
@@ -1440,8 +1425,9 @@ def delete_user(user_id):
     if not user:
         return jsonify({'success': False, 'error': 'User not found'}), 404
     
-    if user.email == 'Joe@aureaclubs.com':
-        return jsonify({'success': False, 'error': 'Cannot delete main admin'}), 400
+    # Cannot delete admin account (there's only one)
+    if user.role == 'admin':
+        return jsonify({'success': False, 'error': 'Cannot delete the admin account. Admin account is protected.'}), 400
     
     db.session.delete(user)
     db.session.commit()

@@ -626,24 +626,24 @@ def send_password_reset_otp(to_email, otp_code):
         </html>
         """
         
-        response = resend.Emails.send({{
-            "from": f"{{FROM_NAME}} <{{FROM_EMAIL}}>",
+        response = resend.Emails.send({
+            "from": f"{FROM_NAME} <{FROM_EMAIL}>",
             "to": [to_email],
             "subject": "🔐 Password Reset OTP - Admin Account",
             "html": html_content
-        }})
+        })
         
-        return {{
+        return {
             'success': True,
-            'message': f'OTP sent successfully to {{to_email}}',
+            'message': f'OTP sent successfully to {to_email}',
             'id': response.get('id', 'unknown')
-        }}
+        }
         
     except Exception as e:
-        return {{
+        return {
             'success': False,
-            'error': f'Failed to send OTP: {{str(e)}}'
-        }}
+            'error': f'Failed to send OTP: {str(e)}'
+        }
 
 
 def get_email_config():
