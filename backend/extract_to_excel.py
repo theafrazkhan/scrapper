@@ -25,6 +25,7 @@ RECOMMENDATION: Upload the generated .xlsx file to Google Sheets for best compat
 
 import json
 import os
+import sys
 import glob
 from datetime import datetime
 from bs4 import BeautifulSoup
@@ -194,15 +195,18 @@ def extract_inventory_from_html(soup):
 def extract_product_from_html(html_file_path):
     """Extract product data from local HTML file"""
     
-    print("=" * 60)
-    print("Lululemon Product Information Extractor to Excel")
-    print("=" * 60)
+    # Reduced logging - only show file name for brevity
+    # print("=" * 60)
+    # print("ℹ️ Lululemon Product Information Extractor to Excel")
+    # print("=" * 60)
     
     # Read HTML file
     with open(html_file_path, 'r', encoding='utf-8') as f:
         html_content = f.read()
     
-    print(f"Reading HTML from: {html_file_path}")
+    # Only print filename, not full path to reduce output
+    filename = os.path.basename(html_file_path)
+    # print(f"ℹ️ Reading HTML from: {html_file_path}")
     
     # Parse HTML
     soup = BeautifulSoup(html_content, 'html.parser')
@@ -211,45 +215,53 @@ def extract_product_from_html(html_file_path):
     next_data_script = soup.find('script', {'id': '__NEXT_DATA__', 'type': 'application/json'})
     
     if not next_data_script:
-        print("❌ Could not find __NEXT_DATA__ script tag")
+        print(f"❌ Could not find __NEXT_DATA__ in {filename}")
+        sys.stdout.flush()
         return None, None, None
     
     # Parse JSON
     try:
         data = json.loads(next_data_script.string)
-        print("✓ Successfully parsed __NEXT_DATA__ JSON")
+        # print("✓ Successfully parsed __NEXT_DATA__ JSON")
     except json.JSONDecodeError as e:
-        print(f"❌ Error parsing JSON: {e}")
+        print(f"❌ Error parsing JSON in {filename}: {e}")
+        sys.stdout.flush()
         return None, None, None
     
     # Navigate to product data
     try:
         product_data = data['props']['pageProps']['data']['pageFolder']['dataSourceConfigurations'][0]['preloadedValue']['product']
-        print("✓ Found product data")
+        # print("✓ Found product data")
     except (KeyError, IndexError, TypeError) as e:
-        print(f"❌ Error navigating to product data: {e}")
+        print(f"❌ Error navigating to product data in {filename}: {e}")
+        sys.stdout.flush()
         return None, None, None, None
     
-    # Extract inventory data from HTML
+    # Extract inventory data from HTML (silently)
     inventory_data = extract_inventory_from_html(soup)
-    if inventory_data:
-        print(f"✓ Found inventory data for {len(inventory_data)} size(s)")
-    else:
-        print("⚠ No inventory data found in HTML")
+    # if inventory_data:
+    #     print(f"✓ Found inventory data for {len(inventory_data)} size(s)")
+    # else:
+    #     print("ℹ️ ⚠ No inventory data found in HTML")
     
-    # Extract product image from HTML
+    # Extract product image from HTML (silently)
     product_image_url = extract_product_image(soup)
-    if product_image_url:
-        print(f"✓ Found product image")
-    else:
-        print("⚠ No product image found")
+    # if product_image_url:
+    #     print(f"✓ Found product image")
+    # else:
+    #     print("ℹ️ ⚠ No product image found")
     
-    # Extract color swatches
+    # Extract color swatches (silently)
     color_swatches = extract_color_swatches(soup)
-    if color_swatches:
-        print(f"✓ Found {len(color_swatches)} color swatch(es)")
-    else:
-        print("⚠ No color swatches found")
+    # if color_swatches:
+    #     print(f"✓ Found {len(color_swatches)} color swatch(es)")
+    # else:
+    #     print("ℹ️ ⚠ No color swatches found")
+    
+    # Only print success for the product (one line per product)
+    product_name = product_data.get('name', 'Unknown Product')
+    print(f"✓ Extracted: {product_name}")
+    sys.stdout.flush()
     
     return product_data, inventory_data, color_swatches, product_image_url
 
@@ -706,6 +718,7 @@ def create_excel_with_all_products(all_products_data, output_file):
     print("\n" + "=" * 60)
     print("Creating Excel file with category sheets + Summary...")
     print("=" * 60)
+    sys.stdout.flush()
     
     # Create workbook
     wb = Workbook()
@@ -732,6 +745,7 @@ def create_excel_with_all_products(all_products_data, output_file):
         categories = ['women', 'men', 'accessories', 'supplies']
     
     print(f"\nDiscovered categories: {', '.join(categories)}")
+    sys.stdout.flush()
     sheets = {}
     
     for category in categories:
@@ -766,10 +780,14 @@ def create_excel_with_all_products(all_products_data, output_file):
     for category in categories:
         count = sheets[category]['count']
         print(f"  {category.capitalize()}: {count} product(s)")
+    sys.stdout.flush()
     
     # Save workbook
+    print(f"\n💾 Saving Excel file...")
+    sys.stdout.flush()
     wb.save(output_file)
     print(f"\n✓ Excel file saved to: {output_file}")
+    sys.stdout.flush()
 
 
 def main():
@@ -778,6 +796,7 @@ def main():
     print("=" * 60)
     print("Lululemon Product Information Batch Extractor")
     print("=" * 60)
+    sys.stdout.flush()
     
     # Check if web folder exists, if not try data folder
     html_files = []
@@ -785,9 +804,11 @@ def main():
     if os.path.exists(WEB_FOLDER):
         html_files = glob.glob(os.path.join(WEB_FOLDER, "*.html"))
         print(f"\n✓ Checking web folder: {WEB_FOLDER}")
+        sys.stdout.flush()
     
     if not html_files and os.path.exists(DATA_FOLDER):
         print(f"\n✓ Checking data folder: {DATA_FOLDER}")
+        sys.stdout.flush()
         # Look in all subfolders of data folder and track category (dynamically discover)
         html_files_with_category = []
         
@@ -805,6 +826,7 @@ def main():
                 if subfolder_files:
                     print(f"  Found {len(subfolder_files)} files in {subfolder}")
         
+        sys.stdout.flush()
         # Convert to simple list for counting, keep category mapping
         html_files = [f[0] for f in html_files_with_category]
         # Create a mapping of file to category
@@ -817,19 +839,23 @@ def main():
         print(f"Creating web folder: {WEB_FOLDER}")
         os.makedirs(WEB_FOLDER, exist_ok=True)
         print(f"✓ Folder created. Please add HTML files to: {WEB_FOLDER}")
+        sys.stdout.flush()
         return
     
     print(f"\n✓ Found {len(html_files)} HTML file(s) to process")
     print("-" * 60)
+    sys.stdout.flush()
     
     # Process all HTML files
     all_products_data = []
     successful = 0
     failed = 0
     
-    for html_file in html_files:
-        filename = os.path.basename(html_file)
-        print(f"\nProcessing: {filename}")
+    for idx, html_file in enumerate(html_files, 1):
+        # Progress update every 10 files or at the start
+        if idx % 10 == 0 or idx == 1:
+            print(f"\n📊 Progress: {idx}/{len(html_files)} files processed...")
+            sys.stdout.flush()
         
         # Determine category from file path
         category = file_category_map.get(html_file, 'women')  # default to women
@@ -846,17 +872,22 @@ def main():
                     'category': category
                 })
                 successful += 1
-                print(f"  ✓ Successfully extracted: {product.get('name', 'Unknown')} [Category: {category}]")
+                # Product name is already printed in extract_product_from_html
             else:
                 failed += 1
-                print(f"  ❌ Failed to extract product data")
+                filename = os.path.basename(html_file)
+                print(f"❌ Failed to extract from {filename}")
+                sys.stdout.flush()
         except Exception as e:
             failed += 1
-            print(f"  ❌ Error processing file: {e}")
+            filename = os.path.basename(html_file)
+            print(f"❌ Error in {filename}: {e}")
+            sys.stdout.flush()
     
     # Check if we have any products to export
     if not all_products_data:
         print("\n❌ No products were successfully extracted")
+        sys.stdout.flush()
         return
     
     # Create results directory if it doesn't exist
@@ -866,6 +897,9 @@ def main():
     # Generate output filename with timestamp (save in data/results/)
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     output_file = os.path.join(results_folder, f"all_products_{timestamp}.xlsx")
+    
+    print(f"\n📝 Creating Excel file with {len(all_products_data)} products...")
+    sys.stdout.flush()
     
     # Create Excel file with all products
     create_excel_with_all_products(all_products_data, output_file)
@@ -879,6 +913,7 @@ def main():
     print(f"Failed: {failed}")
     print(f"Total products in Excel: {len(all_products_data)}")
     print("=" * 60)
+    sys.stdout.flush()
     
     return output_file
 
