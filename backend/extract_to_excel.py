@@ -719,8 +719,19 @@ def create_excel_with_all_products(all_products_data, output_file):
     setup_summary_worksheet(summary_ws)
     summary_row = 2
     
-    # Create sheets for each category
-    categories = ['accessories', 'men', 'women', 'supplies']
+    # Dynamically discover categories from HTML folder structure
+    categories = []
+    if os.path.exists(DATA_FOLDER):
+        categories = [f for f in os.listdir(DATA_FOLDER) if os.path.isdir(os.path.join(DATA_FOLDER, f))]
+        # Sort to ensure consistent order: whats-new, women, men, accessories, supplies
+        priority_order = ['whats-new', 'women', 'men', 'accessories', 'supplies']
+        categories.sort(key=lambda x: priority_order.index(x) if x in priority_order else len(priority_order))
+    
+    if not categories:
+        # Fallback to default categories if discovery fails
+        categories = ['women', 'men', 'accessories', 'supplies']
+    
+    print(f"\nDiscovered categories: {', '.join(categories)}")
     sheets = {}
     
     for category in categories:

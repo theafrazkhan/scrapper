@@ -87,18 +87,15 @@ def parse_log_to_user_message(log_line):
     if not line:
         return None, False
     
-    # Skip timestamp lines at the start
-    if re.match(r'^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}', line):
-        return None, False
-    
-    # Skip separator lines
-    if re.match(r'^[=\-]{20,}$', line):
-        return None, False
-    
-    # Extract message from logging format (2025-12-06 18:26:53,368 - INFO - message)
+    # Extract message from logging format FIRST (2025-12-06 18:26:53,368 - INFO - message)
+    # This must come before other checks to properly parse timestamped logs
     log_match = re.match(r'^[\d\-: ,]+ - (?:INFO|ERROR|WARNING|DEBUG) - (.+)$', line)
     if log_match:
         line = log_match.group(1).strip()
+    
+    # Skip separator lines after extracting message
+    if re.match(r'^[=\-]{20,}$', line):
+        return None, False
     
     # Map technical messages to user-friendly ones
     friendly_mappings = {
@@ -132,16 +129,23 @@ def parse_log_to_user_message(log_line):
         'Extracting links': '🔍 Scanning for products...',
         'Downloading category page': '📄 Loading category...',
         'Found product links': '✓ Products found',
+        'links saved to': '✅ Product links saved',
         
         # Download phase
         'Downloading HTML': '📥 Fetching product details...',
         'Downloaded page': '✓ Product downloaded',
+        'Starting downloads': '📥 Starting product downloads...',
+        'download completed': '✅ Downloads complete',
         
         # Excel generation
         'Generating Excel': '📊 Building your report...',
         'Extracting product data': '📋 Processing products...',
         'Excel report generated': '✅ Report ready!',
+        'Creating Excel file': '📊 Generating Excel report...',
+        'Excel file saved to': '✅ Excel report saved!',
+        'BATCH EXTRACTION COMPLETE': '✅ Product extraction complete!',
         '✅ PIPELINE COMPLETED': '🎉 All done! Your data is ready.',
+        'PIPELINE COMPLETED SUCCESSFULLY': '🎉 All done! Your data is ready.',
         'PIPELINE COMPLETED': '🎉 All done! Your data is ready.',
         '🎉 All done': '🎉 All done! Your data is ready.',
     }
@@ -158,6 +162,30 @@ def parse_log_to_user_message(log_line):
             current = int(match.group(1))
             total = int(match.group(2))
             return f'📥 Downloaded {current} of {total} products...', True
+    
+    # Handle product extraction progress (e.g., "Successfully extracted: Product Name")
+    if 'Successfully extracted:' in line or '✓ Successfully extracted:' in line:
+        product_match = re.search(r'Successfully extracted:\s*(.+?)(?:\s*\[Category:|$)', line)
+        if product_match:
+            product_name = product_match.group(1).strip()
+            # Truncate long names
+            if len(product_name) > 50:
+                product_name = product_name[:47] + '...'
+            return f'✓ Extracted: {product_name}', True
+    
+    # Handle processing messages
+    if 'Processing:' in line:
+        return None, False  # Too verbose, skip
+    
+    # Handle summary messages (e.g., "Total HTML files processed: 528")
+    if 'Total HTML files processed:' in line or 'Successfully extracted:' in line and 'Failed:' not in line:
+        match = re.search(r'(\d+)', line)
+        if match and 'Total HTML files processed:' in line:
+            return f'📊 Processed {match.group(1)} product pages', True
+    
+    # Handle products added to sheets
+    if 'product(s)' in line.lower() and any(cat in line for cat in ['Summary:', 'Accessories:', 'Men:', 'Women:', 'Supplies:']):
+        return f'✓ {line}', True
     
     # Handle category mentions
     if any(cat in line.lower() for cat in ['women', 'men', 'accessories', 'supplies']):
@@ -213,6 +241,11 @@ def run_backend_pipeline(user_id):
             db.session.add(history)
             db.session.commit()
             
+            # Track pipeline phase for progress calculation
+            current_phase = 0  # 0=login, 1=extract_links, 2=download, 3=excel
+            phase_base_progress = [0, 10, 20, 80]  # Base progress for each phase
+            phase_weight = [10, 10, 60, 20]  # Progress weight for each phase
+            
             # Run the existing run_pipeline.py script
             pipeline_script = backend_dir / 'run_pipeline.py'
             
@@ -233,6 +266,60 @@ def run_backend_pipeline(user_id):
                     
                 line = line.strip()
                 if line:
+                    # Detect phase transitions
+                    if 'STEP 1: Login & Save Cookies' in line or 'Login & Cookie Extractor' in line:
+                        current_phase = 0
+                        socketio.emit('scraping_progress', {
+                            'message': '🔐 Logging in to wholesale portal...',
+                            'progress': 0,
+                            'type': 'info'
+                        })
+                    elif 'STEP 2: Extract Product Links' in line or 'Product Link Extractor' in line:
+                        current_phase = 1
+                        socketio.emit('scraping_progress', {
+                            'message': '🔍 Extracting product links...',
+                            'progress': 10,
+                            'type': 'info'
+                        })
+                    elif 'STEP 3: Download Product Pages' in line or 'Lululemon Category Downloader' in line:
+                        current_phase = 2
+                        socketio.emit('scraping_progress', {
+                            'message': '📥 Downloading product pages...',
+                            'progress': 20,
+                            'type': 'info'
+                        })
+                    elif 'STEP 4: Generate Excel Report' in line or 'Excel Report Generator' in line:
+                        current_phase = 3
+                        socketio.emit('scraping_progress', {
+                            'message': '📊 Generating Excel report...',
+                            'progress': 80,
+                            'type': 'info'
+                        })
+                    
+                    # Track sub-steps within Phase 0 (Login) for more granular progress
+                    if current_phase == 0:
+                        if 'Setting up Chrome WebDriver' in line or 'Chrome WebDriver initialized' in line:
+                            socketio.emit('scraping_progress', {'progress': 2})
+                        elif 'Navigating to' in line or 'Looking for email' in line:
+                            socketio.emit('scraping_progress', {'progress': 4})
+                        elif 'Entering email' in line:
+                            socketio.emit('scraping_progress', {'progress': 5})
+                        elif 'Entering password' in line:
+                            socketio.emit('scraping_progress', {'progress': 6})
+                        elif 'Login successful' in line:
+                            socketio.emit('scraping_progress', {'progress': 8})
+                        elif 'Discovering categories' in line or 'Found:' in line:
+                            socketio.emit('scraping_progress', {'progress': 9})
+                    
+                    # Track sub-steps within Phase 1 (Extract Links) for more granular progress
+                    if current_phase == 1:
+                        if 'Reading links' in line or 'Processing category' in line:
+                            socketio.emit('scraping_progress', {'progress': 12})
+                        elif 'Extracted' in line and 'product links' in line:
+                            socketio.emit('scraping_progress', {'progress': 15})
+                        elif 'Saved' in line or 'Writing to' in line:
+                            socketio.emit('scraping_progress', {'progress': 18})
+                    
                     # Convert technical log to user-friendly message
                     user_message, should_display = parse_log_to_user_message(line)
                     
@@ -244,7 +331,34 @@ def run_backend_pipeline(user_id):
                         })
                     
                     # Parse specific progress messages
-                    if 'Downloaded' in line and '/' in line:
+                    # Handle "Progress: 20/531 done, 0 failed" format from download_by_category.py
+                    if 'Progress:' in line and '/' in line:
+                        try:
+                            # Extract numbers like "Progress: 20/531 done"
+                            match = re.search(r'Progress:\s*(\d+)/(\d+)', line)
+                            if match:
+                                current = int(match.group(1))
+                                total = int(match.group(2))
+                                scraping_stats['products_scraped'] = current
+                                scraping_stats['total_products'] = total
+                                
+                                # Calculate progress within current phase
+                                phase_progress = int((current / total) * 100) if total > 0 else 0
+                                
+                                # Map to overall progress (phase 2 = download = 20-80%)
+                                overall_progress = phase_base_progress[current_phase] + int(phase_progress * phase_weight[current_phase] / 100)
+                                scraping_stats['progress'] = overall_progress
+                                
+                                socketio.emit('scraping_progress', {
+                                    'downloaded': current,
+                                    'total_products': total,
+                                    'progress': overall_progress
+                                })
+                        except:
+                            pass
+                    
+                    # Also handle legacy "Downloaded X/Y" format
+                    elif 'Downloaded' in line and '/' in line:
                         try:
                             # Extract numbers like "Downloaded 50/531 pages"
                             match = re.search(r'(\d+)/(\d+)', line)
@@ -253,23 +367,72 @@ def run_backend_pipeline(user_id):
                                 total = int(match.group(2))
                                 scraping_stats['products_scraped'] = current
                                 scraping_stats['total_products'] = total
-                                scraping_stats['progress'] = int((current / total) * 100) if total > 0 else 0
+                                
+                                # Calculate progress within current phase
+                                phase_progress = int((current / total) * 100) if total > 0 else 0
+                                
+                                # Map to overall progress
+                                overall_progress = phase_base_progress[current_phase] + int(phase_progress * phase_weight[current_phase] / 100)
+                                scraping_stats['progress'] = overall_progress
                                 
                                 socketio.emit('scraping_progress', {
                                     'downloaded': current,
-                                    'total': total,
-                                    'percentage': scraping_stats['progress']
+                                    'total_products': total,
+                                    'progress': overall_progress
                                 })
                         except:
                             pass
                     
-                    # Track category progress
-                    if 'Downloading' in line or any(cat in line.lower() for cat in ['women', 'men', 'accessories', 'supplies']):
-                        for category in ['men', 'women', 'accessories', 'supplies']:
-                            if category in line.lower():
-                                scraping_stats['current_category'] = category.title()
+                    # Track extraction progress (e.g., "✓ Extracted: Product Name")
+                    if '✓ Extracted:' in line or 'Successfully extracted:' in line:
+                        try:
+                            # Count total extracted products
+                            scraping_stats['products_extracted'] = scraping_stats.get('products_extracted', 0) + 1
+                            
+                            # If we know total HTML files, calculate extraction progress
+                            if scraping_stats.get('total_products'):
+                                extracted = scraping_stats['products_extracted']
+                                total = scraping_stats['total_products']
+                                phase_progress = int((extracted / total) * 100) if total > 0 else 0
+                                
+                                # Map to overall progress (phase 3 = excel = 80-100%)
+                                overall_progress = phase_base_progress[current_phase] + int(phase_progress * phase_weight[current_phase] / 100)
+                                scraping_stats['progress'] = overall_progress
+                                
                                 socketio.emit('scraping_progress', {
-                                    'category': category.title()
+                                    'downloaded': extracted,
+                                    'total_products': total,
+                                    'progress': overall_progress
+                                })
+                        except:
+                            pass
+                    
+                    # Track category progress and initial counts
+                    # Format: "CATEGORY: WOMEN (531 products)" or "CATEGORY: MEN (245 products)"
+                    if 'CATEGORY:' in line:
+                        try:
+                            cat_match = re.search(r'CATEGORY:\s*(\w+)\s*\((\d+)\s*products?\)', line, re.IGNORECASE)
+                            if cat_match:
+                                category = cat_match.group(1).title()
+                                count = int(cat_match.group(2))
+                                scraping_stats['current_category'] = category
+                                scraping_stats['total_products'] = scraping_stats.get('total_products', 0) + count
+                                
+                                socketio.emit('scraping_progress', {
+                                    'category': category,
+                                    'total_products': scraping_stats.get('total_products', 0),
+                                    'message': f'Starting {category} category ({count} products)...'
+                                })
+                        except:
+                            pass
+                    
+                    # Track legacy format
+                    elif 'Downloading' in line or any(cat in line.lower() for cat in ['women', 'men', 'accessories', 'supplies', 'whats-new']):
+                        for category in ['men', 'women', 'accessories', 'supplies', 'whats-new']:
+                            if category in line.lower():
+                                scraping_stats['current_category'] = category.replace('-', ' ').title()
+                                socketio.emit('scraping_progress', {
+                                    'category': category.replace('-', ' ').title()
                                 })
             
             scraping_process.wait()

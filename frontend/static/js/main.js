@@ -361,6 +361,8 @@ async function stopScraping() {
 
 // Handle scraping progress updates
 function handleScrapingProgress(data) {
+    console.log('Progress update received:', data); // Debug logging
+    
     // Update stats
     if (data.total_products !== undefined) {
         document.getElementById('totalProducts').textContent = data.total_products;
@@ -376,6 +378,7 @@ function handleScrapingProgress(data) {
     
     // Update progress bar
     if (data.progress !== undefined) {
+        console.log('Updating progress bar to:', data.progress + '%'); // Debug logging
         const progressBar = document.getElementById('progressBar');
         const progressText = document.getElementById('progressText');
         

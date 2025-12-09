@@ -87,11 +87,8 @@ def login_to_wholesale(driver):
     print(f"Navigating to {LOGIN_URL}...")
     driver.get(LOGIN_URL)
     
-    # Wait for page to load
-    time.sleep(3)
-    
     try:
-        # Wait for and find the email input field
+        # Wait for and find the email input field (page load implicit)
         print("Looking for email input field...")
         email_input = WebDriverWait(driver, 15).until(
             EC.presence_of_element_located((By.ID, "email"))
@@ -101,14 +98,12 @@ def login_to_wholesale(driver):
         print(f"Entering email: {EMAIL}")
         email_input.clear()
         email_input.send_keys(EMAIL)
-        time.sleep(1)
         
-        # Find and enter password
+        # Find and enter password (no delay needed)
         print("Entering password...")
         password_input = driver.find_element(By.ID, "password")
         password_input.clear()
         password_input.send_keys(PASSWORD)
-        time.sleep(1)
         
         # Find and click the login button
         print("Clicking login button...")
@@ -121,8 +116,8 @@ def login_to_wholesale(driver):
             lambda d: "wholesale.lululemon.com" in d.current_url and d.current_url != LOGIN_URL
         )
         
-        # Additional wait to ensure all cookies are set
-        time.sleep(5)
+        # Brief wait to ensure cookies are set (reduced from 5s to 2s)
+        time.sleep(2)
         
         print("✓ Login successful!")
         print(f"Current URL: {driver.current_url}")
@@ -149,7 +144,8 @@ def discover_categories(driver):
         # Navigate to home page if not already there
         if driver.current_url == LOGIN_URL or "/login" in driver.current_url:
             driver.get(BASE_URL)
-            time.sleep(3)
+            # Wait for navigation to load (reduced from 3s to 1.5s)
+            time.sleep(1.5)
         
         # Find the primary navigation with all category links
         # Look for: class="primary-nav_primaryNavAnchor__A22xB"
@@ -230,17 +226,14 @@ def extract_product_count(driver, category_name, url):
     print(f"\n  Navigating to {category_name}...")
     driver.get(url)
     
-    # Wait for the page to load
-    time.sleep(5)
-    
     try:
         # Look for the div with product count: "Showing 12 of 246 items"
-        # Try multiple selectors
+        # Wait for element to appear instead of fixed sleep
         product_count_element = None
         
         # Method 1: Look for the specific div with class
         try:
-            product_count_element = WebDriverWait(driver, 10).until(
+            product_count_element = WebDriverWait(driver, 8).until(
                 EC.presence_of_element_located((By.CSS_SELECTOR, "div.bg-white.px-16.pt-16 p.lll-type-label-medium"))
             )
         except:
@@ -249,7 +242,9 @@ def extract_product_count(driver, category_name, url):
         # Method 2: Look for any paragraph with similar text pattern
         if not product_count_element:
             try:
-                product_count_element = driver.find_element(By.XPATH, "//p[contains(text(), 'Showing') and contains(text(), 'of') and contains(text(), 'items')]")
+                product_count_element = WebDriverWait(driver, 5).until(
+                    EC.presence_of_element_located((By.XPATH, "//p[contains(text(), 'Showing') and contains(text(), 'of') and contains(text(), 'items')]"))
+                )
             except:
                 pass
         
@@ -375,16 +370,20 @@ def main():
             print("\n✗ No categories discovered. Exiting.")
             return
         
-        # Extract product counts from category pages
-        print("\n[Step 3/4] Extracting product counts from category pages...")
+        # Extract product counts from category pages (FAST MODE: use default 500)
+        print("\n[Step 3/4] Setting up category data (using fast mode)...")
         category_data = {}
+        
+        # OPTIMIZATION: Skip individual page visits, use high default limit
+        # The download script will handle pagination properly
+        print("  ⚡ Fast mode: Using default limit of 500 per category")
         for category_name, cat_info in categories.items():
-            count = extract_product_count(driver, category_name, cat_info['url'])
             category_data[category_name] = {
                 'url': cat_info['url'],
-                'count': count,
+                'count': 500,  # High default - download script will handle actual count
                 'display_name': cat_info['display_name']
             }
+            print(f"  ✓ {cat_info['display_name']}: limit=500")
         
         # Save cookies
         print("\n[Step 3.5/4] Saving cookies...")
@@ -409,7 +408,6 @@ def main():
         # Close the browser
         if driver:
             print("\nClosing browser...")
-            time.sleep(2)  # Brief pause before closing
             driver.quit()
 
 if __name__ == "__main__":

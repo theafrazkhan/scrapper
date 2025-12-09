@@ -52,7 +52,9 @@ def read_category_links():
                 if url:
                     # Extract category name from URL
                     # Example: https://wholesale.lululemon.com/lululemon/women?... -> women
-                    if '/women' in url:
+                    if '/whats-new' in url or '/what-new' in url:
+                        categories['whats-new'] = url
+                    elif '/women' in url:
                         categories['women'] = url
                     elif '/men' in url:
                         categories['men'] = url

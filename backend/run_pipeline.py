@@ -110,6 +110,48 @@ def run_script(script_name, description):
         logging.error(f"❌ Error running {script_name}: {e}")
         return False
 
+def cleanup_temporary_files():
+    """Clean up temporary files after successful scraping, keeping only logs and results"""
+    logging.info("\n" + "="*70)
+    logging.info("CLEANUP: Removing temporary files...")
+    logging.info("="*70)
+    
+    data_dir = Path(__file__).parent / "data"
+    
+    try:
+        import shutil
+        
+        # List of folders/files to delete
+        cleanup_items = [
+            data_dir / "cookie",
+            data_dir / "categories", 
+            data_dir / "html",
+            data_dir / "links.csv"
+        ]
+        
+        for item in cleanup_items:
+            if item.exists():
+                if item.is_dir():
+                    shutil.rmtree(item)
+                    logging.info(f"✓ Deleted folder: {item.name}/")
+                else:
+                    item.unlink()
+                    logging.info(f"✓ Deleted file: {item.name}")
+            else:
+                logging.info(f"⚠️  Not found: {item.name}")
+        
+        # Keep only logs and results
+        logging.info("\n✓ Cleanup complete! Kept folders:")
+        logging.info("  - logs/")
+        logging.info("  - results/")
+        
+        return True
+        
+    except Exception as e:
+        logging.error(f"❌ Error during cleanup: {e}")
+        return False
+
+
 def main():
     """Main pipeline function"""
     # Setup logging
@@ -138,6 +180,9 @@ def main():
             logging.error(f"\n❌ Pipeline failed at: {script}")
             logging.error("Check the log file for details")
             sys.exit(1)
+    
+    # Clean up temporary files
+    cleanup_temporary_files()
     
     # Success!
     logging.info("\n" + "="*70)
