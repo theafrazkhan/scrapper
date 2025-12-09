@@ -70,9 +70,26 @@ def setup_driver():
     chrome_options.add_experimental_option('useAutomationExtension', False)
     
     try:
-        # Use webdriver_manager to automatically download and manage chromedriver
-        print("Installing/updating ChromeDriver...")
-        service = Service(ChromeDriverManager().install())
+        # Check if we're in Docker (has system chromium)
+        chrome_bin = os.environ.get('CHROME_BIN')
+        chromedriver_path = os.environ.get('CHROMEDRIVER_PATH')
+        
+        if chrome_bin and os.path.exists(chrome_bin):
+            # Use system-installed Chromium (Docker)
+            print(f"Using system Chromium: {chrome_bin}")
+            chrome_options.binary_location = chrome_bin
+            
+            if chromedriver_path and os.path.exists(chromedriver_path):
+                print(f"Using system ChromeDriver: {chromedriver_path}")
+                service = Service(chromedriver_path)
+            else:
+                # Try default path
+                service = Service('/usr/bin/chromedriver')
+        else:
+            # Use webdriver_manager to automatically download and manage chromedriver
+            print("Installing/updating ChromeDriver...")
+            service = Service(ChromeDriverManager().install())
+        
         driver = webdriver.Chrome(service=service, options=chrome_options)
         driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
         print("✓ Chrome WebDriver initialized successfully")
