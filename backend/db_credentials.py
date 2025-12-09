@@ -13,6 +13,31 @@ from pathlib import Path
 frontend_dir = Path(__file__).parent.parent / 'frontend'
 sys.path.insert(0, str(frontend_dir))
 
+def get_database_url():
+    """Get database URL from environment or .env file"""
+    # First check environment variable
+    database_url = os.environ.get('DATABASE_URL')
+    
+    if not database_url:
+        # Try loading from .env file
+        try:
+            from dotenv import load_dotenv
+            env_path = Path(__file__).parent.parent / '.env'
+            if env_path.exists():
+                load_dotenv(env_path)
+                database_url = os.environ.get('DATABASE_URL')
+        except ImportError:
+            pass
+    
+    if not database_url:
+        raise ValueError("DATABASE_URL environment variable is not set!")
+    
+    # Handle postgres:// vs postgresql:// schemes
+    if database_url.startswith('postgres://'):
+        database_url = database_url.replace('postgres://', 'postgresql://', 1)
+    
+    return database_url
+
 def get_credentials():
     """
     Fetch active Lululemon credentials from database.
@@ -23,10 +48,12 @@ def get_credentials():
         from flask import Flask
         from database import db, LululemonCredentials
         
+        # Get database URL from environment
+        database_url = get_database_url()
+        
         # Create minimal Flask app to access database
         app = Flask(__name__)
-        # Use the instance folder database path (Flask default)
-        app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{frontend_dir}/instance/scraper.db'
+        app.config['SQLALCHEMY_DATABASE_URI'] = database_url
         app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
         
         # Initialize database
@@ -43,6 +70,8 @@ def get_credentials():
                 
     except Exception as e:
         print(f"Error fetching credentials from database: {e}")
+        import traceback
+        traceback.print_exc()
         return (None, None)
 
 
@@ -56,8 +85,10 @@ def update_last_used():
         from database import db, LululemonCredentials
         from datetime import datetime
         
+        database_url = get_database_url()
+        
         app = Flask(__name__)
-        app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{frontend_dir}/instance/scraper.db'
+        app.config['SQLALCHEMY_DATABASE_URI'] = database_url
         app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
         
         db.init_app(app)
