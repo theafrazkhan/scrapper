@@ -651,10 +651,7 @@ def logout():
 @login_required
 def history():
     """View scraping history"""
-    if current_user.role == 'admin':
-        history_records = ScrapingHistory.query.order_by(ScrapingHistory.started_at.desc()).all()
-    else:
-        history_records = ScrapingHistory.query.filter_by(triggered_by=current_user.id).order_by(ScrapingHistory.started_at.desc()).all()
+    history_records = ScrapingHistory.query.order_by(ScrapingHistory.started_at.desc()).all()
     
     return render_template('history.html', history=history_records, user=current_user)
 
@@ -683,8 +680,7 @@ def api_status():
         'stats': scraping_stats,
         'logged_in': current_user.is_authenticated,
         'user': {
-            'email': current_user.email,
-            'role': current_user.role
+            'email': current_user.email
         } if current_user.is_authenticated else None
     })
 
@@ -1341,16 +1337,13 @@ def send_scraping_results():
 @app.route('/api/admin/users', methods=['GET', 'POST', 'DELETE'])
 @login_required
 def manage_users():
-    """Manage users - admin only"""
-    if current_user.role != 'admin':
-        return jsonify({'error': 'Unauthorized'}), 403
+    """Manage users"""
     
     if request.method == 'GET':
         users = User.query.all()
         return jsonify([{
             'id': u.id,
             'email': u.email,
-            'role': u.role,
             'is_active': u.is_active,
             'created_at': u.created_at.isoformat() if u.created_at else None,
             'last_login': u.last_login.isoformat() if u.last_login else None
@@ -1360,7 +1353,6 @@ def manage_users():
         data = request.get_json()
         email = data.get('email')
         password = data.get('password')
-        role = data.get('role', 'user')
         
         if not email or not password:
             return jsonify({'error': 'Email and password required'}), 400
@@ -1368,15 +1360,7 @@ def manage_users():
         if User.query.filter_by(email=email).first():
             return jsonify({'error': 'User already exists'}), 400
         
-        # Enforce single admin policy
-        if role == 'admin':
-            existing_admin = User.query.filter_by(role='admin').first()
-            if existing_admin:
-                return jsonify({
-                    'error': f'Only one admin account is allowed. Admin account already exists: {existing_admin.email}'
-                }), 400
-        
-        user = User(email=email, role=role)
+        user = User(email=email)
         user.set_password(password)
         db.session.add(user)
         db.session.commit()
@@ -1386,8 +1370,7 @@ def manage_users():
             'message': 'User created',
             'user': {
                 'id': user.id,
-                'email': user.email,
-                'role': user.role
+                'email': user.email
             }
         })
 
@@ -1396,8 +1379,6 @@ def manage_users():
 @login_required
 def delete_user(user_id):
     """Delete a user"""
-    if current_user.role != 'admin':
-        return jsonify({'success': False, 'error': 'Unauthorized'}), 403
     
     # Can't delete yourself
     if user_id == current_user.id:
@@ -1420,9 +1401,7 @@ def delete_user(user_id):
 @app.route('/api/admin/email_recipients', methods=['GET', 'POST', 'DELETE'])
 @login_required
 def manage_email_recipients():
-    """Manage email recipients - admin only"""
-    if current_user.role != 'admin':
-        return jsonify({'error': 'Unauthorized'}), 403
+    """Manage email recipients"""
     
     if request.method == 'GET':
         recipients = EmailRecipient.query.filter_by(is_active=True).all()

@@ -19,7 +19,6 @@ class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(120), unique=True, nullable=False, index=True)
     password_hash = db.Column(db.String(255), nullable=False)
-    role = db.Column(db.String(20), nullable=False, default='user')  # 'admin' or 'user'
     is_active = db.Column(db.Boolean, default=True)
     created_at = db.Column(db.DateTime, default=datetime.now)
     last_login = db.Column(db.DateTime)
@@ -37,10 +36,6 @@ class User(UserMixin, db.Model):
     def check_password(self, password):
         """Check if provided password matches hash"""
         return check_password_hash(self.password_hash, password)
-    
-    def is_admin(self):
-        """Check if user is an admin"""
-        return self.role == 'admin'
     
     def generate_reset_token(self):
         """Generate a 6-digit OTP for password reset"""
