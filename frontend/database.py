@@ -162,17 +162,41 @@ def init_db(app):
     from pathlib import Path
     
     with app.app_context():
-        # Create all tables
-        db.create_all()
-        
-        # Ensure database file has proper permissions
+        # Ensure instance directory exists with proper permissions
         try:
             db_uri = app.config['SQLALCHEMY_DATABASE_URI']
             if db_uri.startswith('sqlite:///'):
                 db_path = db_uri.replace('sqlite:///', '')
+                db_dir = os.path.dirname(db_path)
+                
+                # Create directory with full permissions if it doesn't exist
+                if not os.path.exists(db_dir):
+                    os.makedirs(db_dir, mode=0o777, exist_ok=True)
+                else:
+                    # Ensure directory has proper permissions
+                    os.chmod(db_dir, 0o777)
+        except Exception as e:
+            print(f"⚠️  Warning setting directory permissions: {e}")
+        
+        # Create all tables
+        db.create_all()
+        
+        # Set permissions for database and all related files
+        try:
+            db_uri = app.config['SQLALCHEMY_DATABASE_URI']
+            if db_uri.startswith('sqlite:///'):
+                db_path = db_uri.replace('sqlite:///', '')
+                
+                # Set permissions for main database file
                 if os.path.exists(db_path):
                     os.chmod(db_path, 0o666)  # rw-rw-rw-
                     print(f"✅ Database initialized: {db_path}")
+                    
+                    # Set permissions for SQLite journal files if they exist
+                    for suffix in ['-journal', '-wal', '-shm']:
+                        journal_path = db_path + suffix
+                        if os.path.exists(journal_path):
+                            os.chmod(journal_path, 0o666)
                 else:
                     print(f"✅ Database will be created: {db_path}")
         except Exception as e:

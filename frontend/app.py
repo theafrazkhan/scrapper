@@ -62,6 +62,36 @@ login_manager.login_view = 'login'
 def load_user(user_id):
     return User.query.get(int(user_id))
 
+
+# Fix database permissions on first request
+@app.before_request
+def fix_db_permissions():
+    """Ensure database files have proper permissions before each request"""
+    import os
+    try:
+        db_uri = app.config.get('SQLALCHEMY_DATABASE_URI', '')
+        if db_uri.startswith('sqlite:///'):
+            db_path = db_uri.replace('sqlite:///', '')
+            
+            # Fix main database file
+            if os.path.exists(db_path):
+                try:
+                    os.chmod(db_path, 0o666)
+                except:
+                    pass
+            
+            # Fix journal files
+            for suffix in ['-journal', '-wal', '-shm']:
+                journal_path = db_path + suffix
+                if os.path.exists(journal_path):
+                    try:
+                        os.chmod(journal_path, 0o666)
+                    except:
+                        pass
+    except:
+        pass
+
+
 # Global state
 scraping_active = False
 scraping_process = None
