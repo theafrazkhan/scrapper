@@ -18,6 +18,11 @@ from flask_cors import CORS
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash
 
+# ⚠️ CRITICAL: Set umask to 0 IMMEDIATELY so all files are created with open permissions
+# This prevents SQLite temporary files from being created with restrictive permissions
+os.umask(0)
+print("🔧 umask set to 0 for open file permissions")
+
 # Import our modules
 from database import db, User, ScrapingHistory, EmailRecipient, Schedule, EmailSettings, LululemonCredentials, init_db
 from auth import create_default_admin
