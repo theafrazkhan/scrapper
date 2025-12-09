@@ -249,16 +249,16 @@
                 </button>
             </div>
             
-            <!-- Step 1: Request Reset Token -->
+            <!-- Step 1: Request OTP -->
             <div class="modal-body" id="resetStep1">
                 <p class="modal-description">
-                    Enter your admin email address to receive a password reset token.
+                    Enter your admin email address. If it's registered as an admin account, you'll receive a 6-digit OTP code via email.
                 </p>
                 <form id="forgotPasswordForm" onsubmit="requestResetToken(event)">
                     <div class="form-group">
                         <label for="resetEmail">
                             <i class="fas fa-envelope"></i>
-                            Admin Email
+                            Email Address
                         </label>
                         <input 
                             type="email" 
@@ -269,42 +269,38 @@
                     </div>
                     <button type="submit" class="btn btn-primary btn-large">
                         <i class="fas fa-paper-plane"></i>
-                        <span>Request Reset Token</span>
+                        <span>Send OTP Code</span>
                     </button>
                 </form>
             </div>
             
-            <!-- Step 2: Enter Token and New Password -->
+            <!-- Step 2: Enter OTP and New Password -->
             <div class="modal-body hidden" id="resetStep2">
                 <div class="alert alert-success">
                     <i class="fas fa-check-circle"></i>
                     <div>
-                        <strong>Reset Token Generated!</strong>
-                        <p>Copy the token below and enter it with your new password.</p>
+                        <strong>OTP Sent!</strong>
+                        <p>Check your email for the 6-digit OTP code.</p>
                     </div>
                 </div>
-                <div class="token-display">
-                    <label>Your Reset Token:</label>
-                    <div class="token-box">
-                        <code id="resetTokenDisplay"></code>
-                        <button type="button" class="btn-copy" onclick="copyToken()">
-                            <i class="fas fa-copy"></i>
-                        </button>
-                    </div>
-                    <small class="token-expiry">⏰ Expires in 1 hour</small>
-                </div>
+                
                 <form id="resetPasswordForm" onsubmit="resetPassword(event)">
                     <div class="form-group">
                         <label for="resetToken">
-                            <i class="fas fa-ticket-alt"></i>
-                            Reset Token
+                            <i class="fas fa-shield-alt"></i>
+                            6-Digit OTP Code
                         </label>
                         <input 
                             type="text" 
                             id="resetToken" 
-                            placeholder="Paste your reset token here"
+                            placeholder="Enter 6-digit OTP from email"
+                            pattern="[0-9]{6}"
+                            maxlength="6"
                             required
                         >
+                        <small class="token-expiry" style="color: var(--warning); display: block; margin-top: 5px;">
+                            ⏰ OTP expires in 10 minutes
+                        </small>
                     </div>
                     <div class="form-group">
                         <label for="newPassword">

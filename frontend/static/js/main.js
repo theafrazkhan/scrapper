@@ -735,16 +735,30 @@ async function requestResetToken(event) {
         const data = await response.json();
         
         if (response.ok && data.success) {
-            // Show step 2 with the token
-            document.getElementById('resetStep1').classList.add('hidden');
-            document.getElementById('resetStep2').classList.remove('hidden');
-            document.getElementById('resetTokenDisplay').textContent = data.token;
-            document.getElementById('resetToken').value = data.token;
-            document.getElementById('resetEmail').setAttribute('data-email', email);
-            
-            showToast('Reset token generated successfully!', 'success');
+            // Check if OTP was actually sent (admin account) or just generic response
+            if (data.email_masked) {
+                // Admin account - OTP sent to email
+                document.getElementById('resetStep1').classList.add('hidden');
+                document.getElementById('resetStep2').classList.remove('hidden');
+                document.getElementById('resetEmail').setAttribute('data-email', email);
+                
+                // Update success message to show email was sent
+                const successAlert = document.querySelector('#resetStep2 .alert-success p');
+                if (successAlert) {
+                    successAlert.textContent = `A 6-digit OTP has been sent to ${data.email_masked}. Please check your email and enter it below.`;
+                }
+                
+                showToast('OTP sent to your email! Check your inbox.', 'success');
+            } else {
+                // Generic response (non-admin or non-existent email)
+                showToast(data.message, 'info');
+                // Close modal after 3 seconds
+                setTimeout(() => {
+                    closeForgotPasswordModal();
+                }, 3000);
+            }
         } else {
-            showToast(data.message || 'Failed to generate reset token', 'error');
+            showToast(data.message || 'Failed to send OTP', 'error');
         }
     } catch (error) {
         console.error('Error requesting reset token:', error);
@@ -759,9 +773,15 @@ async function resetPassword(event) {
     event.preventDefault();
     
     const email = document.getElementById('resetEmail').getAttribute('data-email');
-    const token = document.getElementById('resetToken').value;
+    const otp = document.getElementById('resetToken').value;
     const newPassword = document.getElementById('newPassword').value;
     const confirmPassword = document.getElementById('confirmPassword').value;
+    
+    // Validate OTP format (6 digits)
+    if (!/^\d{6}$/.test(otp)) {
+        showToast('OTP must be exactly 6 digits', 'error');
+        return;
+    }
     
     // Validate passwords match
     if (newPassword !== confirmPassword) {
@@ -787,7 +807,7 @@ async function resetPassword(event) {
             },
             body: JSON.stringify({ 
                 email,
-                token,
+                otp,
                 new_password: newPassword
             })
         });
@@ -801,7 +821,7 @@ async function resetPassword(event) {
             // Pre-fill email in login form
             document.getElementById('email').value = email;
         } else {
-            showToast(data.message || 'Failed to reset password', 'error');
+            showToast(data.message || 'Invalid or expired OTP', 'error');
         }
     } catch (error) {
         console.error('Error resetting password:', error);
