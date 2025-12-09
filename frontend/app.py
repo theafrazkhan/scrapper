@@ -94,7 +94,7 @@ def load_user(user_id):
 # Initialize APScheduler
 scheduler = BackgroundScheduler(timezone='UTC')
 scheduler.start()
-print("✅ APScheduler initialized and started")
+print("✅ APScheduler initialized and started", flush=True)
 
 
 # Global state
@@ -816,10 +816,10 @@ def run_scheduled_scraping(schedule_id):
         try:
             schedule = Schedule.query.get(schedule_id)
             if not schedule or not schedule.is_enabled:
-                print(f"⚠️ Schedule {schedule_id} not found or disabled")
+                print(f"⚠️ Schedule {schedule_id} not found or disabled", flush=True)
                 return
             
-            print(f"🕒 Running scheduled scrape: {schedule.name} (ID: {schedule_id})")
+            print(f"🕒 Running scheduled scrape: {schedule.name} (ID: {schedule_id})", flush=True)
             
             # Update last_run timestamp
             schedule.last_run = datetime.now(pytz.UTC)
@@ -841,8 +841,9 @@ def run_scheduled_scraping(schedule_id):
             try:
                 # Run the scraping pipeline with STREAMING output (not blocking)
                 pipeline_script = backend_dir / 'run_pipeline.py'
-                print(f"📍 Backend directory: {backend_dir}")
-                print(f"📍 Running: {sys.executable} {pipeline_script}")
+                print(f"📍 Backend directory: {backend_dir}", flush=True)
+                print(f"📍 Running: {sys.executable} {pipeline_script}", flush=True)
+                print(f"⏰ Started at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}", flush=True)
                 
                 # Use Popen for streaming output (same as manual scrape)
                 process = subprocess.Popen(
@@ -858,13 +859,19 @@ def run_scheduled_scraping(schedule_id):
                 # Stream and log output in real-time
                 output_lines = []
                 products_count = 0
+                line_count = 0
                 
                 for line in process.stdout:
                     line = line.strip()
                     if line:
                         # Print to Docker logs in real-time
-                        print(f"  {line}")
+                        print(f"  {line}", flush=True)
                         output_lines.append(line)
+                        line_count += 1
+                        
+                        # Progress indicator every 50 lines
+                        if line_count % 50 == 0:
+                            print(f"📝 Logged {line_count} lines...", flush=True)
                         
                         # Track progress
                         if 'Progress:' in line or 'Downloaded' in line:
@@ -879,7 +886,8 @@ def run_scheduled_scraping(schedule_id):
                     process.kill()
                     raise  # Re-raise to be caught by outer exception handler
                 
-                print(f"📊 Return code: {return_code}")
+                print(f"📊 Return code: {return_code}", flush=True)
+                print(f"📝 Total lines logged: {line_count}", flush=True)
                 
                 # Update history
                 history.status = 'completed' if return_code == 0 else 'failed'
@@ -902,12 +910,13 @@ def run_scheduled_scraping(schedule_id):
                 db.session.commit()
                 
                 if return_code == 0:
-                    print(f"✅ Scheduled scrape completed: {schedule.name}")
+                    print(f"✅ Scheduled scrape completed: {schedule.name}", flush=True)
                 else:
-                    print(f"❌ Scheduled scrape failed: {schedule.name}")
+                    print(f"❌ Scheduled scrape failed: {schedule.name}", flush=True)
                 
                 # Send email if enabled and successful
                 if schedule.send_email and excel_file and os.path.exists(excel_file) and return_code == 0:
+                    print(f"📧 Sending email for schedule: {schedule.name}", flush=True)
                     send_scheduled_email(schedule, excel_file)
                 
             except subprocess.TimeoutExpired:
@@ -915,7 +924,7 @@ def run_scheduled_scraping(schedule_id):
                 history.completed_at = datetime.now()
                 history.error_message = 'Scraping timeout (exceeded 2 hours)'
                 db.session.commit()
-                print(f"❌ Scheduled scrape timeout: {schedule.name}")
+                print(f"❌ Scheduled scrape timeout: {schedule.name}", flush=True)
                 
             except Exception as scrape_error:
                 history.status = 'failed'
@@ -1040,7 +1049,7 @@ def add_schedule_to_scheduler(schedule):
             day_of_month = datetime.now(tz).day
             trigger = CronTrigger(day=day_of_month, hour=hour, minute=minute, timezone=tz)
         else:
-            print(f"❌ Unknown frequency: {schedule.frequency}")
+            print(f"❌ Unknown frequency: {schedule.frequency}", flush=True)
             return False
         
         # Add job to scheduler
@@ -1054,11 +1063,11 @@ def add_schedule_to_scheduler(schedule):
             name=schedule.name
         )
         
-        print(f"✅ Added schedule to APScheduler: {schedule.name} (ID: {schedule.id})")
+        print(f"✅ Added schedule to APScheduler: {schedule.name} (ID: {schedule.id})", flush=True)
         return True
         
     except Exception as e:
-        print(f"❌ Failed to add schedule {schedule.id} to APScheduler: {e}")
+        print(f"❌ Failed to add schedule {schedule.id} to APScheduler: {e}", flush=True)
         return False
 
 
@@ -1067,7 +1076,7 @@ def remove_schedule_from_scheduler(schedule_id):
     try:
         job_id = f"schedule_{schedule_id}"
         scheduler.remove_job(job_id)
-        print(f"✅ Removed schedule {schedule_id} from APScheduler")
+        print(f"✅ Removed schedule {schedule_id} from APScheduler", flush=True)
         return True
     except Exception as e:
         print(f"❌ Failed to remove schedule {schedule_id}: {e}")
