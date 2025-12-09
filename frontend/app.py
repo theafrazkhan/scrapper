@@ -45,30 +45,29 @@ sys.path.insert(0, str(backend_dir))
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'change-this-secret-key-in-production')
 
-# Database configuration - PostgreSQL or SQLite fallback
+# Database configuration - PostgreSQL ONLY (no SQLite)
 DATABASE_URL = os.environ.get('DATABASE_URL')
-if DATABASE_URL:
-    # Use PostgreSQL from environment variable
-    # Handle both postgres:// and postgresql:// schemes
-    if DATABASE_URL.startswith('postgres://'):
-        DATABASE_URL = DATABASE_URL.replace('postgres://', 'postgresql://', 1)
-    app.config['SQLALCHEMY_DATABASE_URI'] = DATABASE_URL
-    print(f"✅ Using PostgreSQL database")
-else:
-    # Fallback to SQLite for local development
-    instance_path = Path(__file__).parent / 'instance'
-    instance_path.mkdir(exist_ok=True, mode=0o777)
-    db_path = instance_path / 'scraper.db'
-    app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_path}'
-    print(f"⚠️  Using SQLite fallback: {db_path}")
-    
-    # Ensure database file has write permissions if it exists (SQLite only)
-    if db_path.exists():
-        try:
-            os.chmod(db_path, 0o666)
-            os.chmod(instance_path, 0o777)
-        except Exception as e:
-            print(f"⚠️  Warning: Could not set database permissions: {e}")
+if not DATABASE_URL:
+    print("=" * 60)
+    print("❌ ERROR: DATABASE_URL environment variable is not set!")
+    print("=" * 60)
+    print("")
+    print("Please set DATABASE_URL in your .env file or environment:")
+    print("")
+    print("  DATABASE_URL=postgresql://user:password@localhost:5432/scraper")
+    print("")
+    print("Or run the setup script:")
+    print("  sudo bash setup_postgres.sh")
+    print("")
+    print("=" * 60)
+    sys.exit(1)
+
+# Handle both postgres:// and postgresql:// schemes
+if DATABASE_URL.startswith('postgres://'):
+    DATABASE_URL = DATABASE_URL.replace('postgres://', 'postgresql://', 1)
+
+app.config['SQLALCHEMY_DATABASE_URI'] = DATABASE_URL
+print(f"✅ Using PostgreSQL database")
 
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
