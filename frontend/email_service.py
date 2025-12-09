@@ -498,6 +498,154 @@ def send_test_email(to_email):
         }
 
 
+def send_password_reset_otp(to_email, otp_code):
+    """
+    Send password reset OTP to admin user's email
+    
+    Args:
+        to_email (str): Admin email address
+        otp_code (str): 6-digit OTP code
+        
+    Returns:
+        dict: Response with success status
+    """
+    try:
+        html_content = f"""
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+            <style>
+                * {{ margin: 0; padding: 0; box-sizing: border-box; }}
+                body {{ 
+                    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
+                    line-height: 1.6; 
+                    color: #212121;
+                    background: #FAFAFA;
+                    padding: 40px 20px;
+                }}
+                .email-wrapper {{ 
+                    max-width: 600px; 
+                    margin: 0 auto; 
+                    background: white;
+                    border-radius: 16px;
+                    overflow: hidden;
+                    box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+                }}
+                .header {{
+                    background: linear-gradient(135deg, #FF6B35 0%, #F7931E 100%);
+                    padding: 32px;
+                    text-align: center;
+                    color: white;
+                }}
+                .header h1 {{
+                    font-size: 24px;
+                    font-weight: 700;
+                    margin: 0;
+                }}
+                .content {{
+                    padding: 32px;
+                }}
+                .otp-box {{
+                    background: linear-gradient(135deg, #FF6B35 0%, #F7931E 100%);
+                    color: white;
+                    padding: 24px;
+                    border-radius: 12px;
+                    text-align: center;
+                    margin: 24px 0;
+                }}
+                .otp-code {{
+                    font-size: 36px;
+                    font-weight: 800;
+                    letter-spacing: 8px;
+                    margin: 8px 0;
+                    font-family: 'Courier New', monospace;
+                }}
+                .warning {{
+                    background: #FFF3E0;
+                    border-left: 4px solid #FF6B35;
+                    padding: 16px;
+                    border-radius: 8px;
+                    margin: 24px 0;
+                }}
+                .footer {{
+                    text-align: center;
+                    padding: 24px 32px;
+                    background: #F5F5F5;
+                    color: #666;
+                    font-size: 14px;
+                }}
+                .footer a {{
+                    color: #FF6B35;
+                    text-decoration: none;
+                }}
+            </style>
+        </head>
+        <body>
+            <div class="email-wrapper">
+                <div class="header">
+                    <h1>🔐 Password Reset Request</h1>
+                </div>
+                
+                <div class="content">
+                    <p style="font-size: 16px; margin-bottom: 16px;">Hello,</p>
+                    
+                    <p style="margin-bottom: 16px;">
+                        We received a request to reset your admin account password. 
+                        Use the OTP code below to complete the password reset process.
+                    </p>
+                    
+                    <div class="otp-box">
+                        <div style="font-size: 14px; opacity: 0.9; margin-bottom: 8px;">Your OTP Code</div>
+                        <div class="otp-code">{otp_code}</div>
+                        <div style="font-size: 14px; opacity: 0.9; margin-top: 8px;">Valid for 10 minutes</div>
+                    </div>
+                    
+                    <div class="warning">
+                        <strong>⚠️ Security Warning:</strong>
+                        <ul style="margin: 8px 0 0 20px;">
+                            <li>Never share this OTP with anyone</li>
+                            <li>This code expires in 10 minutes</li>
+                            <li>If you didn't request this, please ignore this email</li>
+                        </ul>
+                    </div>
+                    
+                    <p style="margin-top: 24px; color: #666; font-size: 14px;">
+                        This is an automated security email for admin password reset.
+                    </p>
+                </div>
+                
+                <div class="footer">
+                    <p>Built at <a href="https://afrazkhan.dev">afrazkhan.dev</a></p>
+                    <p style="margin-top: 8px;">Lululemon Product Scraper © 2025</p>
+                </div>
+            </div>
+        </body>
+        </html>
+        """
+        
+        response = resend.Emails.send({{
+            "from": f"{{FROM_NAME}} <{{FROM_EMAIL}}>",
+            "to": [to_email],
+            "subject": "🔐 Password Reset OTP - Admin Account",
+            "html": html_content
+        }})
+        
+        return {{
+            'success': True,
+            'message': f'OTP sent successfully to {{to_email}}',
+            'id': response.get('id', 'unknown')
+        }}
+        
+    except Exception as e:
+        return {{
+            'success': False,
+            'error': f'Failed to send OTP: {{str(e)}}'
+        }}
+
+
 def get_email_config():
     """
     Get current email configuration (without exposing API key)

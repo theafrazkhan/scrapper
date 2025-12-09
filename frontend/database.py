@@ -43,12 +43,13 @@ class User(UserMixin, db.Model):
         return self.role == 'admin'
     
     def generate_reset_token(self):
-        """Generate a password reset token"""
+        """Generate a 6-digit OTP for password reset"""
         import secrets
-        self.reset_token = secrets.token_urlsafe(32)
-        # Token expires in 1 hour
+        # Generate 6-digit OTP
+        self.reset_token = ''.join([str(secrets.randbelow(10)) for _ in range(6)])
+        # Token expires in 10 minutes (more secure than 1 hour)
         from datetime import timedelta
-        self.reset_token_expires = datetime.now() + timedelta(hours=1)
+        self.reset_token_expires = datetime.now() + timedelta(minutes=10)
         return self.reset_token
     
     def verify_reset_token(self, token):

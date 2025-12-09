@@ -33,7 +33,7 @@ else:
 # Import our modules
 from database import db, User, ScrapingHistory, EmailRecipient, Schedule, EmailSettings, LululemonCredentials, init_db
 from auth import create_default_admin
-from email_service import send_excel_email, send_test_email, get_email_config
+from email_service import send_excel_email, send_test_email, get_email_config, send_password_reset_otp
 
 # Add backend directory to path
 backend_dir = Path(__file__).parent.parent / 'backend'
@@ -735,7 +735,7 @@ def api_logout():
 
 @app.route('/api/forgot-password', methods=['POST'])
 def forgot_password():
-    """Generate password reset token for admin user only"""
+    """Generate password reset OTP and send to admin user's email"""
     data = request.get_json()
     email = data.get('email')
     
@@ -747,36 +747,50 @@ def forgot_password():
     
     # Check if user exists and is admin
     if not user:
-        # Don't reveal if email exists for security
-        return jsonify({'success': True, 'message': 'If this email exists and is an admin account, a reset token has been generated.'})
+        # Don't reveal if email exists for security (timing-safe response)
+        return jsonify({
+            'success': True, 
+            'message': 'If this email exists and is an admin account, an OTP has been sent to your email.'
+        })
     
     if not user.is_admin():
-        return jsonify({'success': False, 'message': 'Password reset is only available for admin accounts'}), 403
+        # Same generic message for security
+        return jsonify({
+            'success': True, 
+            'message': 'If this email exists and is an admin account, an OTP has been sent to your email.'
+        })
     
-    # Generate reset token
+    # Generate reset token (OTP)
     token = user.generate_reset_token()
     db.session.commit()
     
-    # In a real app, you'd send this via email
-    # For now, we'll return it in the response (development only)
+    # Send OTP via email
+    email_result = send_password_reset_otp(user.email, token)
+    
+    if not email_result.get('success'):
+        return jsonify({
+            'success': False, 
+            'message': 'Failed to send OTP. Please check email configuration or try again later.'
+        }), 500
+    
     return jsonify({
         'success': True,
-        'message': 'Password reset token generated successfully',
-        'token': token,  # In production, send via email instead
-        'expires_in': '1 hour'
+        'message': f'A 6-digit OTP has been sent to {user.email}. It will expire in 10 minutes.',
+        'email_masked': user.email[:3] + '***@' + user.email.split('@')[1] if '@' in user.email else '***'
     })
+
 
 
 @app.route('/api/reset-password', methods=['POST'])
 def reset_password():
-    """Reset password using valid token"""
+    """Reset password using valid OTP code"""
     data = request.get_json()
     email = data.get('email')
-    token = data.get('token')
+    otp = data.get('otp') or data.get('token')  # Support both 'otp' and 'token' for backwards compatibility
     new_password = data.get('new_password')
     
-    if not email or not token or not new_password:
-        return jsonify({'success': False, 'message': 'Email, token, and new password are required'}), 400
+    if not email or not otp or not new_password:
+        return jsonify({'success': False, 'message': 'Email, OTP code, and new password are required'}), 400
     
     # Validate password strength
     if len(new_password) < 6:
@@ -786,14 +800,14 @@ def reset_password():
     user = User.query.filter_by(email=email).first()
     
     if not user:
-        return jsonify({'success': False, 'message': 'Invalid reset token'}), 400
+        return jsonify({'success': False, 'message': 'Invalid OTP code'}), 400
     
     if not user.is_admin():
         return jsonify({'success': False, 'message': 'Password reset is only available for admin accounts'}), 403
     
-    # Verify token
-    if not user.verify_reset_token(token):
-        return jsonify({'success': False, 'message': 'Invalid or expired reset token'}), 400
+    # Verify OTP
+    if not user.verify_reset_token(otp):
+        return jsonify({'success': False, 'message': 'Invalid or expired OTP code'}), 400
     
     # Reset password
     user.set_password(new_password)
