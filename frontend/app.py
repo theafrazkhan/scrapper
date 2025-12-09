@@ -273,7 +273,48 @@ def run_backend_pipeline(user_id):
     
     with app.app_context():
         try:
+            # Debug: Log database permissions before attempting write
+            import os
+            import stat
+            db_uri = app.config.get('SQLALCHEMY_DATABASE_URI', '')
+            if db_uri.startswith('sqlite:///'):
+                db_path = db_uri.replace('sqlite:///', '')
+                print("\n" + "="*60)
+                print("🔍 DATABASE PERMISSION DEBUG INFO")
+                print("="*60)
+                
+                # Check database file
+                if os.path.exists(db_path):
+                    db_stat = os.stat(db_path)
+                    db_perms = oct(stat.S_IMODE(db_stat.st_mode))
+                    print(f"📄 Database file: {db_path}")
+                    print(f"   Permissions: {db_perms}")
+                    print(f"   Owner UID: {db_stat.st_uid}")
+                    print(f"   Group GID: {db_stat.st_gid}")
+                    print(f"   Writable: {os.access(db_path, os.W_OK)}")
+                else:
+                    print(f"❌ Database file not found: {db_path}")
+                
+                # Check directory
+                db_dir = os.path.dirname(db_path)
+                if os.path.exists(db_dir):
+                    dir_stat = os.stat(db_dir)
+                    dir_perms = oct(stat.S_IMODE(dir_stat.st_mode))
+                    print(f"📁 Database directory: {db_dir}")
+                    print(f"   Permissions: {dir_perms}")
+                    print(f"   Writable: {os.access(db_dir, os.W_OK)}")
+                
+                # Current process info
+                print(f"👤 Current process:")
+                print(f"   UID: {os.getuid()}")
+                print(f"   GID: {os.getgid()}")
+                print(f"   umask: {oct(os.umask(0o022))}")  # Check and restore
+                os.umask(0o022)  # Restore after check
+                
+                print("="*60 + "\n")
+            
             # Create scraping history record
+            print("📝 Attempting to write to database...")
             history = ScrapingHistory(
                 trigger_type='manual',
                 triggered_by=user_id,
@@ -282,6 +323,7 @@ def run_backend_pipeline(user_id):
             )
             db.session.add(history)
             db.session.commit()
+            print("✅ Database write successful!")
             
             # Track pipeline phase for progress calculation
             current_phase = 0  # 0=login, 1=extract_links, 2=download, 3=excel
@@ -815,6 +857,34 @@ def start_scraping():
     if scraping_active:
         return jsonify({'success': False, 'message': 'Scraping already in progress'}), 400
     
+    try:
+        # Test database write BEFORE starting scraping
+        with app.app_context():
+            # Try a simple write to test permissions
+            test_history = ScrapingHistory(
+                trigger_type='test',
+                triggered_by=1,
+                status='testing',
+                started_at=datetime.now()
+            )
+            db.session.add(test_history)
+            db.session.flush()  # Don't commit, just test
+            db.session.rollback()  # Rollback the test
+            print("✅ Database write test successful!")
+    
+    except Exception as test_error:
+        import traceback
+        error_details = traceback.format_exc()
+        print(f"\n❌ DATABASE WRITE TEST FAILED!")
+        print(f"Error: {str(test_error)}")
+        print(f"Details:\n{error_details}")
+        
+        return jsonify({
+            'success': False, 
+            'message': f'Database permission error: {str(test_error)}',
+            'details': 'Check server console for detailed permission information'
+        }), 500
+    
     scraping_active = True
     
     # Reset stats
@@ -829,8 +899,9 @@ def start_scraping():
     })
     
     # Start scraping in background thread
-    # Use a dummy user_id=1 for now (will track in future)
-    thread = threading.Thread(target=run_backend_pipeline, args=(1,))
+    # Use current_user.id if logged in, otherwise use 1
+    user_id = current_user.id if current_user.is_authenticated else 1
+    thread = threading.Thread(target=run_backend_pipeline, args=(user_id,))
     thread.daemon = True
     thread.start()
     
