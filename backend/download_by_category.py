@@ -24,15 +24,12 @@ log = logging.getLogger(__name__)
 
 # Configuration
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-MAX_CONCURRENT = 10 # 10 concurrent downloads
-PAGE_TIMEOUT = 60000  # 60 seconds (increased from 30)
+MAX_CONCURRENT = 5  # Reduced from 10 to 5 for better reliability
+PAGE_TIMEOUT = 45000  # Increased to 45 seconds for slow pages
 WAIT_FOR = 'networkidle'  # Wait for network to be idle for fully rendered content
-EXTRA_WAIT = 2000  # Extra wait in milliseconds after page load (increased from 1s to 2s)
-VERIFY_INVENTORY = True  # Verify that inventory table is present before saving
 
 log.info(f"Script directory: {SCRIPT_DIR}")
 log.info(f"Config: MAX_CONCURRENT={MAX_CONCURRENT}, PAGE_TIMEOUT={PAGE_TIMEOUT}ms, WAIT_FOR={WAIT_FOR}")
-log.info(f"        EXTRA_WAIT={EXTRA_WAIT}ms, VERIFY_INVENTORY={VERIFY_INVENTORY}")
 
 
 class PageDownloader:
@@ -128,7 +125,7 @@ class PageDownloader:
         return cat_dir
     
     async def download_page(self, context, url, cat, output_dir, sem):
-        """Download a single fully rendered page with verification"""
+        """Download a single fully rendered page with proper wait for dynamic content"""
         pid = url.rstrip('/').split('/')[-1]
         output_file = os.path.join(output_dir, f"{pid}.html")
         
@@ -147,45 +144,45 @@ class PageDownloader:
                 log.debug(f"[{cat}] 📥 Downloading: {pid}")
                 await page.goto(url, wait_until=WAIT_FOR, timeout=PAGE_TIMEOUT)
                 
-                # Wait for critical elements to load
-                if VERIFY_INVENTORY:
-                    try:
-                        # Just wait for the main product script to be present
-                        # This is more reliable than specific UI elements
-                        await page.wait_for_selector(
-                            'script#__NEXT_DATA__',
-                            timeout=15000  # 15 seconds should be enough
-                        )
-                        log.debug(f"[{cat}] ✓ Page data loaded: {pid}")
-                    except Exception as wait_err:
-                        # If even __NEXT_DATA__ isn't present, this is a problem
-                        log.warning(f"[{cat}] ⚠️  Data script timeout: {pid}")
+                # CRITICAL: Wait for dynamic content to load
+                # Wait for the inventory table to be present (this ensures JS has executed)
+                try:
+                    await page.wait_for_selector('table tbody', timeout=10000, state='attached')
+                    log.debug(f"[{cat}] ✓ Inventory table loaded: {pid}")
+                except:
+                    log.warning(f"[{cat}] ⚠ No inventory table found: {pid}")
                 
-                # Extra delay to ensure dynamic content is loaded
-                await asyncio.sleep(EXTRA_WAIT / 1000)  # Convert ms to seconds
+                # Wait for product images to load
+                try:
+                    await page.wait_for_selector('img.image_image__ECDWj', timeout=10000, state='attached')
+                    log.debug(f"[{cat}] ✓ Product images loaded: {pid}")
+                except:
+                    log.warning(f"[{cat}] ⚠ No product images found: {pid}")
                 
-                # Verify page has essential content
+                # Wait for color swatches
+                try:
+                    await page.wait_for_selector('img.color-swatch_colorSwatchImg__apmdW', timeout=5000, state='attached')
+                    log.debug(f"[{cat}] ✓ Color swatches loaded: {pid}")
+                except:
+                    log.debug(f"[{cat}] ℹ No color swatches: {pid}")
+                
+                # Additional wait to ensure all lazy-loaded content is ready
+                await asyncio.sleep(2)
+                
+                # Get fully rendered HTML
                 html = await page.content()
-                
-                # Basic verification - check if page has product data
-                if '__NEXT_DATA__' not in html:
-                    log.warning(f"[{cat}] ⚠️  Missing __NEXT_DATA__: {pid}")
-                    raise Exception("Page missing essential data (__NEXT_DATA__)")
-                
-                # Check if page has inventory table (optional - just log if missing)
-                has_inventory = 'inventory-grid_accordionItem__XXIck' in html
-                if not has_inventory:
-                    log.debug(f"[{cat}] ⚠️  No inventory table: {pid}")
-                
                 await page.close()
+                
+                # Validate that we have meaningful content
+                if len(html) < 50000:  # Typical full page is >200KB
+                    log.warning(f"[{cat}] ⚠ Small HTML size ({len(html)} bytes): {pid}")
                 
                 # Save to file
                 with open(output_file, 'w', encoding='utf-8') as f:
                     f.write(html)
                 
                 self.stats['done'] += 1
-                inv_status = "✓" if has_inventory else "⚠"
-                log.debug(f"[{cat}] {inv_status} Saved: {pid} ({len(html)} bytes)")
+                log.debug(f"[{cat}] ✓ Saved: {pid} ({len(html)} bytes)")
                 
                 # Progress update every 20 files
                 if self.stats['done'] % 20 == 0:

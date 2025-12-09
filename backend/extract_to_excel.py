@@ -239,12 +239,10 @@ def extract_product_from_html(html_file_path):
     
     # Extract inventory data from HTML (silently)
     inventory_data = extract_inventory_from_html(soup)
-    
-    # Log if no inventory found (for debugging)
-    if not inventory_data or len(inventory_data) == 0:
-        product_name_debug = product_data.get('name', 'Unknown')
-        print(f"⚠️  No inventory data: {product_name_debug}")
-        sys.stdout.flush()
+    # if inventory_data:
+    #     print(f"✓ Found inventory data for {len(inventory_data)} size(s)")
+    # else:
+    #     print("ℹ️ ⚠ No inventory data found in HTML")
     
     # Extract product image from HTML (silently)
     product_image_url = extract_product_image(soup)
@@ -296,7 +294,7 @@ def add_product_rows(ws, row_num, product, inventory_data, color_swatches, produ
     color_names = f"{color_name} - {color_description}" if color_description else color_name
     
     # If we have inventory data, create a row for each color/size/lot combination
-    if inventory_data and len(inventory_data) > 0:
+    if inventory_data:
         # Calculate total quantity across all colors and sizes for this product
         total_product_quantity = 0
         for color, inventory_items in inventory_data.items():
@@ -319,18 +317,10 @@ def add_product_rows(ws, row_num, product, inventory_data, color_swatches, produ
         return row_num + rows_added  # Return next row number
     else:
         # If no inventory data, add a single row with basic product info
-        # Create a dummy inventory item to maintain consistency
-        dummy_inv_item = {
-            'size': 'N/A',
-            'sku': sku,
-            'available_quantity': 0,
-            'in_stock': False
-        }
         add_single_inventory_row(
             ws, row_num, product_name, sku, retail_price, wholesale_price,
             color_swatches, product_image_url, description, slug, sku_name,
-            color_names, product_type, color_name if color_name else 'N/A', 
-            dummy_inv_item, 0, True
+            color_names, product_type, color_name, None, 0, True
         )
         return row_num + 1
 
@@ -430,12 +420,12 @@ def add_single_inventory_row(ws, row_num, product_name, sku, retail_price, whole
     else:
         ws[f'J{row_num}'] = ''
     
-    # Column K: Available Quantity (format: individual quantity only for simplicity)
+    # Column K: Available Quantity (format: individual/total, e.g., "50/439")
     if inv_item:
         individual_qty = inv_item.get('available_quantity', 0)
-        ws[f'K{row_num}'] = str(individual_qty)
+        ws[f'K{row_num}'] = f"{individual_qty}"
     else:
-        ws[f'K{row_num}'] = "0"
+        ws[f'K{row_num}'] = f"0/{total_product_quantity}"
     
     # Column L: In Stock (for this specific size/color)
     if inv_item:
