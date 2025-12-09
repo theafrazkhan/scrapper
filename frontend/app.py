@@ -1721,6 +1721,82 @@ def handle_disconnect():
 with app.app_context():
     init_db(app)
     create_default_admin()
+    
+    # Run comprehensive database diagnostics
+    print("\n" + "="*70)
+    print("🔍 DATABASE DIAGNOSTICS AT STARTUP")
+    print("="*70)
+    
+    import os
+    import stat
+    db_uri = app.config.get('SQLALCHEMY_DATABASE_URI', '')
+    if db_uri.startswith('sqlite:///'):
+        db_path = db_uri.replace('sqlite:///', '')
+        db_dir = os.path.dirname(db_path)
+        
+        # Check database file
+        if os.path.exists(db_path):
+            try:
+                db_stat = os.stat(db_path)
+                db_perms = oct(stat.S_IMODE(db_stat.st_mode))
+                print(f"📄 Database: {db_path}")
+                print(f"   Permissions: {db_perms}")
+                print(f"   Owner: UID={db_stat.st_uid}, GID={db_stat.st_gid}")
+                print(f"   Writable: {os.access(db_path, os.W_OK)}")
+                
+                # Check if journal files exist
+                for suffix in ['-journal', '-wal', '-shm']:
+                    journal_path = db_path + suffix
+                    if os.path.exists(journal_path):
+                        j_stat = os.stat(journal_path)
+                        j_perms = oct(stat.S_IMODE(j_stat.st_mode))
+                        print(f"   {suffix}: {j_perms}")
+            except Exception as e:
+                print(f"   ❌ Error checking database: {e}")
+        else:
+            print(f"   ℹ️  Database doesn't exist yet: {db_path}")
+        
+        # Check directory
+        if os.path.exists(db_dir):
+            try:
+                dir_stat = os.stat(db_dir)
+                dir_perms = oct(stat.S_IMODE(dir_stat.st_mode))
+                print(f"📁 Directory: {db_dir}")
+                print(f"   Permissions: {dir_perms}")
+                print(f"   Writable: {os.access(db_dir, os.W_OK)}")
+            except Exception as e:
+                print(f"   ❌ Error checking directory: {e}")
+        
+        # Current process info
+        print(f"👤 Process Info:")
+        print(f"   UID: {os.getuid()}")
+        print(f"   GID: {os.getgid()}")
+        current_umask = os.umask(0o022)  # Check and restore
+        os.umask(current_umask)  # Restore immediately
+        print(f"   umask: {oct(current_umask)}")
+        
+        # Test database write
+        print(f"\n🧪 Testing database write...")
+        try:
+            from database import ScrapingHistory
+            from datetime import datetime
+            test_record = ScrapingHistory(
+                trigger_type='startup_test',
+                triggered_by=1,
+                status='testing',
+                started_at=datetime.now()
+            )
+            db.session.add(test_record)
+            db.session.flush()
+            db.session.rollback()  # Don't save the test
+            print(f"   ✅ Database write test SUCCESSFUL!")
+        except Exception as write_error:
+            print(f"   ❌ Database write test FAILED!")
+            print(f"   Error: {str(write_error)}")
+            import traceback
+            print(f"   Details:\n{traceback.format_exc()}")
+    
+    print("="*70 + "\n")
 
 
 if __name__ == '__main__':
