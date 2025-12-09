@@ -25,12 +25,7 @@ if env_path.exists():
     load_dotenv(env_path)
     print(f"✅ Loaded environment variables from {env_path}")
 else:
-    print(f"⚠️  No .env file found at {env_path} - using defaults")
-
-# ⚠️ CRITICAL: Set umask to 0 IMMEDIATELY so all files are created with open permissions
-# This prevents SQLite temporary files from being created with restrictive permissions
-os.umask(0)
-print("🔧 umask set to 0 for open file permissions")
+    print(f"⚠️  No .env file found at {env_path} - using system environment")
 
 # Import our modules
 from database import db, User, ScrapingHistory, EmailRecipient, Schedule, EmailSettings, LululemonCredentials, init_db
@@ -91,35 +86,6 @@ login_manager.login_view = 'login'
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))
-
-
-# Fix database permissions on first request
-@app.before_request
-def fix_db_permissions():
-    """Ensure database files have proper permissions before each request"""
-    import os
-    try:
-        db_uri = app.config.get('SQLALCHEMY_DATABASE_URI', '')
-        if db_uri.startswith('sqlite:///'):
-            db_path = db_uri.replace('sqlite:///', '')
-            
-            # Fix main database file
-            if os.path.exists(db_path):
-                try:
-                    os.chmod(db_path, 0o666)
-                except:
-                    pass
-            
-            # Fix journal files
-            for suffix in ['-journal', '-wal', '-shm']:
-                journal_path = db_path + suffix
-                if os.path.exists(journal_path):
-                    try:
-                        os.chmod(journal_path, 0o666)
-                    except:
-                        pass
-    except:
-        pass
 
 
 # Global state
@@ -289,54 +255,10 @@ def run_backend_pipeline(user_id):
     """Run the existing backend pipeline script"""
     global scraping_active, scraping_process, scraping_stats
     
-    # Ensure umask is 0 for this thread (critical for SQLite temp files)
-    os.umask(0)
-    
     with app.app_context():
         try:
-            # Debug: Log database permissions before attempting write
-            import os
-            import stat
-            db_uri = app.config.get('SQLALCHEMY_DATABASE_URI', '')
-            if db_uri.startswith('sqlite:///'):
-                db_path = db_uri.replace('sqlite:///', '')
-                print("\n" + "="*60)
-                print("🔍 DATABASE PERMISSION DEBUG INFO (in scraping thread)")
-                print("="*60)
-                
-                # Check database file
-                if os.path.exists(db_path):
-                    db_stat = os.stat(db_path)
-                    db_perms = oct(stat.S_IMODE(db_stat.st_mode))
-                    print(f"📄 Database file: {db_path}")
-                    print(f"   Permissions: {db_perms}")
-                    print(f"   Owner UID: {db_stat.st_uid}")
-                    print(f"   Group GID: {db_stat.st_gid}")
-                    print(f"   Writable: {os.access(db_path, os.W_OK)}")
-                else:
-                    print(f"❌ Database file not found: {db_path}")
-                
-                # Check directory
-                db_dir = os.path.dirname(db_path)
-                if os.path.exists(db_dir):
-                    dir_stat = os.stat(db_dir)
-                    dir_perms = oct(stat.S_IMODE(dir_stat.st_mode))
-                    print(f"📁 Database directory: {db_dir}")
-                    print(f"   Permissions: {dir_perms}")
-                    print(f"   Writable: {os.access(db_dir, os.W_OK)}")
-                
-                # Current process info
-                print(f"👤 Current thread:")
-                print(f"   UID: {os.getuid()}")
-                print(f"   GID: {os.getgid()}")
-                current_umask = os.umask(0)  # Check current umask
-                os.umask(0)  # Set back to 0 (NOT 0o022!)
-                print(f"   umask: {oct(current_umask)} (now set to 0o0)")
-                
-                print("="*60 + "\n")
-            
             # Create scraping history record
-            print("📝 Attempting to write to database...")
+            print("� Creating scraping history record...")
             history = ScrapingHistory(
                 trigger_type='manual',
                 triggered_by=user_id,
@@ -1744,86 +1666,31 @@ with app.app_context():
     init_db(app)
     create_default_admin()
     
-    # Run comprehensive database diagnostics
-    print("\n" + "="*70)
-    print("🔍 DATABASE DIAGNOSTICS AT STARTUP")
-    print("="*70)
-    
-    import os
-    import stat
-    db_uri = app.config.get('SQLALCHEMY_DATABASE_URI', '')
-    if db_uri.startswith('sqlite:///'):
-        db_path = db_uri.replace('sqlite:///', '')
-        db_dir = os.path.dirname(db_path)
-        
-        # Check database file
-        if os.path.exists(db_path):
-            try:
-                db_stat = os.stat(db_path)
-                db_perms = oct(stat.S_IMODE(db_stat.st_mode))
-                print(f"📄 Database: {db_path}")
-                print(f"   Permissions: {db_perms}")
-                print(f"   Owner: UID={db_stat.st_uid}, GID={db_stat.st_gid}")
-                print(f"   Writable: {os.access(db_path, os.W_OK)}")
-                
-                # Check if journal files exist
-                for suffix in ['-journal', '-wal', '-shm']:
-                    journal_path = db_path + suffix
-                    if os.path.exists(journal_path):
-                        j_stat = os.stat(journal_path)
-                        j_perms = oct(stat.S_IMODE(j_stat.st_mode))
-                        print(f"   {suffix}: {j_perms}")
-            except Exception as e:
-                print(f"   ❌ Error checking database: {e}")
-        else:
-            print(f"   ℹ️  Database doesn't exist yet: {db_path}")
-        
-        # Check directory
-        if os.path.exists(db_dir):
-            try:
-                dir_stat = os.stat(db_dir)
-                dir_perms = oct(stat.S_IMODE(dir_stat.st_mode))
-                print(f"📁 Directory: {db_dir}")
-                print(f"   Permissions: {dir_perms}")
-                print(f"   Writable: {os.access(db_dir, os.W_OK)}")
-            except Exception as e:
-                print(f"   ❌ Error checking directory: {e}")
-        
-        # Current process info
-        print(f"👤 Process Info:")
-        print(f"   UID: {os.getuid()}")
-        print(f"   GID: {os.getgid()}")
-        current_umask = os.umask(0o022)  # Check and restore
-        os.umask(current_umask)  # Restore immediately
-        print(f"   umask: {oct(current_umask)}")
-        
-        # Test database write
-        print(f"\n🧪 Testing database write...")
-        try:
-            from database import ScrapingHistory
-            from datetime import datetime
-            test_record = ScrapingHistory(
-                trigger_type='startup_test',
-                triggered_by=1,
-                status='testing',
-                started_at=datetime.now()
-            )
-            db.session.add(test_record)
-            db.session.flush()
-            db.session.rollback()  # Don't save the test
-            print(f"   ✅ Database write test SUCCESSFUL!")
-        except Exception as write_error:
-            print(f"   ❌ Database write test FAILED!")
-            print(f"   Error: {str(write_error)}")
-            import traceback
-            print(f"   Details:\n{traceback.format_exc()}")
-    
-    print("="*70 + "\n")
+    # Test database connection
+    print("\n" + "="*50)
+    print("🔍 DATABASE CONNECTION TEST")
+    print("="*50)
+    try:
+        from database import ScrapingHistory
+        from datetime import datetime
+        test_record = ScrapingHistory(
+            trigger_type='startup_test',
+            triggered_by=1,
+            status='testing',
+            started_at=datetime.now()
+        )
+        db.session.add(test_record)
+        db.session.flush()
+        db.session.rollback()  # Don't save the test record
+        print("✅ Database connection: OK")
+    except Exception as e:
+        print(f"❌ Database connection: FAILED")
+        print(f"   Error: {str(e)}")
+    print("="*50 + "\n")
 
 
 if __name__ == '__main__':
     print("🚀 Starting Lululemon Scraper - Enterprise Edition")
     print("📍 Server running at: http://localhost:5000")
     print("👤 Default admin: Joe@aureaclubs.com / Joeilaspa455!")
-    # Use allow_unsafe_werkzeug=True for production deployment with Flask-SocketIO
     socketio.run(app, host='0.0.0.0', port=5000, debug=False, allow_unsafe_werkzeug=True)

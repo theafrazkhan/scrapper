@@ -4,8 +4,15 @@ Add or update Lululemon credentials in the database.
 This script can be run standalone to add credentials without using the web interface.
 """
 
+import os
 import sys
 from pathlib import Path
+from dotenv import load_dotenv
+
+# Load environment variables
+env_path = Path(__file__).parent.parent / '.env'
+if env_path.exists():
+    load_dotenv(env_path)
 
 # Add frontend directory to path
 frontend_dir = Path(__file__).parent.parent / 'frontend'
@@ -20,9 +27,20 @@ def add_or_update_credentials(username, password):
         from database import db, LululemonCredentials
         from datetime import datetime
         
+        # Get database URL from environment
+        DATABASE_URL = os.environ.get('DATABASE_URL')
+        if not DATABASE_URL:
+            print("❌ ERROR: DATABASE_URL environment variable is not set!")
+            print("   Please set DATABASE_URL in your .env file")
+            return False
+        
+        # Handle postgres:// vs postgresql:// schemes
+        if DATABASE_URL.startswith('postgres://'):
+            DATABASE_URL = DATABASE_URL.replace('postgres://', 'postgresql://', 1)
+        
         # Create minimal Flask app
         app = Flask(__name__)
-        app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{frontend_dir}/instance/scraper.db'
+        app.config['SQLALCHEMY_DATABASE_URI'] = DATABASE_URL
         app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
         
         # Initialize database
@@ -54,7 +72,6 @@ def add_or_update_credentials(username, password):
             print(f"\n✅ {action} credentials successfully!")
             print(f"   Username: {creds.username}")
             print(f"   Password: {'*' * len(creds.password)}")
-            print(f"   Database: {frontend_dir}/instance/scraper.db")
             
             return True
             
