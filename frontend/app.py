@@ -61,6 +61,14 @@ else:
     db_path = instance_path / 'scraper.db'
     app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_path}'
     print(f"⚠️  Using SQLite fallback: {db_path}")
+    
+    # Ensure database file has write permissions if it exists (SQLite only)
+    if db_path.exists():
+        try:
+            os.chmod(db_path, 0o666)
+            os.chmod(instance_path, 0o777)
+        except Exception as e:
+            print(f"⚠️  Warning: Could not set database permissions: {e}")
 
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
@@ -70,15 +78,6 @@ app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
     'pool_pre_ping': True,
     'pool_recycle': 3600,
 }
-
-# Ensure database file has write permissions if it exists
-if db_path.exists():
-    try:
-        os.chmod(db_path, 0o666)
-        # Also fix the directory
-        os.chmod(instance_path, 0o777)
-    except Exception as e:
-        print(f"⚠️  Warning: Could not set database permissions: {e}")
 
 # Initialize extensions
 db.init_app(app)
