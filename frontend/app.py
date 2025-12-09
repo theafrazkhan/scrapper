@@ -828,10 +828,6 @@ def run_scheduled_scraping(schedule_id):
             schedule.next_run = calculate_next_run(schedule)
             db.session.commit()
             
-            # Start scraping (this will use the existing start_scraping logic)
-            # We'll call the scraping subprocess directly
-            backend_dir = Path(__file__).parent.parent / 'backend'
-            
             # Create history record
             history = ScrapingHistory(
                 trigger_type='scheduled',
@@ -843,50 +839,75 @@ def run_scheduled_scraping(schedule_id):
             db.session.commit()
             
             try:
-                # Run the scraping pipeline with proper environment
+                # Run the scraping pipeline with STREAMING output (not blocking)
+                pipeline_script = backend_dir / 'run_pipeline.py'
                 print(f"📍 Backend directory: {backend_dir}")
-                print(f"📍 Running: python3 {backend_dir / 'run_pipeline.py'}")
+                print(f"📍 Running: {sys.executable} {pipeline_script}")
                 
-                # Use sys.executable to get the current Python interpreter
-                python_executable = sys.executable
-                
-                result = subprocess.run(
-                    [python_executable, str(backend_dir / 'run_pipeline.py')],
+                # Use Popen for streaming output (same as manual scrape)
+                process = subprocess.Popen(
+                    [sys.executable, str(pipeline_script)],
                     cwd=str(backend_dir),
-                    capture_output=True,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.STDOUT,
                     text=True,
-                    timeout=7200,  # 2 hour timeout
-                    env=os.environ.copy()  # Pass environment variables
+                    bufsize=1,  # Line buffered
+                    env=os.environ.copy()
                 )
                 
-                print(f"📊 Return code: {result.returncode}")
-                if result.stdout:
-                    print(f"📝 Output: {result.stdout[:500]}")  # First 500 chars
-                if result.stderr:
-                    print(f"❌ Errors: {result.stderr[:500]}")  # First 500 chars
+                # Stream and log output in real-time
+                output_lines = []
+                products_count = 0
+                
+                for line in process.stdout:
+                    line = line.strip()
+                    if line:
+                        # Print to Docker logs in real-time
+                        print(f"  {line}")
+                        output_lines.append(line)
+                        
+                        # Track progress
+                        if 'Progress:' in line or 'Downloaded' in line:
+                            match = re.search(r'(\d+)/(\d+)', line)
+                            if match:
+                                products_count = int(match.group(1))
+                
+                # Wait for completion with timeout
+                try:
+                    return_code = process.wait(timeout=7200)  # 2 hour timeout
+                except subprocess.TimeoutExpired:
+                    process.kill()
+                    raise  # Re-raise to be caught by outer exception handler
+                
+                print(f"📊 Return code: {return_code}")
                 
                 # Update history
-                history.status = 'completed' if result.returncode == 0 else 'failed'
+                history.status = 'completed' if return_code == 0 else 'failed'
                 history.completed_at = datetime.now()
-                history.products_count = extract_products_count(result.stdout)
+                history.products_count = products_count
                 
                 # Store error message if failed
-                if result.returncode != 0:
-                    history.error_message = result.stderr[:500] if result.stderr else 'Unknown error'
+                if return_code != 0:
+                    # Get last 10 lines as error message
+                    error_msg = '\n'.join(output_lines[-10:]) if output_lines else 'Unknown error'
+                    history.error_message = error_msg[:500]
                 
                 # Find the generated Excel file
                 excel_file = find_latest_excel_file()
-                history.file_path = excel_file
+                if excel_file:
+                    history.excel_filename = os.path.basename(excel_file)
+                    history.file_size = os.path.getsize(excel_file)
+                    history.file_path = excel_file
                 
                 db.session.commit()
                 
-                if result.returncode == 0:
+                if return_code == 0:
                     print(f"✅ Scheduled scrape completed: {schedule.name}")
                 else:
                     print(f"❌ Scheduled scrape failed: {schedule.name}")
                 
                 # Send email if enabled and successful
-                if schedule.send_email and excel_file and os.path.exists(excel_file) and result.returncode == 0:
+                if schedule.send_email and excel_file and os.path.exists(excel_file) and return_code == 0:
                     send_scheduled_email(schedule, excel_file)
                 
             except subprocess.TimeoutExpired:

@@ -26,7 +26,11 @@ except ImportError:
 
 # Setup logging
 def setup_logging():
-    """Setup logging to both file and console"""
+    """Setup logging to both file and console with unbuffered output"""
+    # Force unbuffered output for Docker logs
+    sys.stdout.reconfigure(line_buffering=True)
+    sys.stderr.reconfigure(line_buffering=True)
+    
     # Create logs directory if it doesn't exist
     log_dir = Path(__file__).parent / "logs"
     log_dir.mkdir(exist_ok=True)
@@ -35,15 +39,20 @@ def setup_logging():
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     log_file = log_dir / f"scraper_{timestamp}.log"
     
-    # Configure logging
+    # Configure logging with immediate flush
     logging.basicConfig(
         level=logging.INFO,
         format='%(asctime)s - %(levelname)s - %(message)s',
         handlers=[
-            logging.FileHandler(log_file),
+            logging.FileHandler(log_file, mode='a'),
             logging.StreamHandler(sys.stdout)
-        ]
+        ],
+        force=True
     )
+    
+    # Set all handlers to flush immediately
+    for handler in logging.root.handlers:
+        handler.flush()
     
     return log_file
 
