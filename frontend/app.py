@@ -276,6 +276,9 @@ def run_backend_pipeline(user_id):
     """Run the existing backend pipeline script"""
     global scraping_active, scraping_process, scraping_stats
     
+    # Ensure umask is 0 for this thread (critical for SQLite temp files)
+    os.umask(0)
+    
     with app.app_context():
         try:
             # Debug: Log database permissions before attempting write
@@ -285,7 +288,7 @@ def run_backend_pipeline(user_id):
             if db_uri.startswith('sqlite:///'):
                 db_path = db_uri.replace('sqlite:///', '')
                 print("\n" + "="*60)
-                print("🔍 DATABASE PERMISSION DEBUG INFO")
+                print("🔍 DATABASE PERMISSION DEBUG INFO (in scraping thread)")
                 print("="*60)
                 
                 # Check database file
@@ -310,11 +313,12 @@ def run_backend_pipeline(user_id):
                     print(f"   Writable: {os.access(db_dir, os.W_OK)}")
                 
                 # Current process info
-                print(f"👤 Current process:")
+                print(f"👤 Current thread:")
                 print(f"   UID: {os.getuid()}")
                 print(f"   GID: {os.getgid()}")
-                print(f"   umask: {oct(os.umask(0o022))}")  # Check and restore
-                os.umask(0o022)  # Restore after check
+                current_umask = os.umask(0)  # Check current umask
+                os.umask(0)  # Set back to 0 (NOT 0o022!)
+                print(f"   umask: {oct(current_umask)} (now set to 0o0)")
                 
                 print("="*60 + "\n")
             
