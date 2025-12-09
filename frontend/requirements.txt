@@ -5,6 +5,10 @@ Flask==3.0.0
 Flask-SocketIO==5.3.5
 Flask-CORS==4.0.0
 Flask-Login==0.6.3
+Flask-SQLAlchemy==3.1.1
+
+# Database
+psycopg2-binary==2.9.9
 
 # WebSocket support
 python-socketio==5.10.0

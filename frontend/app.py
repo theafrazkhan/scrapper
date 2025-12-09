@@ -36,24 +36,30 @@ sys.path.insert(0, str(backend_dir))
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'change-this-secret-key-in-production')
 
-# Ensure instance folder exists with proper permissions
-instance_path = Path(__file__).parent / 'instance'
-instance_path.mkdir(exist_ok=True, mode=0o775)
+# Database configuration - PostgreSQL or SQLite fallback
+DATABASE_URL = os.environ.get('DATABASE_URL')
+if DATABASE_URL:
+    # Use PostgreSQL from environment variable
+    # Handle both postgres:// and postgresql:// schemes
+    if DATABASE_URL.startswith('postgres://'):
+        DATABASE_URL = DATABASE_URL.replace('postgres://', 'postgresql://', 1)
+    app.config['SQLALCHEMY_DATABASE_URI'] = DATABASE_URL
+    print(f"✅ Using PostgreSQL database")
+else:
+    # Fallback to SQLite for local development
+    instance_path = Path(__file__).parent / 'instance'
+    instance_path.mkdir(exist_ok=True, mode=0o777)
+    db_path = instance_path / 'scraper.db'
+    app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_path}'
+    print(f"⚠️  Using SQLite fallback: {db_path}")
 
-# Set database path explicitly with absolute path
-db_path = instance_path / 'scraper.db'
-app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_path}'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
 
-# Configure SQLite with more lenient permissions
+# Configure database engine options
 app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
-    'connect_args': {
-        'check_same_thread': False,  # Allow multi-threading
-        'timeout': 30,  # Increase timeout for busy database
-    },
-    'pool_pre_ping': True,  # Verify connections before using them
-    'pool_recycle': 3600,  # Recycle connections after 1 hour
+    'pool_pre_ping': True,
+    'pool_recycle': 3600,
 }
 
 # Ensure database file has write permissions if it exists

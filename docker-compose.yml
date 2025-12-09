@@ -1,14 +1,35 @@
 version: '3.8'
 
 services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: lululemon-postgres
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-scraper}
+      POSTGRES_USER: ${POSTGRES_USER:-scraper_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change_this_password}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-scraper_user}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Lululemon Scraper Application
   lululemon-scraper:
     build: .
     container_name: lululemon-scraper
+    depends_on:
+      postgres:
+        condition: service_healthy
     ports:
       - "5000:5000"
     volumes:
-      # Persist database
-      - ./frontend/instance:/app/frontend/instance
       # Persist scraped data
       - ./backend/data:/app/backend/data
       # Persist logs
@@ -16,6 +37,7 @@ services:
     environment:
       - FLASK_ENV=production
       - SECRET_KEY=${SECRET_KEY:-change-this-secret-key-in-production}
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-scraper_user}:${POSTGRES_PASSWORD:-change_this_password}@postgres:5432/${POSTGRES_DB:-scraper}
       - PYTHONUNBUFFERED=1
     restart: unless-stopped
     healthcheck:
@@ -24,3 +46,7 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
+
+volumes:
+  postgres_data:
+    driver: local
