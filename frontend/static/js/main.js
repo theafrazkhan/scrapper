@@ -117,6 +117,41 @@ async function checkLoginStatus() {
             currentUser = data.user;
             showDashboard();
             updateUserMenu();
+            
+            // CRITICAL: Restore scraping state if active
+            if (data.active && data.stats) {
+                console.log('Restoring scraping state:', data.stats);
+                scrapingInProgress = true;
+                
+                // Update UI to show scraping is in progress
+                const startBtn = document.getElementById('startScrapingBtn');
+                if (startBtn) {
+                    startBtn.disabled = true;
+                    startBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span>Scraping in Progress...</span>';
+                }
+                
+                // Update status indicator
+                updateStatus('Scraping in progress...', 'running');
+                
+                // Restore stats
+                if (data.stats.products_scraped !== undefined) {
+                    updateStats(data.stats.products_scraped, 0, '00:00');
+                }
+                
+                // Restore progress
+                if (data.stats.progress !== undefined) {
+                    updateProgress(data.stats.progress);
+                }
+                
+                // Add log about reconnection
+                addLog('Reconnected to active scraping session', 'info');
+                
+                // Start timer if we have a start time
+                if (!timerInterval) {
+                    scrapingStartTime = Date.now();
+                    startTimer();
+                }
+            }
         }
     } catch (error) {
         console.error('Error checking login status:', error);
@@ -249,7 +284,9 @@ function initializeSocket() {
     
     socket.on('connect', () => {
         console.log('Socket connected');
-        updateStatus('Ready', 'ready');
+        
+        // Check if scraping is in progress after (re)connection
+        checkScrapingStateOnReconnect();
     });
     
     socket.on('disconnect', () => {
@@ -272,6 +309,60 @@ function initializeSocket() {
     socket.on('scraping_stopped', (data) => {
         handleScrapingStopped(data);
     });
+}
+
+// Check scraping state when socket (re)connects
+async function checkScrapingStateOnReconnect() {
+    try {
+        const response = await fetch('/api/status');
+        const data = await response.json();
+        
+        if (data.active && data.stats) {
+            console.log('Active scraping detected on reconnect:', data.stats);
+            
+            if (!scrapingInProgress) {
+                // We weren't tracking this scraping - restore state
+                scrapingInProgress = true;
+                
+                // Update UI
+                const startBtn = document.getElementById('startScrapingBtn');
+                if (startBtn) {
+                    startBtn.disabled = true;
+                    startBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span>Scraping in Progress...</span>';
+                }
+                
+                // Update status
+                updateStatus('Scraping in progress...', 'running');
+                
+                // Start timer if not already running
+                if (!timerInterval) {
+                    scrapingStartTime = Date.now();
+                    startTimer();
+                }
+                
+                addLog('Reconnected to active scraping session', 'success');
+            }
+            
+            // Always update stats/progress from server
+            if (data.stats.products_scraped !== undefined) {
+                updateStats(data.stats.products_scraped, 0, '00:00');
+            }
+            
+            if (data.stats.progress !== undefined) {
+                updateProgress(data.stats.progress);
+            }
+            
+            if (data.stats.current_category) {
+                addLog(`Processing: ${data.stats.current_category}`, 'info');
+            }
+        } else {
+            // No active scraping
+            updateStatus('Ready', 'ready');
+        }
+    } catch (error) {
+        console.error('Error checking scraping state:', error);
+        updateStatus('Ready', 'ready');
+    }
 }
 
 // Start scraping
