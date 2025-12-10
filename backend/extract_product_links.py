@@ -79,61 +79,47 @@ async def download_category_page(context, category_name, url):
         print(f"   ⏳ Loading initial page to detect total products...")
         await page.goto(url, wait_until='domcontentloaded', timeout=120000)
         
-        # Wait for page to load
-        await asyncio.sleep(5)
+        # Wait longer for the page to fully render - categories with more products take longer
+        print(f"   ⏳ Waiting for page to render...")
+        await asyncio.sleep(10)
         
         # Extract total count from "Showing X of Y items"
         total_products = None
+        import re
+        
         try:
-            # Look for the grid container first, then find the paragraph with count
-            print(f"   ⏳ Searching for product count...")
+            # Wait for the specific paragraph element with the count to appear
+            print(f"   ⏳ Waiting for product count indicator...")
             
-            # Method 1: Look for the specific grid structure
+            # Try to find the paragraph with class containing 'lll-type-label-medium'
             try:
-                # Find the grid container and get text content
-                grid_locator = page.locator('div.grid.grid-cols-4.gap-24').first
-                # Look for paragraph with "Showing X of Y items" pattern inside or near it
-                count_locator = grid_locator.locator('p:has-text("Showing")').first
-                count_text = await count_locator.text_content(timeout=10000)
-                print(f"   ℹ️ Found count text in grid: {count_text}")
-                
-                if count_text:
-                    import re
-                    match = re.search(r'Showing\s+\d+\s+of\s+(\d+)\s+items?', count_text, re.IGNORECASE)
-                    if match:
-                        total_products = int(match.group(1))
-                        print(f"   ✓ Detected {total_products} total products in category")
-            except Exception as e:
-                print(f"   ⚠ Grid method failed: {e}")
-            
-            # Method 2: Search entire page for the pattern if grid method failed
-            if not total_products:
-                try:
-                    # Look for any paragraph with the pattern
-                    count_locator = page.locator('p:has-text("Showing")').first
-                    count_text = await count_locator.text_content(timeout=10000)
-                    print(f"   ℹ️ Found count text (fallback): {count_text}")
+                count_element = await page.wait_for_selector('p.lll-type-label-medium:has-text("Showing")', timeout=15000)
+                if count_element:
+                    count_text = await count_element.text_content()
+                    print(f"   📊 Found count text: {count_text}")
                     
-                    if count_text:
-                        import re
-                        match = re.search(r'Showing\s+\d+\s+of\s+(\d+)\s+items?', count_text, re.IGNORECASE)
-                        if match:
-                            total_products = int(match.group(1))
-                            print(f"   ✓ Detected {total_products} total products in category")
-                except Exception as e:
-                    print(f"   ⚠ Paragraph search failed: {e}")
-            
-            # Method 3: Last resort - search HTML content directly
+                    # Parse "Showing X of Y items"
+                    match = re.search(r'Showing\s+(\d+)\s+of\s+(\d+)\s+items?', count_text, re.IGNORECASE)
+                    if match:
+                        showing = int(match.group(1))
+                        total_products = int(match.group(2))
+                        print(f"   ✓ Detected {total_products} total products in category (currently showing {showing})")
+            except Exception as e:
+                print(f"   ⚠ Timeout waiting for count element: {e}")
+                
+            # Fallback: Search in page HTML if element wait fails
             if not total_products:
-                print(f"   ⏳ Searching page HTML for count...")
+                print(f"   ⏳ Trying fallback: searching page HTML...")
                 page_text = await page.content()
-                import re
-                match = re.search(r'Showing\s+\d+\s+of\s+(\d+)\s+items?', page_text, re.IGNORECASE)
+                
+                # Look for pattern in HTML
+                match = re.search(r'Showing\s+(\d+)\s+of\s+(\d+)\s+items?', page_text, re.IGNORECASE)
                 if match:
-                    total_products = int(match.group(1))
-                    print(f"   ✓ Detected {total_products} total products in category (from HTML)")
+                    showing = int(match.group(1))
+                    total_products = int(match.group(2))
+                    print(f"   ✓ Detected {total_products} total products in category (showing {showing})")
                 else:
-                    print(f"   ⚠ Could not find product count pattern in HTML")
+                    print(f"   ⚠ Could not find 'Showing X of Y items' pattern in page")
                     
         except Exception as e:
             print(f"   ⚠ Could not detect total count: {e}")
@@ -155,10 +141,14 @@ async def download_category_page(context, category_name, url):
             
             print(f"   ⏳ Reloading with limit={total_products}...")
             await page.goto(updated_url, wait_until='domcontentloaded', timeout=120000)
-            await asyncio.sleep(8)  # Wait for all products to load
+            
+            # Wait longer for large categories to load all products
+            wait_time = min(15, max(8, total_products // 20))  # 8-15 seconds based on count
+            print(f"   ⏳ Waiting {wait_time}s for all products to load...")
+            await asyncio.sleep(wait_time)
         else:
             print(f"   ⚠ Using default limit, could not detect total")
-            await asyncio.sleep(8)
+            await asyncio.sleep(10)
         
         # Wait for products to be in DOM
         try:
