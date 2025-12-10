@@ -1393,17 +1393,17 @@ def delete_user(user_id):
         return jsonify({'success': False, 'error': 'User not found'}), 404
     
     try:
-        # Get admin user to reassign records
-        admin_user = User.query.filter_by(is_admin=True).first()
-        if not admin_user or admin_user.id == user_id:
-            # Find another admin or the first remaining user
-            admin_user = User.query.filter(User.id != user_id).first()
+        # Get the first remaining user to reassign records to
+        remaining_user = User.query.filter(User.id != user_id).first()
         
-        # Reassign scraping history to admin instead of setting to NULL
-        ScrapingHistory.query.filter_by(triggered_by=user_id).update({'triggered_by': admin_user.id})
+        if not remaining_user:
+            return jsonify({'success': False, 'error': 'Cannot delete the last user'}), 400
         
-        # Reassign schedules to admin instead of deleting them
-        Schedule.query.filter_by(created_by=user_id).update({'created_by': admin_user.id})
+        # Reassign scraping history to remaining user instead of setting to NULL
+        ScrapingHistory.query.filter_by(triggered_by=user_id).update({'triggered_by': remaining_user.id})
+        
+        # Reassign schedules to remaining user instead of deleting them
+        Schedule.query.filter_by(created_by=user_id).update({'created_by': remaining_user.id})
         
         # Handle email recipients - set to NULL (this one allows NULL)
         EmailRecipient.query.filter_by(added_by=user_id).update({'added_by': None})
