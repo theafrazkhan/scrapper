@@ -85,36 +85,54 @@ async def download_category_page(context, category_name, url):
         # Extract total count from "Showing X of Y items"
         total_products = None
         try:
-            # Look for the pattern "Showing X of Y items" - try multiple selectors
-            count_text = None
+            # Look for the grid container first, then find the paragraph with count
+            print(f"   ⏳ Searching for product count...")
             
-            # Try different possible selectors
+            # Method 1: Look for the specific grid structure
             try:
-                count_text = await page.locator('p.lll-type-label-medium').first.text_content(timeout=10000)
-                print(f"   ℹ️ Found count text: {count_text}")
-            except:
-                # Try alternative selector
-                try:
-                    count_text = await page.locator('text=/Showing \\d+ of \\d+ items/').first.text_content(timeout=10000)
-                    print(f"   ℹ️ Found count text (alt): {count_text}")
-                except:
-                    # Try getting all text and searching
-                    print(f"   ⏳ Searching page content for count...")
-                    page_text = await page.content()
+                # Find the grid container
+                grid = await page.locator('div.grid.grid-cols-4.gap-24').first
+                # Look for paragraph with "Showing X of Y items" pattern inside or near it
+                count_text = await grid.locator('p:has-text("Showing")').first.text_content(timeout=10000)
+                print(f"   ℹ️ Found count text in grid: {count_text}")
+                
+                if count_text:
                     import re
-                    match = re.search(r'Showing \d+ of (\d+) items', page_text)
-                    if match:
-                        total_products = int(match.group(1))
-                        print(f"   ✓ Detected {total_products} total products in category (from HTML)")
-            
-            if count_text and not total_products:
-                if 'of' in count_text.lower():
-                    # Extract the total number (e.g., "Showing 12 of 261 items" -> 261)
-                    import re
-                    match = re.search(r'of\s+(\d+)', count_text, re.IGNORECASE)
+                    match = re.search(r'Showing\s+\d+\s+of\s+(\d+)\s+items?', count_text, re.IGNORECASE)
                     if match:
                         total_products = int(match.group(1))
                         print(f"   ✓ Detected {total_products} total products in category")
+            except Exception as e:
+                print(f"   ⚠ Grid method failed: {e}")
+            
+            # Method 2: Search entire page for the pattern if grid method failed
+            if not total_products:
+                try:
+                    # Look for any paragraph with the pattern
+                    count_text = await page.locator('p:has-text("Showing")').first.text_content(timeout=10000)
+                    print(f"   ℹ️ Found count text (fallback): {count_text}")
+                    
+                    if count_text:
+                        import re
+                        match = re.search(r'Showing\s+\d+\s+of\s+(\d+)\s+items?', count_text, re.IGNORECASE)
+                        if match:
+                            total_products = int(match.group(1))
+                            print(f"   ✓ Detected {total_products} total products in category")
+                except Exception as e:
+                    print(f"   ⚠ Paragraph search failed: {e}")
+            
+            # Method 3: Last resort - search HTML content directly
+            if not total_products:
+                print(f"   ⏳ Searching page HTML for count...")
+                page_text = await page.content()
+                import re
+                match = re.search(r'Showing\s+\d+\s+of\s+(\d+)\s+items?', page_text, re.IGNORECASE)
+                if match:
+                    total_products = int(match.group(1))
+                    print(f"   ✓ Detected {total_products} total products in category (from HTML)")
+                else:
+                    print(f"   ⚠ Could not find product count pattern in HTML")
+                    
         except Exception as e:
             print(f"   ⚠ Could not detect total count: {e}")
         
