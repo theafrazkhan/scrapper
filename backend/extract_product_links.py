@@ -77,47 +77,68 @@ async def download_category_page(context, category_name, url):
         
         # Step 1: Load the initial page to get the total count
         print(f"   ⏳ Loading initial page to detect total products...")
-        await page.goto(url, wait_until='load', timeout=120000)
+        await page.goto(url, wait_until='domcontentloaded', timeout=120000)
         
-        # Wait for the count element to appear
-        await asyncio.sleep(3)
+        # Wait for page to load
+        await asyncio.sleep(5)
         
         # Extract total count from "Showing X of Y items"
         total_products = None
         try:
-            # Look for the pattern "Showing X of Y items"
-            count_text = await page.locator('p.lll-type-label-medium').first.text_content()
-            if count_text and 'of' in count_text:
-                # Extract the total number (e.g., "Showing 12 of 261 items" -> 261)
-                parts = count_text.split('of')
-                if len(parts) >= 2:
-                    total_str = parts[1].strip().split()[0]  # Get "261" from "261 items"
-                    total_products = int(total_str)
-                    print(f"   ✓ Detected {total_products} total products in category")
+            # Look for the pattern "Showing X of Y items" - try multiple selectors
+            count_text = None
+            
+            # Try different possible selectors
+            try:
+                count_text = await page.locator('p.lll-type-label-medium').first.text_content(timeout=10000)
+                print(f"   ℹ️ Found count text: {count_text}")
+            except:
+                # Try alternative selector
+                try:
+                    count_text = await page.locator('text=/Showing \\d+ of \\d+ items/').first.text_content(timeout=10000)
+                    print(f"   ℹ️ Found count text (alt): {count_text}")
+                except:
+                    # Try getting all text and searching
+                    print(f"   ⏳ Searching page content for count...")
+                    page_text = await page.content()
+                    import re
+                    match = re.search(r'Showing \d+ of (\d+) items', page_text)
+                    if match:
+                        total_products = int(match.group(1))
+                        print(f"   ✓ Detected {total_products} total products in category (from HTML)")
+            
+            if count_text and not total_products:
+                if 'of' in count_text.lower():
+                    # Extract the total number (e.g., "Showing 12 of 261 items" -> 261)
+                    import re
+                    match = re.search(r'of\s+(\d+)', count_text, re.IGNORECASE)
+                    if match:
+                        total_products = int(match.group(1))
+                        print(f"   ✓ Detected {total_products} total products in category")
         except Exception as e:
             print(f"   ⚠ Could not detect total count: {e}")
         
         # Step 2: If we found a total, update the URL with the correct limit
         if total_products:
             # Parse URL and update limit parameter
+            import re
             if '?' in url:
                 base_url, params = url.split('?', 1)
                 # Replace limit parameter
-                import re
                 new_params = re.sub(r'limit=\d+', f'limit={total_products}', params)
                 # If limit wasn't in params, add it
-                if f'limit={total_products}' not in new_params:
+                if 'limit=' not in params:
                     new_params = f'limit={total_products}&{new_params}'
                 updated_url = f"{base_url}?{new_params}"
             else:
                 updated_url = f"{url}?limit={total_products}"
             
             print(f"   ⏳ Reloading with limit={total_products}...")
-            await page.goto(updated_url, wait_until='load', timeout=120000)
-            await asyncio.sleep(5)  # Wait for all products to load
+            await page.goto(updated_url, wait_until='domcontentloaded', timeout=120000)
+            await asyncio.sleep(8)  # Wait for all products to load
         else:
             print(f"   ⚠ Using default limit, could not detect total")
-            await asyncio.sleep(5)
+            await asyncio.sleep(8)
         
         # Wait for products to be in DOM
         try:
@@ -189,18 +210,28 @@ def extract_product_links_from_html(html_file, category_name):
         
         # Method 2: Fallback to HTML parsing (if JSON extraction fails)
         print(f"   ℹ️  Falling back to HTML parsing...")
+        
+        # Look for product card links more specifically
+        # Product links usually have the pattern /p/ followed by the product slug
         for a_tag in soup.find_all('a', href=True):
             href = a_tag['href']
-            if '/p/' in href:
+            # More specific check - must contain /p/ and be a product page link
+            if '/p/' in href and not any(x in href for x in ['/pages/', '/plp/', '/pdp/']):
                 # Convert to full URL if relative
                 if href.startswith('/'):
                     full_url = f"https://wholesale.lululemon.com{href}"
-                else:
+                elif href.startswith('http'):
                     full_url = href
+                else:
+                    continue  # Skip relative paths that don't start with /
                 
                 # Clean URL - remove query parameters and hash
                 clean_url = full_url.split('?')[0].split('#')[0]
-                product_links.add(clean_url)
+                
+                # Validate it's a proper product URL format
+                # Should be like: https://wholesale.lululemon.com/p/product-name-W12345
+                if clean_url.count('/p/') == 1:  # Only one /p/ in the URL
+                    product_links.add(clean_url)
         
         print(f"   ✓ Found {len(product_links)} unique product links")
         return product_links
