@@ -133,12 +133,15 @@ async function checkLoginStatus() {
                 // Update status indicator
                 updateStatus('Scraping in progress...', 'running');
                 
-                // Restore stats
+                // Restore stat cards (header numbers)
+                if (data.stats.total_products !== undefined) {
+                    document.getElementById('totalProducts').textContent = data.stats.total_products;
+                }
                 if (data.stats.products_scraped !== undefined) {
-                    updateStats(data.stats.products_scraped, 0, '00:00');
+                    document.getElementById('downloadedProducts').textContent = data.stats.products_scraped;
                 }
                 
-                // Restore progress
+                // Restore progress bar
                 if (data.stats.progress !== undefined) {
                     updateProgress(data.stats.progress);
                 }
@@ -344,8 +347,12 @@ async function checkScrapingStateOnReconnect() {
             }
             
             // Always update stats/progress from server
+            if (data.stats.total_products !== undefined) {
+                document.getElementById('totalProducts').textContent = data.stats.total_products;
+            }
+            
             if (data.stats.products_scraped !== undefined) {
-                updateStats(data.stats.products_scraped, 0, '00:00');
+                document.getElementById('downloadedProducts').textContent = data.stats.products_scraped;
             }
             
             if (data.stats.progress !== undefined) {
