@@ -90,10 +90,11 @@ async def download_category_page(context, category_name, url):
             
             # Method 1: Look for the specific grid structure
             try:
-                # Find the grid container
-                grid = await page.locator('div.grid.grid-cols-4.gap-24').first
+                # Find the grid container and get text content
+                grid_locator = page.locator('div.grid.grid-cols-4.gap-24').first
                 # Look for paragraph with "Showing X of Y items" pattern inside or near it
-                count_text = await grid.locator('p:has-text("Showing")').first.text_content(timeout=10000)
+                count_locator = grid_locator.locator('p:has-text("Showing")').first
+                count_text = await count_locator.text_content(timeout=10000)
                 print(f"   ℹ️ Found count text in grid: {count_text}")
                 
                 if count_text:
@@ -109,7 +110,8 @@ async def download_category_page(context, category_name, url):
             if not total_products:
                 try:
                     # Look for any paragraph with the pattern
-                    count_text = await page.locator('p:has-text("Showing")').first.text_content(timeout=10000)
+                    count_locator = page.locator('p:has-text("Showing")').first
+                    count_text = await count_locator.text_content(timeout=10000)
                     print(f"   ℹ️ Found count text (fallback): {count_text}")
                     
                     if count_text:
@@ -232,27 +234,28 @@ def extract_product_links_from_html(html_file, category_name):
         # Look for product card links more specifically
         # Product links have format: /p/{product-name}/{product-id}
         import re
-        product_pattern = re.compile(r'/p/[^/]+/[^/?#]+')  # Matches /p/something/something
+        product_pattern = re.compile(r'^/p/[^/]+/[^/?#]+$')  # Strict: must start with /p/ and have exactly 2 segments
         
-        for a_tag in soup.find_all('a', href=True):
+        # Only look in the product grid area to avoid navigation/footer links
+        # Try to find the product grid container first
+        product_grid = soup.find('div', class_=lambda x: x and 'grid' in x and 'grid-cols' in x)
+        search_area = product_grid if product_grid else soup
+        
+        for a_tag in search_area.find_all('a', href=True):
             href = a_tag['href']
             
-            # Check if this matches the product URL pattern
-            if product_pattern.search(href):
-                # Convert to full URL if relative
-                if href.startswith('/'):
-                    full_url = f"https://wholesale.lululemon.com{href}"
-                elif href.startswith('http'):
-                    full_url = href
+            # Clean the href first (remove query params)
+            clean_href = href.split('?')[0].split('#')[0]
+            
+            # Check if this matches the strict product URL pattern
+            if product_pattern.match(clean_href):
+                # Convert to full URL
+                if clean_href.startswith('/'):
+                    full_url = f"https://wholesale.lululemon.com{clean_href}"
                 else:
-                    continue  # Skip other relative paths
+                    continue
                 
-                # Clean URL - remove query parameters and hash
-                clean_url = full_url.split('?')[0].split('#')[0]
-                
-                # Validate it has the correct structure: /p/name/id
-                if product_pattern.search(clean_url):
-                    product_links.add(clean_url)
+                product_links.add(full_url)
         
         print(f"   ✓ Found {len(product_links)} unique product links")
         return product_links
