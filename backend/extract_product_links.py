@@ -71,58 +71,61 @@ def read_category_links():
 async def download_category_page(context, category_name, url):
     """Download a single category page"""
     print(f"\n📥 Downloading: {category_name}")
-    print(f"   URL: {url}")
     
     try:
         page = await context.new_page()
         
-        # Increase timeout for large categories (women has 256 products)
-        # Use 'load' instead of 'networkidle' for faster initial load
-        print(f"   ⏳ Loading page...")
-        await page.goto(url, wait_until='load', timeout=120000)  # 2 minutes timeout
+        # Step 1: Load the initial page to get the total count
+        print(f"   ⏳ Loading initial page to detect total products...")
+        await page.goto(url, wait_until='load', timeout=120000)
         
-        # Wait for products to load in the page
-        print(f"   ⏳ Waiting for products to load...")
+        # Wait for the count element to appear
+        await asyncio.sleep(3)
+        
+        # Extract total count from "Showing X of Y items"
+        total_products = None
         try:
-            # Wait for product grid or product cards to appear
+            # Look for the pattern "Showing X of Y items"
+            count_text = await page.locator('p.lll-type-label-medium').first.text_content()
+            if count_text and 'of' in count_text:
+                # Extract the total number (e.g., "Showing 12 of 261 items" -> 261)
+                parts = count_text.split('of')
+                if len(parts) >= 2:
+                    total_str = parts[1].strip().split()[0]  # Get "261" from "261 items"
+                    total_products = int(total_str)
+                    print(f"   ✓ Detected {total_products} total products in category")
+        except Exception as e:
+            print(f"   ⚠ Could not detect total count: {e}")
+        
+        # Step 2: If we found a total, update the URL with the correct limit
+        if total_products:
+            # Parse URL and update limit parameter
+            if '?' in url:
+                base_url, params = url.split('?', 1)
+                # Replace limit parameter
+                import re
+                new_params = re.sub(r'limit=\d+', f'limit={total_products}', params)
+                # If limit wasn't in params, add it
+                if f'limit={total_products}' not in new_params:
+                    new_params = f'limit={total_products}&{new_params}'
+                updated_url = f"{base_url}?{new_params}"
+            else:
+                updated_url = f"{url}?limit={total_products}"
+            
+            print(f"   ⏳ Reloading with limit={total_products}...")
+            await page.goto(updated_url, wait_until='load', timeout=120000)
+            await asyncio.sleep(5)  # Wait for all products to load
+        else:
+            print(f"   ⚠ Using default limit, could not detect total")
+            await asyncio.sleep(5)
+        
+        # Wait for products to be in DOM
+        try:
             await page.wait_for_selector('a[href*="/p/"]', timeout=20000)
-            print(f"   ✓ Products loaded in DOM")
+            product_count = await page.locator('a[href*="/p/"]').count()
+            print(f"   ✓ Found {product_count} product links in DOM")
         except:
             print(f"   ⚠ Timeout waiting for product elements")
-        
-        # Scroll to load all products (for lazy loading/infinite scroll)
-        print(f"   📜 Scrolling to load all products...")
-        previous_count = 0
-        stable_count = 0
-        max_scrolls = 50  # Maximum number of scroll attempts
-        
-        for scroll_attempt in range(max_scrolls):
-            # Count current products
-            current_count = await page.locator('a[href*="/p/"]').count()
-            
-            # Scroll to bottom
-            await page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
-            await asyncio.sleep(2)  # Wait for new products to load
-            
-            # Check if we've loaded new products
-            if current_count == previous_count:
-                stable_count += 1
-                # If count hasn't changed for 3 consecutive scrolls, we're done
-                if stable_count >= 3:
-                    print(f"   ✓ Loaded {current_count} products after {scroll_attempt + 1} scrolls")
-                    break
-            else:
-                stable_count = 0
-                print(f"   ⏳ Loaded {current_count} products so far...")
-            
-            previous_count = current_count
-        else:
-            # If we hit max_scrolls
-            final_count = await page.locator('a[href*="/p/"]').count()
-            print(f"   ⚠ Reached max scrolls ({max_scrolls}), found {final_count} products")
-        
-        # Final wait to ensure all content is rendered
-        await asyncio.sleep(3)
         
         # Get HTML content
         html_content = await page.content()
