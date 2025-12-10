@@ -1405,6 +1405,9 @@ def delete_user(user_id):
         # Reassign schedules to remaining user instead of deleting them
         Schedule.query.filter_by(created_by=user_id).update({'created_by': remaining_user.id})
         
+        # Reassign lululemon credentials to remaining user
+        LululemonCredentials.query.filter_by(updated_by=user_id).update({'updated_by': remaining_user.id})
+        
         # Handle email recipients - set to NULL (this one allows NULL)
         EmailRecipient.query.filter_by(added_by=user_id).update({'added_by': None})
         
