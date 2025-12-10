@@ -1392,10 +1392,31 @@ def delete_user(user_id):
     if not user:
         return jsonify({'success': False, 'error': 'User not found'}), 404
     
-    db.session.delete(user)
-    db.session.commit()
-    
-    return jsonify({'success': True, 'message': 'User deleted'})
+    try:
+        # Get admin user to reassign records
+        admin_user = User.query.filter_by(is_admin=True).first()
+        if not admin_user or admin_user.id == user_id:
+            # Find another admin or the first remaining user
+            admin_user = User.query.filter(User.id != user_id).first()
+        
+        # Reassign scraping history to admin instead of setting to NULL
+        ScrapingHistory.query.filter_by(triggered_by=user_id).update({'triggered_by': admin_user.id})
+        
+        # Reassign schedules to admin instead of deleting them
+        Schedule.query.filter_by(created_by=user_id).update({'created_by': admin_user.id})
+        
+        # Handle email recipients - set to NULL (this one allows NULL)
+        EmailRecipient.query.filter_by(added_by=user_id).update({'added_by': None})
+        
+        # Now delete the user
+        db.session.delete(user)
+        db.session.commit()
+        
+        return jsonify({'success': True, 'message': 'User deleted successfully'})
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error deleting user: {str(e)}")
+        return jsonify({'success': False, 'error': f'Failed to delete user: {str(e)}'}), 500
 
 
 @app.route('/api/admin/email_recipients', methods=['GET', 'POST', 'DELETE'])
