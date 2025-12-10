@@ -92,7 +92,7 @@ class EmailRecipient(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(120), nullable=False)
     is_active = db.Column(db.Boolean, default=True)
-    added_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    added_by = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='SET NULL'), nullable=True)  # Make nullable and set to NULL on user deletion
     added_at = db.Column(db.DateTime, default=datetime.now)
     
     def __repr__(self):
