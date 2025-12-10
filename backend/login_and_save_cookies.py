@@ -294,28 +294,32 @@ def discover_categories(driver):
         # Return empty dict, will use fallback
         return {}
 
-def extract_product_count(driver, category_name, url):
-    """Navigate to a category page and extract the total product count."""
-    print(f"\n  Navigating to {category_name}...")
-    driver.get(url)
+def extract_product_count_and_links(driver, category_name, url):
+    """Navigate to a category page, extract the total product count, and extract all product links."""
+    print(f"\n  📂 Processing {category_name}...")
+    
+    # Step 1: Load initial page with limit=12 to detect count
+    initial_url = re.sub(r'limit=\d+', 'limit=12', url) if 'limit=' in url else (url + '?limit=12' if '?' not in url else url + '&limit=12')
+    print(f"    ⏳ Loading initial page...")
+    driver.get(initial_url)
     
     try:
-        # Look for the div with product count: "Showing 12 of 246 items"
-        # Wait for element to appear instead of fixed sleep
+        # Wait for the product count element to appear
         product_count_element = None
+        total_count = None
         
-        # Method 1: Look for the specific div with class
+        # Method 1: Look for the specific paragraph with class
         try:
-            product_count_element = WebDriverWait(driver, 8).until(
-                EC.presence_of_element_located((By.CSS_SELECTOR, "div.bg-white.px-16.pt-16 p.lll-type-label-medium"))
+            product_count_element = WebDriverWait(driver, 15).until(
+                EC.presence_of_element_located((By.CSS_SELECTOR, "p.lll-type-label-medium"))
             )
         except:
             pass
         
-        # Method 2: Look for any paragraph with similar text pattern
+        # Method 2: Look for any paragraph with the pattern
         if not product_count_element:
             try:
-                product_count_element = WebDriverWait(driver, 5).until(
+                product_count_element = WebDriverWait(driver, 10).until(
                     EC.presence_of_element_located((By.XPATH, "//p[contains(text(), 'Showing') and contains(text(), 'of') and contains(text(), 'items')]"))
                 )
             except:
@@ -323,21 +327,98 @@ def extract_product_count(driver, category_name, url):
         
         if product_count_element:
             text = product_count_element.text
-            print(f"  Found text: {text}")
+            print(f"    📊 Found: '{text}'")
             
             # Extract the total count using regex: "Showing X of Y items"
-            match = re.search(r'Showing\s+\d+\s+of\s+(\d+)\s+items', text)
+            match = re.search(r'Showing\s+\d+\s+of\s+(\d+)\s+items?', text, re.IGNORECASE)
             if match:
                 total_count = int(match.group(1))
-                print(f"  ✓ Total products in {category_name}: {total_count}")
-                return total_count+10
+                print(f"    ✓ Detected {total_count} total products")
         
-        print(f"  ⚠ Could not extract product count for {category_name}, using default limit=12")
-        return 12
+        if not total_count:
+            print(f"    ⚠ Could not detect count, using default=500")
+            total_count = 500
+        
+        # Step 2: Reload page with full limit
+        full_url = re.sub(r'limit=\d+', f'limit={total_count}', url) if 'limit=' in url else (url + f'?limit={total_count}' if '?' not in url else url + f'&limit={total_count}')
+        print(f"    ⏳ Loading all {total_count} products...")
+        driver.get(full_url)
+        
+        # CRITICAL: Wait longer for heavy pages to load all products
+        # Dynamic wait: more products = more wait time
+        if total_count > 200:
+            wait_time = 30  # 30 seconds for 200+ products
+        elif total_count > 100:
+            wait_time = 20  # 20 seconds for 100+ products
+        else:
+            wait_time = 15  # 15 seconds for <100 products
+        
+        print(f"    ⏳ Waiting {wait_time}s for all products to render...")
+        time.sleep(wait_time)
+        
+        # Step 3: Extract all product links from the page
+        print(f"    🔍 Extracting product links...")
+        product_links = set()
+        
+        # Find all <a> tags with href containing "/p/"
+        link_elements = driver.find_elements(By.CSS_SELECTOR, 'a[href*="/p/"]')
+        print(f"    📦 Found {len(link_elements)} link elements in DOM")
+        
+        # Filter to only valid product links with pattern: /p/{name}/{id}
+        product_pattern = re.compile(r'^/p/[^/]+/[^/?#]+$')
+        
+        for link_elem in link_elements:
+            try:
+                href = link_elem.get_attribute('href')
+                if href:
+                    # Extract path from full URL
+                    if 'wholesale.lululemon.com' in href:
+                        path = href.split('wholesale.lululemon.com')[-1].split('?')[0].split('#')[0]
+                    else:
+                        path = href.split('?')[0].split('#')[0]
+                    
+                    # Check if it matches product URL pattern
+                    if product_pattern.match(path):
+                        full_url = f"https://wholesale.lululemon.com{path}" if path.startswith('/') else href
+                        product_links.add(full_url)
+            except:
+                continue
+        
+        print(f"    ✓ Extracted {len(product_links)} unique product links")
+        
+        return {
+            'count': total_count,
+            'links': product_links
+        }
         
     except Exception as e:
-        print(f"  ⚠ Error extracting count for {category_name}: {e}")
-        return 12
+        print(f"    ❌ Error processing {category_name}: {e}")
+        return {
+            'count': 500,
+            'links': set()
+        }
+
+def save_category_links_to_csv(category_name, product_links):
+    """Save product links for a category to a CSV file."""
+    # Create categories folder if it doesn't exist
+    categories_folder = SCRIPT_DIR / "data" / "categories"
+    categories_folder.mkdir(parents=True, exist_ok=True)
+    
+    output_file = categories_folder / f"{category_name}.csv"
+    sorted_links = sorted(list(product_links))
+    
+    try:
+        with open(output_file, 'w', newline='', encoding='utf-8') as csvfile:
+            writer = csv.writer(csvfile)
+            writer.writerow(['Product URL'])
+            for link in sorted_links:
+                writer.writerow([link])
+        
+        print(f"    💾 Saved to: {output_file.name}")
+        return True
+    except Exception as e:
+        print(f"    ❌ Error saving CSV: {e}")
+        return False
 
 def update_links_file(category_counts):
     """Update the links.csv file with the correct product limits."""
@@ -457,34 +538,47 @@ def main():
             print("\n✗ No categories discovered. Exiting.")
             sys.exit(1)
         
-        # Extract product counts from category pages (FAST MODE: use default 500)
-        print("\n[Step 3/4] Setting up category data (using fast mode)...")
+        # Extract product counts AND links from category pages (in same session!)
+        print("\n[Step 3/4] Extracting product links from all categories...")
+        print("  🔥 Using same browser session - already authenticated!")
         category_data = {}
+        total_products = 0
         
-        # OPTIMIZATION: Skip individual page visits, use high default limit
-        # The download script will handle pagination properly
-        print("  ⚡ Fast mode: Using default limit of 500 per category")
         for category_name, cat_info in categories.items():
+            result = extract_product_count_and_links(driver, cat_info['display_name'], cat_info['url'])
+            
             category_data[category_name] = {
                 'url': cat_info['url'],
-                'count': 500,  # High default - download script will handle actual count
+                'count': result['count'],
                 'display_name': cat_info['display_name']
             }
-            print(f"  ✓ {cat_info['display_name']}: limit=500")
+            
+            # Save links to CSV immediately
+            if result['links']:
+                save_category_links_to_csv(category_name, result['links'])
+                total_products += len(result['links'])
+            else:
+                print(f"    ⚠ No links extracted for {category_name}")
+        
+        print(f"\n  🎉 Total products extracted: {total_products}")
         
         # Save cookies
-        print("\n[Step 3.5/4] Saving cookies...")
+        print("\n[Step 4/4] Saving session cookies...")
         save_cookies(driver, COOKIE_FILE)
         
-        # Update links.csv file
+        # Update links.csv file with updated URLs
+        print("\n[Step 4.5/4] Updating links.csv...")
         update_links_file(category_data)
         
         print("\n" + "=" * 60)
         print("✓ SUCCESS! All tasks completed.")
         print("=" * 60)
-        print(f"\nCookie file: {os.path.abspath(COOKIE_FILE)}")
-        print(f"Links file: {os.path.abspath(LINKS_FILE)}")
-        print("\nYou can now use these cookies and links with your download scripts.")
+        print(f"\n📂 Cookie file: {os.path.abspath(COOKIE_FILE)}")
+        print(f"📂 Links file: {os.path.abspath(LINKS_FILE)}")
+        print(f"📂 Product CSVs: {os.path.abspath(SCRIPT_DIR / 'data' / 'categories')}/")
+        print(f"\n🔗 Total products extracted: {total_products}")
+        print("\n✅ You can now use these cookies and product lists with your download scripts.")
+
         
     except Exception as e:
         print(f"\n✗ An error occurred: {e}")

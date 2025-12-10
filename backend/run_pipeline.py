@@ -208,10 +208,10 @@ def main():
     
     # Run scraping pipeline
     pipeline_steps = [
-        ("login_and_save_cookies.py", "STEP 1: Login & Save Cookies"),
-        ("extract_product_links.py", "STEP 2: Extract Product Links"),
-        ("download_by_category.py", "STEP 3: Download Product Pages"),
-        ("extract_to_excel.py", "STEP 4: Generate Excel Report")
+        ("login_and_save_cookies.py", "STEP 1: Login & Extract Product Links (in same session)"),
+        # REMOVED: extract_product_links.py - now handled in login script with same browser session
+        ("download_by_category.py", "STEP 2: Download Product Pages"),
+        ("extract_to_excel.py", "STEP 3: Generate Excel Report")
     ]
     
     total_start = datetime.now()
