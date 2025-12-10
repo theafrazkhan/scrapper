@@ -400,15 +400,19 @@ async function updateEmailConfiguration(event) {
         const data = await response.json();
         
         if (data.success) {
+            // Close modal first
+            closeModal('edit-email-config-modal');
+            
+            // Refresh the display
+            await loadEmailConfig();
+            
+            // Show success message
             Swal.fire({
                 icon: 'success',
                 title: 'Success!',
                 text: 'Email configuration updated successfully',
                 confirmButtonColor: '#ff6b35'
             });
-            
-            closeModal('edit-email-config-modal');
-            loadEmailConfig();
         } else {
             Swal.fire({
                 icon: 'error',

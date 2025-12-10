@@ -8,13 +8,35 @@ import resend
 from pathlib import Path
 from datetime import datetime
 
-# Configure Resend API
-RESEND_API_KEY = "re_dzPPEveX_B9rbrrcKa3usGcqErFFqiZ5P"
-FROM_EMAIL = "scraper@testing.afrazkhan.dev"
-FROM_NAME = "Lululemon Scraper"
+def get_email_config_from_db():
+    """
+    Get email configuration from database
+    
+    Returns:
+        dict: Email configuration from database or None
+    """
+    try:
+        from database import db, EmailConfig
+        config = EmailConfig.query.first()
+        if config:
+            return {
+                'api_key': config.api_key,
+                'from_email': config.from_email,
+                'from_name': config.from_name,
+                'domain': config.domain,
+                'provider': config.provider
+            }
+    except Exception as e:
+        print(f"Error loading email config from database: {e}")
+    return None
 
-# Initialize Resend
-resend.api_key = RESEND_API_KEY
+def initialize_resend():
+    """Initialize Resend API with database configuration"""
+    config = get_email_config_from_db()
+    if config and config.get('api_key'):
+        resend.api_key = config['api_key']
+        return config
+    return None
 
 
 def send_excel_email(to_emails, excel_path, scraping_stats=None):
@@ -30,6 +52,14 @@ def send_excel_email(to_emails, excel_path, scraping_stats=None):
         dict: Response with success status and details
     """
     try:
+        # Get email configuration from database
+        email_config = initialize_resend()
+        if not email_config:
+            return {
+                'success': False,
+                'error': 'Email not configured. Please configure email settings in Settings > Email Configuration.'
+            }
+        
         # Validate inputs
         if not to_emails:
             return {
@@ -220,7 +250,7 @@ def send_excel_email(to_emails, excel_path, scraping_stats=None):
         for recipient in to_emails:
             try:
                 response = resend.Emails.send({
-                    "from": f"{FROM_NAME} <{FROM_EMAIL}>",
+                    "from": f"{email_config['from_name']} <{email_config['from_email']}>",
                     "to": [recipient],
                     "subject": subject,
                     "html": html_body,
@@ -278,6 +308,14 @@ def send_test_email(to_email):
         dict: Response with success status
     """
     try:
+        # Get email configuration from database
+        email_config = initialize_resend()
+        if not email_config:
+            return {
+                'success': False,
+                'error': 'Email not configured. Please configure email settings first.'
+            }
+        
         html_content = """
         <!DOCTYPE html>
         <html lang="en">
@@ -479,7 +517,7 @@ def send_test_email(to_email):
         """
         
         response = resend.Emails.send({
-            "from": f"{FROM_NAME} <{FROM_EMAIL}>",
+            "from": f"{email_config['from_name']} <{email_config['from_email']}>",
             "to": [to_email],
             "subject": "✓ Email Configuration Test - Success!",
             "html": html_content
@@ -500,16 +538,24 @@ def send_test_email(to_email):
 
 def send_password_reset_otp(to_email, otp_code):
     """
-    Send password reset OTP to admin user's email
+    Send password reset OTP to user's email
     
     Args:
-        to_email (str): Admin email address
+        to_email (str): User email address
         otp_code (str): 6-digit OTP code
         
     Returns:
         dict: Response with success status
     """
     try:
+        # Get email configuration from database
+        email_config = initialize_resend()
+        if not email_config:
+            return {
+                'success': False,
+                'error': 'Email not configured. Cannot send OTP.'
+            }
+        
         html_content = f"""
         <!DOCTYPE html>
         <html lang="en">
@@ -627,9 +673,9 @@ def send_password_reset_otp(to_email, otp_code):
         """
         
         response = resend.Emails.send({
-            "from": f"{FROM_NAME} <{FROM_EMAIL}>",
+            "from": f"{email_config['from_name']} <{email_config['from_email']}>",
             "to": [to_email],
-            "subject": "🔐 Password Reset OTP - Admin Account",
+            "subject": "🔐 Password Reset OTP",
             "html": html_content
         })
         
@@ -653,10 +699,19 @@ def get_email_config():
     Returns:
         dict: Email configuration details
     """
+    config = get_email_config_from_db()
+    if config:
+        return {
+            'provider': config.get('provider', 'Resend'),
+            'from_email': config.get('from_email', ''),
+            'from_name': config.get('from_name', ''),
+            'api_configured': bool(config.get('api_key')),
+            'domain': config.get('domain', '')
+        }
     return {
         'provider': 'Resend',
-        'from_email': FROM_EMAIL,
-        'from_name': FROM_NAME,
-        'api_configured': bool(RESEND_API_KEY),
-        'domain': 'testing.afrazkhan.dev'
+        'from_email': '',
+        'from_name': '',
+        'api_configured': False,
+        'domain': ''
     }
