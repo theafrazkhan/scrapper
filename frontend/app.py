@@ -1980,7 +1980,7 @@ def manage_email_config():
                     'success': True,
                     'config': {
                         'provider': 'Resend',
-                        'api_key': email_settings.smtp_password,  # Using smtp_password field for API key
+                        'api_key_configured': bool(email_settings.smtp_password),  # Don't expose actual key
                         'from_email': email_settings.from_email,
                         'from_name': email_settings.from_name or 'Lululemon Scraper',  # Get from DB
                         'domain': email_settings.from_email.split('@')[1] if email_settings.from_email and '@' in email_settings.from_email else ''
@@ -1992,7 +1992,7 @@ def manage_email_config():
                     'success': True,
                     'config': {
                         'provider': 'Resend',
-                        'api_key': '',
+                        'api_key_configured': False,
                         'from_email': '',
                         'from_name': 'Lululemon Scraper',
                         'domain': ''
@@ -2007,15 +2007,16 @@ def manage_email_config():
     elif request.method == 'POST':
         try:
             data = request.get_json()
-            api_key = data.get('api_key')
+            api_key = data.get('api_key', '').strip()  # Optional, only if provided
             from_email = data.get('from_email')
             from_name = data.get('from_name')
             domain = data.get('domain')
             
-            if not all([api_key, from_email, from_name, domain]):
+            # Validate required fields (api_key is optional for updates)
+            if not all([from_email, from_name, domain]):
                 return jsonify({
                     'success': False,
-                    'error': 'All fields are required'
+                    'error': 'From Email, From Name, and Domain are required'
                 }), 400
             
             # Check if settings exist
@@ -2023,14 +2024,22 @@ def manage_email_config():
             
             if email_settings:
                 # Update existing
-                email_settings.smtp_password = api_key
+                # Only update API key if a new one is provided
+                if api_key:
+                    email_settings.smtp_password = api_key
                 email_settings.from_email = from_email
                 email_settings.from_name = from_name
                 email_settings.updated_by = current_user.id
                 email_settings.updated_at = datetime.now()
                 email_settings.is_enabled = True
             else:
-                # Create new
+                # Create new - API key is required for new config
+                if not api_key:
+                    return jsonify({
+                        'success': False,
+                        'error': 'API key is required for initial setup'
+                    }), 400
+                    
                 email_settings = EmailSettings(
                     smtp_host='api.resend.com',
                     smtp_port=587,

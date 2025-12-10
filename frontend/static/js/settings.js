@@ -352,10 +352,21 @@ async function openEditEmailConfigModal() {
         
         if (data.success) {
             const config = data.config;
-            document.getElementById('email-api-key').value = config.api_key || '';
+            // DO NOT populate API key for security - leave it empty
+            document.getElementById('email-api-key').value = '';
             document.getElementById('email-from-email').value = config.from_email || '';
             document.getElementById('email-from-name').value = config.from_name || '';
             document.getElementById('email-domain').value = config.domain || '';
+            
+            // Update placeholder based on whether API key is already configured
+            const apiKeyInput = document.getElementById('email-api-key');
+            if (config.api_key_configured) {
+                apiKeyInput.placeholder = 'Leave blank to keep existing API key';
+                apiKeyInput.required = false;
+            } else {
+                apiKeyInput.placeholder = 'Enter Resend API key (re_...)';
+                apiKeyInput.required = true;
+            }
         }
     } catch (error) {
         console.error('Failed to load email config:', error);

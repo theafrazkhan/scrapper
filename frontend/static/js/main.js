@@ -208,20 +208,13 @@ function updateUserMenu() {
         
         userEmailShort.textContent = shortName;
         userEmail.textContent = currentUser.email;
-        userRole.textContent = currentUser.role;
-        
-        // Add admin badge styling
-        if (currentUser.role === 'admin') {
-            userRole.classList.add('admin');
-        }
+        userRole.textContent = 'User';
         
         // Show menu wrapper
         userMenuWrapper.classList.remove('hidden');
         
-        // Show settings link if user is admin
-        if (currentUser.role === 'admin') {
-            settingsLink.style.display = 'flex';
-        }
+        // Show settings link for all users
+        settingsLink.style.display = 'flex';
     }
 }
 
