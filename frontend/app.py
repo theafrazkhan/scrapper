@@ -710,8 +710,7 @@ def api_login():
             'success': True,
             'message': 'Login successful',
             'user': {
-                'email': user.email,
-                'role': user.role
+                'email': user.email
             }
         })
     
@@ -1389,8 +1388,6 @@ def delete_user(user_id):
         return jsonify({'success': False, 'error': 'User not found'}), 404
     
     # Cannot delete admin account (there's only one)
-    if user.role == 'admin':
-        return jsonify({'success': False, 'error': 'Cannot delete the admin account. Admin account is protected.'}), 400
     
     db.session.delete(user)
     db.session.commit()
@@ -1448,8 +1445,6 @@ def manage_email_recipients():
 @login_required
 def add_recipient():
     """Add email recipient"""
-    if current_user.role != 'admin':
-        return jsonify({'success': False, 'error': 'Unauthorized'}), 403
     
     data = request.get_json()
     email = data.get('email')
@@ -1477,8 +1472,6 @@ def add_recipient():
 @login_required
 def manage_recipient(recipient_id):
     """Update or delete email recipient"""
-    if current_user.role != 'admin':
-        return jsonify({'success': False, 'error': 'Unauthorized'}), 403
     
     recipient = EmailRecipient.query.get(recipient_id)
     if not recipient:
@@ -1509,8 +1502,6 @@ def manage_recipient(recipient_id):
 @login_required
 def get_schedules():
     """Get all schedules (admin only)"""
-    if current_user.role != 'admin':
-        return jsonify({'error': 'Unauthorized'}), 403
     
     schedules = Schedule.query.all()
     return jsonify({
@@ -1534,8 +1525,6 @@ def get_schedules():
 @login_required
 def create_schedule():
     """Create a new schedule (admin only)"""
-    if current_user.role != 'admin':
-        return jsonify({'error': 'Unauthorized'}), 403
     
     data = request.get_json()
     
@@ -1610,8 +1599,6 @@ def create_schedule():
 @login_required
 def update_schedule(schedule_id):
     """Update a schedule (admin only)"""
-    if current_user.role != 'admin':
-        return jsonify({'error': 'Unauthorized'}), 403
     
     schedule = Schedule.query.get(schedule_id)
     if not schedule:
@@ -1671,8 +1658,6 @@ def update_schedule(schedule_id):
 @login_required
 def delete_schedule(schedule_id):
     """Delete a schedule (admin only)"""
-    if current_user.role != 'admin':
-        return jsonify({'error': 'Unauthorized'}), 403
     
     schedule = Schedule.query.get(schedule_id)
     if not schedule:
@@ -1697,8 +1682,6 @@ def delete_schedule(schedule_id):
 @login_required
 def toggle_schedule(schedule_id):
     """Toggle schedule enabled/disabled (admin only)"""
-    if current_user.role != 'admin':
-        return jsonify({'error': 'Unauthorized'}), 403
     
     schedule = Schedule.query.get(schedule_id)
     if not schedule:
@@ -1732,8 +1715,6 @@ def toggle_schedule(schedule_id):
 @login_required
 def get_timezones():
     """Get list of common timezones"""
-    if current_user.role != 'admin':
-        return jsonify({'error': 'Unauthorized'}), 403
     
     # Return a curated list of common timezones
     common_timezones = [
@@ -1771,8 +1752,6 @@ def get_timezones():
 @login_required
 def get_env_credentials():
     """Get Lululemon credentials from .env file (admin only)"""
-    if current_user.role != 'admin':
-        return jsonify({'error': 'Unauthorized'}), 403
     
     try:
         env_path = Path(__file__).parent.parent / '.env'
@@ -1807,8 +1786,6 @@ def get_env_credentials():
 @login_required
 def update_env_credentials():
     """Update Lululemon credentials in .env file (admin only)"""
-    if current_user.role != 'admin':
-        return jsonify({'error': 'Unauthorized'}), 403
     
     try:
         data = request.get_json()
@@ -1874,8 +1851,6 @@ def update_env_credentials():
 @login_required
 def get_lululemon_credentials():
     """Get Lululemon credentials (admin only)"""
-    if current_user.role != 'admin':
-        return jsonify({'error': 'Unauthorized'}), 403
     
     creds = LululemonCredentials.query.filter_by(is_active=True).first()
     if creds:
@@ -1898,8 +1873,6 @@ def get_lululemon_credentials():
 @login_required
 def update_lululemon_credentials():
     """Update Lululemon credentials (admin only)"""
-    if current_user.role != 'admin':
-        return jsonify({'error': 'Unauthorized'}), 403
     
     try:
         data = request.get_json()
@@ -1996,8 +1969,6 @@ def update_lululemon_credentials():
 @login_required
 def manage_email_config():
     """Get or update email configuration (admin only)"""
-    if current_user.role != 'admin':
-        return jsonify({'error': 'Unauthorized'}), 403
     
     if request.method == 'GET':
         try:
@@ -2011,21 +1982,20 @@ def manage_email_config():
                         'provider': 'Resend',
                         'api_key': email_settings.smtp_password,  # Using smtp_password field for API key
                         'from_email': email_settings.from_email,
-                        'from_name': 'Lululemon Scraper',  # Default
+                        'from_name': email_settings.from_name or 'Lululemon Scraper',  # Get from DB
                         'domain': email_settings.from_email.split('@')[1] if email_settings.from_email and '@' in email_settings.from_email else ''
                     }
                 })
             else:
-                # Return current hardcoded config if no DB entry
-                from email_service import RESEND_API_KEY, FROM_EMAIL, FROM_NAME, DOMAIN
+                # Return empty config if no DB entry
                 return jsonify({
                     'success': True,
                     'config': {
                         'provider': 'Resend',
-                        'api_key': RESEND_API_KEY,
-                        'from_email': FROM_EMAIL,
-                        'from_name': FROM_NAME,
-                        'domain': DOMAIN
+                        'api_key': '',
+                        'from_email': '',
+                        'from_name': 'Lululemon Scraper',
+                        'domain': ''
                     }
                 })
         except Exception as e:
@@ -2055,6 +2025,9 @@ def manage_email_config():
                 # Update existing
                 email_settings.smtp_password = api_key
                 email_settings.from_email = from_email
+                email_settings.from_name = from_name
+                email_settings.updated_by = current_user.id
+                email_settings.updated_at = datetime.now()
                 email_settings.is_enabled = True
             else:
                 # Create new
@@ -2064,48 +2037,13 @@ def manage_email_config():
                     smtp_username='resend',
                     smtp_password=api_key,
                     from_email=from_email,
+                    from_name=from_name,
+                    updated_by=current_user.id,
                     is_enabled=True
                 )
                 db.session.add(email_settings)
             
             db.session.commit()
-            
-            # Update email_service.py file to use these values
-            try:
-                email_service_path = os.path.join(os.path.dirname(__file__), 'email_service.py')
-                
-                if os.path.exists(email_service_path):
-                    with open(email_service_path, 'r') as f:
-                        content = f.read()
-                    
-                    # Update the constants
-                    import re
-                    content = re.sub(
-                        r'RESEND_API_KEY\s*=\s*["\'].*?["\']',
-                        f'RESEND_API_KEY = "{api_key}"',
-                        content
-                    )
-                    content = re.sub(
-                        r'FROM_EMAIL\s*=\s*["\'].*?["\']',
-                        f'FROM_EMAIL = "{from_email}"',
-                        content
-                    )
-                    content = re.sub(
-                        r'FROM_NAME\s*=\s*["\'].*?["\']',
-                        f'FROM_NAME = "{from_name}"',
-                        content
-                    )
-                    content = re.sub(
-                        r'DOMAIN\s*=\s*["\'].*?["\']',
-                        f'DOMAIN = "{domain}"',
-                        content
-                    )
-                    
-                    with open(email_service_path, 'w') as f:
-                        f.write(content)
-            
-            except Exception as file_error:
-                print(f"Warning: Failed to update email_service.py: {file_error}")
             
             return jsonify({
                 'success': True,
@@ -2124,8 +2062,6 @@ def manage_email_config():
 @login_required
 def test_lululemon_credentials():
     """Test Lululemon credentials by attempting login (admin only)"""
-    if current_user.role != 'admin':
-        return jsonify({'error': 'Unauthorized'}), 403
     
     try:
         data = request.get_json()

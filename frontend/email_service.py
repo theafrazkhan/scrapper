@@ -16,15 +16,15 @@ def get_email_config_from_db():
         dict: Email configuration from database or None
     """
     try:
-        from database import db, EmailConfig
-        config = EmailConfig.query.first()
+        from database import db, EmailSettings
+        config = EmailSettings.query.first()
         if config:
             return {
-                'api_key': config.api_key,
+                'api_key': config.smtp_password,  # API key stored in smtp_password field
                 'from_email': config.from_email,
-                'from_name': config.from_name,
-                'domain': config.domain,
-                'provider': config.provider
+                'from_name': config.from_name or 'Lululemon Scraper',
+                'domain': config.from_email.split('@')[1] if config.from_email and '@' in config.from_email else '',
+                'provider': 'Resend'
             }
     except Exception as e:
         print(f"Error loading email config from database: {e}")

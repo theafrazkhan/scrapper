@@ -43,7 +43,6 @@ async function addUser(event) {
     
     const email = document.getElementById('new-user-email').value;
     const password = document.getElementById('new-user-password').value;
-    const role = document.getElementById('new-user-role').value;
     
     try {
         const response = await fetch('/api/admin/users', {
@@ -51,7 +50,7 @@ async function addUser(event) {
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ email, password, role })
+            body: JSON.stringify({ email, password })
         });
         
         const data = await response.json();
