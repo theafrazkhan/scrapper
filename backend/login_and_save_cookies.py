@@ -8,6 +8,7 @@ Note: Credentials are now fetched from database instead of .env file
 
 import json
 import os
+import sys
 import time
 import re
 import csv
@@ -133,11 +134,66 @@ def login_to_wholesale(driver):
             lambda d: "wholesale.lululemon.com" in d.current_url and d.current_url != LOGIN_URL
         )
         
-        # Brief wait to ensure cookies are set (reduced from 5s to 2s)
-        time.sleep(2)
+        # Brief wait to ensure page loads completely
+        time.sleep(3)
+        
+        # CRITICAL: Validate actual login success
+        print("Validating login success...")
+        
+        # Check for error messages
+        try:
+            error_elements = driver.find_elements(By.CSS_SELECTOR, ".error, .alert-danger, [class*='error'], [class*='Error']")
+            if error_elements:
+                for elem in error_elements:
+                    error_text = elem.text.strip()
+                    if error_text and len(error_text) > 0:
+                        print(f"✗ Login error detected: {error_text}")
+                        return False
+        except:
+            pass
+        
+        # Check if we're still on login page or redirected to error page
+        current_url = driver.current_url.lower()
+        if 'login' in current_url or 'signin' in current_url or 'error' in current_url:
+            print(f"✗ Login failed - still on auth page: {current_url}")
+            return False
+        
+        # Check for wholesale-specific elements that prove we're logged in
+        try:
+            # Try to find navigation menu or wholesale-specific elements
+            wholesale_indicators = [
+                (By.CSS_SELECTOR, "nav"),
+                (By.CSS_SELECTOR, "[class*='navigation']"),
+                (By.CSS_SELECTOR, "[class*='menu']"),
+                (By.XPATH, "//a[contains(@href, 'wholesale')]"),
+            ]
+            
+            found_indicator = False
+            for by, selector in wholesale_indicators:
+                try:
+                    elements = driver.find_elements(by, selector)
+                    if elements:
+                        found_indicator = True
+                        break
+                except:
+                    continue
+            
+            if not found_indicator:
+                print("✗ Warning: Could not find wholesale navigation elements")
+                print("   This might indicate login failure")
+                
+        except Exception as e:
+            print(f"⚠ Warning: Could not verify wholesale elements: {e}")
+        
+        # Final validation: Check page title or content
+        page_title = driver.title.lower()
+        if 'error' in page_title or 'login' in page_title or 'sign in' in page_title:
+            print(f"✗ Login failed - page title indicates error: {driver.title}")
+            return False
         
         print("✓ Login successful!")
         print(f"Current URL: {driver.current_url}")
+        print(f"Page title: {driver.title}")
         return True
         
     except TimeoutException as e:
@@ -375,9 +431,23 @@ def main():
         
         # Perform login
         print("\n[Step 1/4] Logging in to wholesale portal...")
-        if not login_to_wholesale(driver):
-            print("\n✗ Login failed. Please check credentials and try again.")
-            return
+        login_success = login_to_wholesale(driver)
+        
+        if not login_success:
+            print("\n" + "=" * 60)
+            print("❌ LOGIN FAILED - ABORTING")
+            print("=" * 60)
+            print("\nPossible reasons:")
+            print("  1. Incorrect email or password")
+            print("  2. Account is locked or suspended")
+            print("  3. Lululemon changed their login page structure")
+            print("  4. Network connectivity issues")
+            print("\nPlease:")
+            print("  - Verify your credentials in Settings > Lululemon Login")
+            print("  - Try logging in manually at https://wholesale.lululemon.com/")
+            print("  - Check if your wholesale account is active")
+            print("=" * 60)
+            sys.exit(1)  # Exit with error code
         
         # Discover categories dynamically
         print("\n[Step 2/4] Discovering categories...")
@@ -385,7 +455,7 @@ def main():
         
         if not categories:
             print("\n✗ No categories discovered. Exiting.")
-            return
+            sys.exit(1)
         
         # Extract product counts from category pages (FAST MODE: use default 500)
         print("\n[Step 3/4] Setting up category data (using fast mode)...")
