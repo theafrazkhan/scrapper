@@ -224,9 +224,7 @@
                 <i class="fas fa-user-circle"></i>
                 <div>
                     <div class="dropdown-email">{{ user.email }}</div>
-                    <div class="dropdown-role {% if user.is_admin() %}admin{% endif %}">
-                        {% if user.is_admin() %}Administrator{% else %}User{% endif %}
-                    </div>
+                    <div class="dropdown-role">User</div>
                 </div>
             </div>
             <div class="menu-divider"></div>
