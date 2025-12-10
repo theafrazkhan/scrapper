@@ -422,7 +422,9 @@ def save_category_links_to_csv(category_name, product_links):
 
 def update_links_file(category_counts):
     """Update the links.csv file with the correct product limits."""
-    print("\n[4/4] Updating links.csv file...")
+    print("\n" + "="*60)
+    print("Updating links.csv with detected product counts...")
+    print("="*60)
     
     # Create directory if it doesn't exist
     LINKS_FILE.parent.mkdir(parents=True, exist_ok=True)
@@ -436,7 +438,7 @@ def update_links_file(category_counts):
         # Replace limit=12 with the actual count
         updated_url = re.sub(r'limit=\d+', f'limit={count}', url)
         updated_urls.append(updated_url)
-        print(f"  - {category_name}: limit={count}")
+        print(f"  ✓ {data['display_name']}: limit={count}")
     
     # Save to CSV file (overwrite if exists)
     with open(LINKS_FILE, 'w', newline='') as f:
