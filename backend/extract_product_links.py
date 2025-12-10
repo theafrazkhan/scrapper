@@ -212,25 +212,28 @@ def extract_product_links_from_html(html_file, category_name):
         print(f"   ℹ️  Falling back to HTML parsing...")
         
         # Look for product card links more specifically
-        # Product links usually have the pattern /p/ followed by the product slug
+        # Product links have format: /p/{product-name}/{product-id}
+        import re
+        product_pattern = re.compile(r'/p/[^/]+/[^/?#]+')  # Matches /p/something/something
+        
         for a_tag in soup.find_all('a', href=True):
             href = a_tag['href']
-            # More specific check - must contain /p/ and be a product page link
-            if '/p/' in href and not any(x in href for x in ['/pages/', '/plp/', '/pdp/']):
+            
+            # Check if this matches the product URL pattern
+            if product_pattern.search(href):
                 # Convert to full URL if relative
                 if href.startswith('/'):
                     full_url = f"https://wholesale.lululemon.com{href}"
                 elif href.startswith('http'):
                     full_url = href
                 else:
-                    continue  # Skip relative paths that don't start with /
+                    continue  # Skip other relative paths
                 
                 # Clean URL - remove query parameters and hash
                 clean_url = full_url.split('?')[0].split('#')[0]
                 
-                # Validate it's a proper product URL format
-                # Should be like: https://wholesale.lululemon.com/p/product-name-W12345
-                if clean_url.count('/p/') == 1:  # Only one /p/ in the URL
+                # Validate it has the correct structure: /p/name/id
+                if product_pattern.search(clean_url):
                     product_links.add(clean_url)
         
         print(f"   ✓ Found {len(product_links)} unique product links")
