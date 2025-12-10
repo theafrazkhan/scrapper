@@ -463,10 +463,18 @@
                                 <td>{{ u.last_login.strftime('%Y-%m-%d %H:%M') if u.last_login else 'Never' }}</td>
                                 <td>{{ u.created_at.strftime('%Y-%m-%d') if u.created_at else 'N/A' }}</td>
                                 <td>
-                                    {% if u.email != user.email %}
+                                    {% if u.email != user.email and users|length > 1 %}
                                     <button class="btn-icon" onclick="deleteUser({{ u.id }}, '{{ u.email }}')" title="Delete">
                                         <i class="fas fa-trash"></i>
                                     </button>
+                                    {% elif users|length == 1 %}
+                                    <span style="color: var(--gray-500); font-size: 0.85rem;" title="Cannot delete the last user">
+                                        <i class="fas fa-lock"></i> Last user
+                                    </span>
+                                    {% elif u.email == user.email %}
+                                    <span style="color: var(--gray-500); font-size: 0.85rem;" title="Cannot delete your own account">
+                                        <i class="fas fa-user-shield"></i> You
+                                    </span>
                                     {% endif %}
                                 </td>
                             </tr>

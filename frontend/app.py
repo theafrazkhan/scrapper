@@ -661,7 +661,7 @@ def history():
 def settings():
     """Settings page - includes user management, email & schedule configuration"""
     users = User.query.all()
-    email_recipients = EmailRecipient.query.filter_by(is_active=True).all()
+    email_recipients = EmailRecipient.query.all()  # Show all recipients, including inactive
     schedules = Schedule.query.all()
     
     return render_template('settings.html', 
@@ -737,11 +737,11 @@ def forgot_password():
     user = User.query.filter_by(email=email).first()
     
     if not user:
-        # Don't reveal if email exists for security (timing-safe response)
+        # Return clear error message
         return jsonify({
-            'success': True, 
-            'message': 'If this email exists, an OTP has been sent to your email.'
-        })
+            'success': False, 
+            'message': 'No account found with this email address. Please check and try again.'
+        }), 404
     
     # Generate reset token (OTP)
     token = user.generate_reset_token()
@@ -1383,11 +1383,14 @@ def delete_user(user_id):
     if user_id == current_user.id:
         return jsonify({'success': False, 'error': 'Cannot delete your own account'}), 400
     
+    # Check total user count - must have at least one user remaining
+    total_users = User.query.count()
+    if total_users <= 1:
+        return jsonify({'success': False, 'error': 'Cannot delete the last user account'}), 400
+    
     user = User.query.get(user_id)
     if not user:
         return jsonify({'success': False, 'error': 'User not found'}), 404
-    
-    # Cannot delete admin account (there's only one)
     
     db.session.delete(user)
     db.session.commit()
@@ -1470,6 +1473,35 @@ def add_recipient():
 
 @app.route('/api/admin/recipients/<int:recipient_id>', methods=['PUT', 'DELETE'])
 @login_required
+def manage_recipient(recipient_id):
+    """Update or delete a specific recipient"""
+    
+    recipient = EmailRecipient.query.get(recipient_id)
+    if not recipient:
+        return jsonify({'success': False, 'error': 'Recipient not found'}), 404
+    
+    if request.method == 'PUT':
+        # Toggle active status
+        data = request.get_json()
+        new_status = data.get('is_active')
+        
+        if new_status is not None:
+            recipient.is_active = new_status
+            db.session.commit()
+            status_text = "activated" if new_status else "paused"
+            return jsonify({
+                'success': True, 
+                'message': f'Recipient {status_text}',
+                'is_active': recipient.is_active
+            })
+        
+        return jsonify({'success': False, 'error': 'Invalid data'}), 400
+    
+    elif request.method == 'DELETE':
+        # Permanently delete
+        db.session.delete(recipient)
+        db.session.commit()
+        return jsonify({'success': True, 'message': 'Recipient deleted permanently'})
 def manage_recipient(recipient_id):
     """Update or delete email recipient"""
     
