@@ -90,9 +90,39 @@ async def download_category_page(context, category_name, url):
         except:
             print(f"   ⚠ Timeout waiting for product elements")
         
-        # Additional wait to ensure all JavaScript has executed
-        # Longer wait for categories with more products
-        await asyncio.sleep(8)
+        # Scroll to load all products (for lazy loading/infinite scroll)
+        print(f"   📜 Scrolling to load all products...")
+        previous_count = 0
+        stable_count = 0
+        max_scrolls = 50  # Maximum number of scroll attempts
+        
+        for scroll_attempt in range(max_scrolls):
+            # Count current products
+            current_count = await page.locator('a[href*="/p/"]').count()
+            
+            # Scroll to bottom
+            await page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
+            await asyncio.sleep(2)  # Wait for new products to load
+            
+            # Check if we've loaded new products
+            if current_count == previous_count:
+                stable_count += 1
+                # If count hasn't changed for 3 consecutive scrolls, we're done
+                if stable_count >= 3:
+                    print(f"   ✓ Loaded {current_count} products after {scroll_attempt + 1} scrolls")
+                    break
+            else:
+                stable_count = 0
+                print(f"   ⏳ Loaded {current_count} products so far...")
+            
+            previous_count = current_count
+        else:
+            # If we hit max_scrolls
+            final_count = await page.locator('a[href*="/p/"]').count()
+            print(f"   ⚠ Reached max scrolls ({max_scrolls}), found {final_count} products")
+        
+        # Final wait to ensure all content is rendered
+        await asyncio.sleep(3)
         
         # Get HTML content
         html_content = await page.content()
