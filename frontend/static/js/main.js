@@ -121,6 +121,10 @@ async function checkLoginStatus() {
             // CRITICAL: Restore scraping state if active
             if (data.active && data.stats) {
                 console.log('Restoring scraping state:', data.stats);
+                console.log('  - total_products:', data.stats.total_products);
+                console.log('  - products_scraped:', data.stats.products_scraped);
+                console.log('  - progress:', data.stats.progress);
+                
                 scrapingInProgress = true;
                 
                 // Update UI to show scraping is in progress
@@ -134,16 +138,27 @@ async function checkLoginStatus() {
                 updateStatus('Scraping in progress...', 'running');
                 
                 // Restore stat cards (header numbers)
-                if (data.stats.total_products !== undefined) {
-                    document.getElementById('totalProducts').textContent = data.stats.total_products;
+                const totalProductsEl = document.getElementById('totalProducts');
+                const downloadedEl = document.getElementById('downloadedProducts');
+                
+                if (totalProductsEl && data.stats.total_products !== undefined && data.stats.total_products > 0) {
+                    totalProductsEl.textContent = data.stats.total_products;
+                    console.log('✅ Restored totalProducts:', data.stats.total_products);
+                } else {
+                    console.log('⚠️ totalProducts not restored:', data.stats.total_products);
                 }
-                if (data.stats.products_scraped !== undefined) {
-                    document.getElementById('downloadedProducts').textContent = data.stats.products_scraped;
+                
+                if (downloadedEl && data.stats.products_scraped !== undefined && data.stats.products_scraped > 0) {
+                    downloadedEl.textContent = data.stats.products_scraped;
+                    console.log('✅ Restored products_scraped:', data.stats.products_scraped);
+                } else {
+                    console.log('⚠️ products_scraped not restored:', data.stats.products_scraped);
                 }
                 
                 // Restore progress bar
                 if (data.stats.progress !== undefined) {
                     updateProgress(data.stats.progress);
+                    console.log('✅ Restored progress:', data.stats.progress + '%');
                 }
                 
                 // Add log about reconnection
