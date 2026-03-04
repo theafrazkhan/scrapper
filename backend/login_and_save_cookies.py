@@ -52,6 +52,61 @@ LINKS_FILE = SCRIPT_DIR / "data" / "links.csv"
 # Base URL - categories will be discovered dynamically
 BASE_URL = "https://wholesale.lululemon.com"
 
+AUTH_COOKIE_NAMES = {
+    "wholesale_strategic_sales",
+    "JSESSIONID",
+    "Route_SSSAuth",
+    "frontastic-session",
+}
+
+
+def _find_first_element(driver, selectors, timeout=15):
+    """Try multiple selectors and return the first matching element."""
+    end_time = time.time() + timeout
+    while time.time() < end_time:
+        for by, selector in selectors:
+            try:
+                element = driver.find_element(by, selector)
+                if element:
+                    return element
+            except Exception:
+                continue
+        time.sleep(0.25)
+    return None
+
+
+def _looks_like_auth_url(url):
+    """Check if URL appears to be an auth/login page."""
+    lowered = (url or "").lower()
+    return any(token in lowered for token in ["login", "signin", "sign-in", "auth", "oauth", "sso"])
+
+
+def _has_login_form(driver):
+    """Detect presence of visible login form fields."""
+    try:
+        login_fields = driver.find_elements(
+            By.CSS_SELECTOR,
+            "input[type='password'], input#password, input[name='password']"
+        )
+        for field in login_fields:
+            if field.is_displayed():
+                return True
+    except Exception:
+        pass
+    return False
+
+
+def _has_auth_cookie(driver):
+    """Check for expected auth/session cookies."""
+    try:
+        cookies = driver.get_cookies()
+        for cookie in cookies:
+            if cookie.get("name") in AUTH_COOKIE_NAMES and cookie.get("value"):
+                return True
+    except Exception:
+        pass
+    return False
+
 def setup_driver():
     """Set up Chrome WebDriver with appropriate options."""
     print("Setting up Chrome WebDriver...")
@@ -106,11 +161,19 @@ def login_to_wholesale(driver):
     driver.get(LOGIN_URL)
     
     try:
-        # Wait for and find the email input field (page load implicit)
+        # Wait for and find the email input field (with selector fallbacks)
         print("Looking for email input field...")
-        email_input = WebDriverWait(driver, 15).until(
-            EC.presence_of_element_located((By.ID, "email"))
-        )
+        email_input = _find_first_element(driver, [
+            (By.ID, "email"),
+            (By.NAME, "email"),
+            (By.CSS_SELECTOR, "input[type='email']"),
+            (By.CSS_SELECTOR, "input[autocomplete='username']"),
+            (By.CSS_SELECTOR, "input[name*='email' i]"),
+        ], timeout=20)
+
+        if not email_input:
+            print("✗ Could not locate email input field")
+            return False
         
         # Enter email
         print(f"Entering email: {EMAIL}")
@@ -119,19 +182,41 @@ def login_to_wholesale(driver):
         
         # Find and enter password (no delay needed)
         print("Entering password...")
-        password_input = driver.find_element(By.ID, "password")
+        password_input = _find_first_element(driver, [
+            (By.ID, "password"),
+            (By.NAME, "password"),
+            (By.CSS_SELECTOR, "input[type='password']"),
+            (By.CSS_SELECTOR, "input[autocomplete='current-password']"),
+        ], timeout=10)
+
+        if not password_input:
+            print("✗ Could not locate password input field")
+            return False
+
         password_input.clear()
         password_input.send_keys(PASSWORD)
         
         # Find and click the login button
         print("Clicking login button...")
-        login_button = driver.find_element(By.CSS_SELECTOR, "button[type='submit']")
-        login_button.click()
+        login_button = _find_first_element(driver, [
+            (By.CSS_SELECTOR, "button[type='submit']"),
+            (By.CSS_SELECTOR, "input[type='submit']"),
+            (By.XPATH, "//button[contains(translate(normalize-space(.), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'sign in') or contains(translate(normalize-space(.), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'log in') or contains(translate(normalize-space(.), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'login')]")
+        ], timeout=8)
+
+        if login_button:
+            login_button.click()
+        else:
+            # Fallback: submit via password field if button selector changed
+            password_input.submit()
         
-        # Wait for login to complete - wait for URL to change or specific element to appear
+        # Wait for login state to settle (URL/auth cookie/login form disappearance)
         print("Waiting for login to complete...")
-        WebDriverWait(driver, 20).until(
-            lambda d: "wholesale.lululemon.com" in d.current_url and d.current_url != LOGIN_URL
+        WebDriverWait(driver, 30).until(
+            lambda d: (
+                _has_auth_cookie(d)
+                or (not _has_login_form(d) and not _looks_like_auth_url(d.current_url))
+            )
         )
         
         # Brief wait to ensure page loads completely
@@ -140,21 +225,23 @@ def login_to_wholesale(driver):
         # CRITICAL: Validate actual login success
         print("Validating login success...")
         
-        # Check for error messages
+        # Check for visible error messages
         try:
             error_elements = driver.find_elements(By.CSS_SELECTOR, ".error, .alert-danger, [class*='error'], [class*='Error']")
             if error_elements:
                 for elem in error_elements:
+                    if not elem.is_displayed():
+                        continue
                     error_text = elem.text.strip()
-                    if error_text and len(error_text) > 0:
+                    if error_text and any(token in error_text.lower() for token in ["invalid", "incorrect", "locked", "suspended", "failed", "try again"]):
                         print(f"✗ Login error detected: {error_text}")
                         return False
         except:
             pass
         
-        # Check if we're still on login page or redirected to error page
+        # Check if we're still on login page
         current_url = driver.current_url.lower()
-        if 'login' in current_url or 'signin' in current_url or 'error' in current_url:
+        if _looks_like_auth_url(current_url) and _has_login_form(driver) and not _has_auth_cookie(driver):
             print(f"✗ Login failed - still on auth page: {current_url}")
             return False
         
@@ -185,10 +272,11 @@ def login_to_wholesale(driver):
         except Exception as e:
             print(f"⚠ Warning: Could not verify wholesale elements: {e}")
         
-        # Final validation: Check page title or content
-        page_title = driver.title.lower()
-        if 'error' in page_title or 'login' in page_title or 'sign in' in page_title:
-            print(f"✗ Login failed - page title indicates error: {driver.title}")
+        # Final validation: authenticated cookie OR off-auth URL with no login form
+        if not (_has_auth_cookie(driver) or (not _has_login_form(driver) and not _looks_like_auth_url(driver.current_url))):
+            print(f"✗ Login validation failed - unable to confirm authenticated state")
+            print(f"Current URL: {driver.current_url}")
+            print(f"Page title: {driver.title}")
             return False
         
         print("✓ Login successful!")
@@ -343,49 +431,81 @@ def extract_product_count_and_links(driver, category_name, url):
         full_url = re.sub(r'limit=\d+', f'limit={total_count}', url) if 'limit=' in url else (url + f'?limit={total_count}' if '?' not in url else url + f'&limit={total_count}')
         print(f"    ⏳ Loading all {total_count} products...")
         driver.get(full_url)
-        
-        # CRITICAL: Wait longer for heavy pages to load all products
-        # Dynamic wait: more products = more wait time
-        if total_count > 200:
-            wait_time = 30  # 30 seconds for 200+ products
-        elif total_count > 100:
-            wait_time = 20  # 20 seconds for 100+ products
-        else:
-            wait_time = 15  # 15 seconds for <100 products
-        
-        print(f"    ⏳ Waiting {wait_time}s for all products to render...")
-        time.sleep(wait_time)
-        
-        # Step 3: Extract all product links from the page
-        print(f"    🔍 Extracting product links...")
+
+        # Optimized waiting: poll the DOM for product link count instead of a long fixed sleep.
+        print("    ⏳ Waiting for products to render (progressive polling)...")
         product_links = set()
-        
-        # Find all <a> tags with href containing "/p/"
-        link_elements = driver.find_elements(By.CSS_SELECTOR, 'a[href*="/p/"]')
-        print(f"    📦 Found {len(link_elements)} link elements in DOM")
-        
-        # Filter to only valid product links with pattern: /p/{name}/{id}
         product_pattern = re.compile(r'^/p/[^/]+/[^/?#]+$')
-        
-        for link_elem in link_elements:
+
+        # Polling strategy: check every 1s up to a reasonable timeout based on total_count
+        # fast path: timeout = min(60, 5 + total_count // 5)
+        timeout_secs = min(60, 5 + total_count // 5)
+        start_ts = time.time()
+        last_count = 0
+
+        while True:
+            # Use JavaScript to quickly collect hrefs from anchors (faster than many selenium calls)
             try:
-                href = link_elem.get_attribute('href')
-                if href:
-                    # Extract path from full URL
+                js = (
+                    "Array.from(document.querySelectorAll('a[href*=\"/p/\"]')).map(a => a.getAttribute('href')).filter(Boolean)"
+                )
+                hrefs = driver.execute_script(f"return {js};")
+            except Exception:
+                hrefs = []
+
+            # Normalize and filter
+            found_before = len(product_links)
+            for href in hrefs:
+                try:
                     if 'wholesale.lululemon.com' in href:
                         path = href.split('wholesale.lululemon.com')[-1].split('?')[0].split('#')[0]
                     else:
                         path = href.split('?')[0].split('#')[0]
-                    
-                    # Check if it matches product URL pattern
+
                     if product_pattern.match(path):
                         full_url = f"https://wholesale.lululemon.com{path}" if path.startswith('/') else href
                         product_links.add(full_url)
-            except:
-                continue
-        
+                except Exception:
+                    continue
+
+            current_count = len(product_links)
+            # If we've reached expected total_count, or count isn't growing and we've passed a short stable window, break
+            elapsed = time.time() - start_ts
+            if current_count >= total_count:
+                print(f"    ✓ Reached expected product count: {current_count}")
+                break
+            if current_count == last_count and elapsed > max(8, timeout_secs // 3):
+                # no progress in a stable window; assume loaded
+                print(f"    ⚠ Product count stabilized at {current_count} after {int(elapsed)}s")
+                break
+
+            if elapsed > timeout_secs:
+                print(f"    ⚠ Timeout waiting for products after {int(elapsed)}s (found {current_count})")
+                break
+
+            last_count = current_count
+            # Adaptive sleep: shorter when early, slightly longer when close to expected
+            sleep_for = 0.8 if current_count < total_count // 2 else 1.2
+            time.sleep(sleep_for)
+
+        print(f"    📦 Collected {len(product_links)} candidate links from DOM")
+
+        # Final dedupe and sanity-check: ensure the number doesn't exceed total_count wildly
+        if len(product_links) > total_count * 3:
+            # Something's off (duplicates or nav links slipped through). Trim by unique paths.
+            print(f"    ⚠ Unusually high link count ({len(product_links)}), applying stricter filter")
+            filtered = set()
+            for url in product_links:
+                try:
+                    path = url.split('wholesale.lululemon.com')[-1].split('?')[0].split('#')[0]
+                    if product_pattern.match(path):
+                        filtered.add(f"https://wholesale.lululemon.com{path}" if path.startswith('/') else url)
+                except Exception:
+                    continue
+            product_links = filtered
+
         print(f"    ✓ Extracted {len(product_links)} unique product links")
-        
+
         return {
             'count': total_count,
             'links': product_links
