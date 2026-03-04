@@ -19,7 +19,14 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
-from selenium.common.exceptions import TimeoutException, NoSuchElementException
+from selenium.common.exceptions import (
+    TimeoutException,
+    NoSuchElementException,
+    StaleElementReferenceException,
+    ElementNotInteractableException,
+    ElementClickInterceptedException,
+    WebDriverException,
+)
 from webdriver_manager.chrome import ChromeDriverManager
 
 # Import database credentials utility
@@ -107,6 +114,100 @@ def _has_auth_cookie(driver):
         pass
     return False
 
+
+def _type_into_field(driver, selectors, value, field_name, timeout=20):
+    """Reliably type into an input field with retries and JS fallback."""
+    deadline = time.time() + timeout
+    last_error = None
+
+    while time.time() < deadline:
+        element = _find_first_element(driver, selectors, timeout=2)
+        if not element:
+            time.sleep(0.3)
+            continue
+
+        try:
+            driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", element)
+        except Exception:
+            pass
+
+        try:
+            WebDriverWait(driver, 3).until(lambda d: element.is_displayed() and element.is_enabled())
+            element.click()
+            element.clear()
+            element.send_keys(value)
+
+            typed_value = (element.get_attribute("value") or "").strip()
+            if typed_value:
+                return True
+        except (StaleElementReferenceException, ElementNotInteractableException, ElementClickInterceptedException, WebDriverException) as exc:
+            last_error = exc
+
+        # JS fallback when normal input fails in headless mode
+        try:
+            fresh_element = _find_first_element(driver, selectors, timeout=1)
+            if not fresh_element:
+                time.sleep(0.2)
+                continue
+            driver.execute_script(
+                "arguments[0].focus(); arguments[0].value = arguments[1]; arguments[0].dispatchEvent(new Event('input', {bubbles: true})); arguments[0].dispatchEvent(new Event('change', {bubbles: true}));",
+                fresh_element,
+                value,
+            )
+            typed_value = (fresh_element.get_attribute("value") or "").strip()
+            if typed_value:
+                return True
+        except Exception as exc:
+            last_error = exc
+
+        time.sleep(0.4)
+
+    if last_error:
+        print(f"✗ Failed to type into {field_name}: {type(last_error).__name__}: {last_error}")
+    else:
+        print(f"✗ Failed to type into {field_name}: field not found or not interactable")
+    return False
+
+
+def _click_submit(driver, selectors, fallback_element=None, timeout=10):
+    """Reliably click submit button with fallbacks."""
+    deadline = time.time() + timeout
+    last_error = None
+
+    while time.time() < deadline:
+        button = _find_first_element(driver, selectors, timeout=1)
+        if button:
+            try:
+                driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", button)
+            except Exception:
+                pass
+
+            try:
+                if button.is_displayed() and button.is_enabled():
+                    button.click()
+                    return True
+            except (StaleElementReferenceException, ElementNotInteractableException, ElementClickInterceptedException, WebDriverException) as exc:
+                last_error = exc
+
+            try:
+                driver.execute_script("arguments[0].click();", button)
+                return True
+            except Exception as exc:
+                last_error = exc
+
+        time.sleep(0.3)
+
+    if fallback_element is not None:
+        try:
+            fallback_element.submit()
+            return True
+        except Exception as exc:
+            last_error = exc
+
+    if last_error:
+        print(f"✗ Failed to click submit: {type(last_error).__name__}: {last_error}")
+    return False
+
 def setup_driver():
     """Set up Chrome WebDriver with appropriate options."""
     print("Setting up Chrome WebDriver...")
@@ -163,13 +264,15 @@ def login_to_wholesale(driver):
     try:
         # Wait for and find the email input field (with selector fallbacks)
         print("Looking for email input field...")
-        email_input = _find_first_element(driver, [
+        email_selectors = [
             (By.ID, "email"),
             (By.NAME, "email"),
             (By.CSS_SELECTOR, "input[type='email']"),
             (By.CSS_SELECTOR, "input[autocomplete='username']"),
             (By.CSS_SELECTOR, "input[name*='email' i]"),
-        ], timeout=20)
+        ]
+
+        email_input = _find_first_element(driver, email_selectors, timeout=20)
 
         if not email_input:
             print("✗ Could not locate email input field")
@@ -177,38 +280,37 @@ def login_to_wholesale(driver):
         
         # Enter email
         print(f"Entering email: {EMAIL}")
-        email_input.clear()
-        email_input.send_keys(EMAIL)
+        if not _type_into_field(driver, email_selectors, EMAIL, "email", timeout=15):
+            return False
         
         # Find and enter password (no delay needed)
         print("Entering password...")
-        password_input = _find_first_element(driver, [
+        password_selectors = [
             (By.ID, "password"),
             (By.NAME, "password"),
             (By.CSS_SELECTOR, "input[type='password']"),
             (By.CSS_SELECTOR, "input[autocomplete='current-password']"),
-        ], timeout=10)
+        ]
+
+        password_input = _find_first_element(driver, password_selectors, timeout=10)
 
         if not password_input:
             print("✗ Could not locate password input field")
             return False
 
-        password_input.clear()
-        password_input.send_keys(PASSWORD)
+        if not _type_into_field(driver, password_selectors, PASSWORD, "password", timeout=12):
+            return False
         
         # Find and click the login button
         print("Clicking login button...")
-        login_button = _find_first_element(driver, [
+        submit_selectors = [
             (By.CSS_SELECTOR, "button[type='submit']"),
             (By.CSS_SELECTOR, "input[type='submit']"),
             (By.XPATH, "//button[contains(translate(normalize-space(.), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'sign in') or contains(translate(normalize-space(.), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'log in') or contains(translate(normalize-space(.), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'login')]")
-        ], timeout=8)
+        ]
 
-        if login_button:
-            login_button.click()
-        else:
-            # Fallback: submit via password field if button selector changed
-            password_input.submit()
+        if not _click_submit(driver, submit_selectors, fallback_element=password_input, timeout=10):
+            return False
         
         # Wait for login state to settle (URL/auth cookie/login form disappearance)
         print("Waiting for login to complete...")
@@ -293,7 +395,7 @@ def login_to_wholesale(driver):
         print(f"Current URL: {driver.current_url}")
         return False
     except Exception as e:
-        print(f"✗ Error during login: {e}")
+        print(f"✗ Error during login: {type(e).__name__}: {e}")
         print(f"Current URL: {driver.current_url}")
         return False
 
