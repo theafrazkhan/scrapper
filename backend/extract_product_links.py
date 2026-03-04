@@ -194,10 +194,28 @@ def extract_product_links_from_html(html_file, category_name):
                 json_data = json.loads(script_tag.string)
                 
                 # Navigate through the JSON to find products
-                # The structure is: props.pageProps.data.dataSource.items
+                # Current structure: props.pageProps.data.data.dataSources.__master.items
+                # Legacy structure: props.pageProps.data.dataSource.items
                 page_props = json_data.get('props', {}).get('pageProps', {})
                 data = page_props.get('data', {})
-                data_source = data.get('dataSource', {})
+
+                data_source = None
+                # Try current structure first
+                data_container = data.get('data', {})
+                if isinstance(data_container, dict):
+                    sources = data_container.get('dataSources', {})
+                    if isinstance(sources, dict):
+                        data_source = sources.get('__master', {})
+                        if not data_source:
+                            for val in sources.values():
+                                if isinstance(val, dict) and 'items' in val:
+                                    data_source = val
+                                    break
+
+                # Legacy fallback
+                if not data_source or not data_source.get('items'):
+                    data_source = data.get('dataSource', {})
+
                 items = data_source.get('items', [])
                 
                 print(f"   📦 Found {len(items)} products in JSON data")

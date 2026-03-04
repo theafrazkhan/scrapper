@@ -552,10 +552,27 @@ def extract_product_count_and_links(driver, category_name, url):
             if next_data:
                 import json as _json
                 data = _json.loads(next_data)
-                # Navigate: props.pageProps.data.dataSource.total or similar
-                ds = data.get('props', {}).get('pageProps', {}).get('data', {}).get('dataSource', {})
+                page_data = data.get('props', {}).get('pageProps', {}).get('data', {})
+                ds = None
+
+                # Current structure: data.data.dataSources.__master
+                data_container = page_data.get('data', {})
+                if isinstance(data_container, dict):
+                    sources = data_container.get('dataSources', {})
+                    if isinstance(sources, dict):
+                        ds = sources.get('__master', {})
+                        if not ds:
+                            for val in sources.values():
+                                if isinstance(val, dict) and 'items' in val:
+                                    ds = val
+                                    break
+
+                # Legacy fallback: data.dataSource
+                if not ds or not ds.get('items'):
+                    ds = page_data.get('dataSource', {})
+
                 items = ds.get('items', [])
-                total = ds.get('total', None) or ds.get('count', None)
+                total = ds.get('totalItems', None) or ds.get('total', None) or ds.get('count', None)
                 if total:
                     return len(items) if items else 0, int(total)
                 elif items:
@@ -809,10 +826,15 @@ def extract_product_count_and_links(driver, category_name, url):
             # If controls disappear temporarily but the page still reports we haven't loaded all products,
             # keep waiting/retrying instead of exiting early.
             if (not has_view_more) and current_count > 0 and stagnant_for > 8:
+                expect_more = False
                 if viewed_count is not None and total_count and viewed_count < total_count:
-                    if no_controls_since and (time.time() - no_controls_since) < 30:
-                        time.sleep(1.0)
-                        continue
+                    expect_more = True
+                elif current_count < total_count:
+                    # Even without live viewed_count, we know we haven't reached target
+                    expect_more = True
+                if expect_more and no_controls_since and (time.time() - no_controls_since) < 30:
+                    time.sleep(1.0)
+                    continue
                 print(f"    ⚠ No more pagination controls; stabilized at {current_count} links")
                 break
 
