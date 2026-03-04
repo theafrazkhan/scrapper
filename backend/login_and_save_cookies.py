@@ -59,10 +59,13 @@ LINKS_FILE = SCRIPT_DIR / "data" / "links.csv"
 # Base URL - categories will be discovered dynamically
 BASE_URL = "https://wholesale.lululemon.com"
 
-AUTH_COOKIE_NAMES = {
+STRONG_AUTH_COOKIE_NAMES = {
     "wholesale_strategic_sales",
-    "JSESSIONID",
     "Route_SSSAuth",
+}
+
+SESSION_COOKIE_NAMES = {
+    "JSESSIONID",
     "frontastic-session",
 }
 
@@ -103,15 +106,39 @@ def _has_login_form(driver):
     return False
 
 
-def _has_auth_cookie(driver):
-    """Check for expected auth/session cookies."""
+def _has_auth_cookie(driver, require_strong=True):
+    """Check for auth/session cookies.
+
+    When require_strong=True, only accept cookies that indicate authenticated session.
+    """
     try:
         cookies = driver.get_cookies()
+        candidate_names = STRONG_AUTH_COOKIE_NAMES if require_strong else (STRONG_AUTH_COOKIE_NAMES | SESSION_COOKIE_NAMES)
         for cookie in cookies:
-            if cookie.get("name") in AUTH_COOKIE_NAMES and cookie.get("value"):
+            if cookie.get("name") in candidate_names and cookie.get("value"):
                 return True
     except Exception:
         pass
+    return False
+
+
+def _has_post_login_ui(driver):
+    """Detect UI markers only present after successful login."""
+    selectors = [
+        (By.CSS_SELECTOR, "a[href='/account']"),
+        (By.CSS_SELECTOR, "a.primary-nav_primaryNavAnchor__A22xB"),
+        (By.CSS_SELECTOR, "[data-testid='quick-view-bag_test-id']"),
+        (By.CSS_SELECTOR, "header.mega-nav_megaNav__oz8pZ"),
+    ]
+
+    try:
+        for by, selector in selectors:
+            elements = driver.find_elements(by, selector)
+            if any(elem.is_displayed() for elem in elements):
+                return True
+    except Exception:
+        pass
+
     return False
 
 
@@ -304,6 +331,8 @@ def login_to_wholesale(driver):
         # Find and click the login button
         print("Clicking login button...")
         submit_selectors = [
+            (By.CSS_SELECTOR, "button[data-testid='login-page__sign-in-button_test-id']"),
+            (By.CSS_SELECTOR, "form#submit-login button[type='submit']"),
             (By.CSS_SELECTOR, "button[type='submit']"),
             (By.CSS_SELECTOR, "input[type='submit']"),
             (By.XPATH, "//button[contains(translate(normalize-space(.), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'sign in') or contains(translate(normalize-space(.), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'log in') or contains(translate(normalize-space(.), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'login')]")
@@ -312,12 +341,13 @@ def login_to_wholesale(driver):
         if not _click_submit(driver, submit_selectors, fallback_element=password_input, timeout=10):
             return False
         
-        # Wait for login state to settle (URL/auth cookie/login form disappearance)
+        # Wait for login state to settle (strong auth cookie OR post-login UI)
         print("Waiting for login to complete...")
         WebDriverWait(driver, 30).until(
             lambda d: (
-                _has_auth_cookie(d)
-                or (not _has_login_form(d) and not _looks_like_auth_url(d.current_url))
+                _has_auth_cookie(d, require_strong=True)
+                or _has_post_login_ui(d)
+                or (not _has_login_form(d) and not _looks_like_auth_url(d.current_url) and _has_auth_cookie(d, require_strong=False))
             )
         )
         
@@ -343,39 +373,25 @@ def login_to_wholesale(driver):
         
         # Check if we're still on login page
         current_url = driver.current_url.lower()
-        if _looks_like_auth_url(current_url) and _has_login_form(driver) and not _has_auth_cookie(driver):
+        if _looks_like_auth_url(current_url) and _has_login_form(driver):
             print(f"✗ Login failed - still on auth page: {current_url}")
             return False
         
         # Check for wholesale-specific elements that prove we're logged in
         try:
-            # Try to find navigation menu or wholesale-specific elements
-            wholesale_indicators = [
-                (By.CSS_SELECTOR, "nav"),
-                (By.CSS_SELECTOR, "[class*='navigation']"),
-                (By.CSS_SELECTOR, "[class*='menu']"),
-                (By.XPATH, "//a[contains(@href, 'wholesale')]"),
-            ]
-            
-            found_indicator = False
-            for by, selector in wholesale_indicators:
-                try:
-                    elements = driver.find_elements(by, selector)
-                    if elements:
-                        found_indicator = True
-                        break
-                except:
-                    continue
-            
+            found_indicator = _has_post_login_ui(driver)
             if not found_indicator:
-                print("✗ Warning: Could not find wholesale navigation elements")
-                print("   This might indicate login failure")
-                
+                print("⚠ Post-login navigation markers not visible yet")
+                print("   Continuing because auth cookies/url checks passed")
         except Exception as e:
             print(f"⚠ Warning: Could not verify wholesale elements: {e}")
         
-        # Final validation: authenticated cookie OR off-auth URL with no login form
-        if not (_has_auth_cookie(driver) or (not _has_login_form(driver) and not _looks_like_auth_url(driver.current_url))):
+        # Final validation: require strong auth evidence (not just generic session cookie)
+        if not (
+            _has_auth_cookie(driver, require_strong=True)
+            or _has_post_login_ui(driver)
+            or (not _has_login_form(driver) and not _looks_like_auth_url(driver.current_url) and _has_auth_cookie(driver, require_strong=False))
+        ):
             print(f"✗ Login validation failed - unable to confirm authenticated state")
             print(f"Current URL: {driver.current_url}")
             print(f"Page title: {driver.title}")
