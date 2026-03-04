@@ -542,43 +542,44 @@ def extract_product_count_and_links(driver, category_name, url):
         except Exception:
             pass
 
-        # Method 2: __NEXT_DATA__ JSON extraction (works even if page text hasn't rendered)
+        # Method 2: __NEXT_DATA__ JSON extraction - do full traversal in browser JS
+        # to avoid large JSON transfer / parsing issues on Python side
         try:
-            next_data = drv.execute_script("""
-                var el = document.getElementById('__NEXT_DATA__');
-                if (el) return el.textContent;
-                return null;
+            js_total = drv.execute_script("""
+                try {
+                    var el = document.getElementById('__NEXT_DATA__');
+                    if (!el) return 'NO_ELEMENT';
+                    var data = JSON.parse(el.textContent);
+                    var pd = data.props && data.props.pageProps && data.props.pageProps.data;
+                    if (!pd) return 'NO_PAGEDATA';
+                    // Current structure: data.data.dataSources.__master
+                    if (pd.data && pd.data.dataSources) {
+                        var ds = pd.data.dataSources.__master || pd.data.dataSources[Object.keys(pd.data.dataSources)[0]];
+                        if (ds) {
+                            var total = ds.totalItems || ds.total || ds.count;
+                            var items = ds.items ? ds.items.length : 0;
+                            if (total) return items + '|' + total;
+                        }
+                    }
+                    // Legacy: data.dataSource
+                    if (pd.dataSource) {
+                        var ds2 = pd.dataSource;
+                        var total2 = ds2.totalItems || ds2.total || ds2.count;
+                        var items2 = ds2.items ? ds2.items.length : 0;
+                        if (total2) return items2 + '|' + total2;
+                    }
+                    return 'NO_DATASOURCE:' + JSON.stringify(Object.keys(pd)).substring(0,200);
+                } catch(e) {
+                    return 'ERROR:' + e.message;
+                }
             """)
-            if next_data:
-                import json as _json
-                data = _json.loads(next_data)
-                page_data = data.get('props', {}).get('pageProps', {}).get('data', {})
-                ds = None
-
-                # Current structure: data.data.dataSources.__master
-                data_container = page_data.get('data', {})
-                if isinstance(data_container, dict):
-                    sources = data_container.get('dataSources', {})
-                    if isinstance(sources, dict):
-                        ds = sources.get('__master', {})
-                        if not ds:
-                            for val in sources.values():
-                                if isinstance(val, dict) and 'items' in val:
-                                    ds = val
-                                    break
-
-                # Legacy fallback: data.dataSource
-                if not ds or not ds.get('items'):
-                    ds = page_data.get('dataSource', {})
-
-                items = ds.get('items', [])
-                total = ds.get('totalItems', None) or ds.get('total', None) or ds.get('count', None)
-                if total:
-                    return len(items) if items else 0, int(total)
-                elif items:
-                    return len(items), len(items)
-        except Exception:
-            pass
+            if js_total and '|' in str(js_total):
+                parts = str(js_total).split('|')
+                return int(parts[0]), int(parts[1])
+            else:
+                print(f"      [debug] __NEXT_DATA__ result: {js_total}")
+        except Exception as e:
+            print(f"      [debug] __NEXT_DATA__ exception: {e}")
 
         # Method 3: Selenium element text (original approach)
         selectors = [
@@ -638,6 +639,9 @@ def extract_product_count_and_links(driver, category_name, url):
     except Exception:
         pass
 
+    # Allow extra settle time for React hydration after heavy prior category processing
+    time.sleep(5)
+
     try:
         total_count = None
 
@@ -670,6 +674,18 @@ def extract_product_count_and_links(driver, category_name, url):
                 break
 
         if not total_count:
+            # Debug: show page state to diagnose why all methods failed
+            try:
+                page_title = driver.title or "(no title)"
+                page_url = driver.current_url or "(no url)"
+                source_len = len(driver.page_source or "")
+                has_next_data = driver.execute_script("return !!document.getElementById('__NEXT_DATA__')")
+                print(f"    [debug] Page title: {page_title}")
+                print(f"    [debug] Current URL: {page_url}")
+                print(f"    [debug] Page source length: {source_len}")
+                print(f"    [debug] Has __NEXT_DATA__: {has_next_data}")
+            except Exception as dbg_e:
+                print(f"    [debug] Could not inspect page: {dbg_e}")
             print(f"    ⚠ Could not detect count, using default=500")
             total_count = 500
         
