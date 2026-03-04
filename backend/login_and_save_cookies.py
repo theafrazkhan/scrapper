@@ -542,7 +542,28 @@ def extract_product_count_and_links(driver, category_name, url):
         except Exception:
             pass
 
-        # Method 2: Selenium element text (original approach)
+        # Method 2: __NEXT_DATA__ JSON extraction (works even if page text hasn't rendered)
+        try:
+            next_data = drv.execute_script("""
+                var el = document.getElementById('__NEXT_DATA__');
+                if (el) return el.textContent;
+                return null;
+            """)
+            if next_data:
+                import json as _json
+                data = _json.loads(next_data)
+                # Navigate: props.pageProps.data.dataSource.total or similar
+                ds = data.get('props', {}).get('pageProps', {}).get('data', {}).get('dataSource', {})
+                items = ds.get('items', [])
+                total = ds.get('total', None) or ds.get('count', None)
+                if total:
+                    return len(items) if items else 0, int(total)
+                elif items:
+                    return len(items), len(items)
+        except Exception:
+            pass
+
+        # Method 3: Selenium element text (original approach)
         selectors = [
             "p.lll-type-label-medium",
             "p",
@@ -565,7 +586,7 @@ def extract_product_count_and_links(driver, category_name, url):
         except Exception:
             pass
 
-        # Method 3: Page source fallback
+        # Method 4: Page source fallback
         try:
             source = drv.page_source or ""
             v, t = _extract_counts_from_text(source)
@@ -579,20 +600,43 @@ def extract_product_count_and_links(driver, category_name, url):
     # Step 1: Load initial page with limit=12 to detect count
     initial_url = re.sub(r'limit=\d+', 'limit=12', url) if 'limit=' in url else (url + '?limit=12' if '?' not in url else url + '&limit=12')
 
-    # Brief pause to let the browser settle after previous category processing
-    time.sleep(1)
+    # Navigate to about:blank first to free DOM/memory from previous category processing.
+    # After scrolling through hundreds of product tiles (e.g. 307 for WOMEN),
+    # the browser DOM is heavy and navigating directly to the next category
+    # can result in incomplete page rendering.
+    try:
+        driver.get('about:blank')
+        time.sleep(1)
+    except Exception:
+        pass
 
     print(f"    ⏳ Loading initial page...")
     driver.get(initial_url)
+
+    # Wait for the document to be fully loaded (not just domcontentloaded)
+    try:
+        WebDriverWait(driver, 30).until(
+            lambda d: d.execute_script("return document.readyState") == "complete"
+        )
+    except Exception:
+        pass
 
     try:
         total_count = None
 
         # Count detection with retry - some pages need more time after heavy prior processing
-        for attempt in range(2):
+        for attempt in range(3):
             if attempt > 0:
                 print(f"    ⏳ Retrying count detection (attempt {attempt + 1})...")
-                driver.refresh()
+                driver.get('about:blank')
+                time.sleep(1)
+                driver.get(initial_url)
+                try:
+                    WebDriverWait(driver, 30).until(
+                        lambda d: d.execute_script("return document.readyState") == "complete"
+                    )
+                except Exception:
+                    pass
                 time.sleep(3)
 
             try:
@@ -616,7 +660,23 @@ def extract_product_count_and_links(driver, category_name, url):
         # On updated pages, very large limits can return non-hydrated product grids.
         paged_url = re.sub(r'limit=\d+', 'limit=12', url) if 'limit=' in url else (url + '?limit=12' if '?' not in url else url + '&limit=12')
         print(f"    ⏳ Loading products in paginated mode (target: {total_count})...")
+
+        # Reset browser state before loading the pagination page
+        try:
+            driver.get('about:blank')
+            time.sleep(1)
+        except Exception:
+            pass
+
         driver.get(paged_url)
+
+        # Wait for document to fully load
+        try:
+            WebDriverWait(driver, 30).until(
+                lambda d: d.execute_script("return document.readyState") == "complete"
+            )
+        except Exception:
+            pass
 
         # Wait for first batch to become available
         try:
