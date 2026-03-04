@@ -503,6 +503,56 @@ def discover_categories(driver):
 def extract_product_count_and_links(driver, category_name, url):
     """Navigate to a category page, extract the total product count, and extract all product links."""
     print(f"\n  📂 Processing {category_name}...")
+
+    count_text_pattern = re.compile(
+        r'(?:Showing|Viewing)\s+(\d+)\s+of\s+(\d+)\s+items?',
+        re.IGNORECASE
+    )
+
+    def _extract_counts_from_text(text):
+        if not text:
+            return None, None
+        match = count_text_pattern.search(text)
+        if not match:
+            return None, None
+        return int(match.group(1)), int(match.group(2))
+
+    def _extract_counts_from_page(drv):
+        """Return (visible_count, total_count) from visible text or page source."""
+        visible_count = None
+        total_count = None
+
+        selectors = [
+            "p.lll-type-label-medium",
+            "p",
+            "div",
+        ]
+
+        try:
+            for selector in selectors:
+                elements = drv.find_elements(By.CSS_SELECTOR, selector)
+                for elem in elements:
+                    try:
+                        if not elem.is_displayed():
+                            continue
+                        txt = (elem.text or "").strip()
+                        v, t = _extract_counts_from_text(txt)
+                        if t:
+                            return v, t
+                    except Exception:
+                        continue
+        except Exception:
+            pass
+
+        try:
+            source = drv.page_source or ""
+            v, t = _extract_counts_from_text(source)
+            if t:
+                return v, t
+        except Exception:
+            pass
+
+        return visible_count, total_count
     
     # Step 1: Load initial page with limit=12 to detect count
     initial_url = re.sub(r'limit=\d+', 'limit=12', url) if 'limit=' in url else (url + '?limit=12' if '?' not in url else url + '&limit=12')
@@ -510,36 +560,20 @@ def extract_product_count_and_links(driver, category_name, url):
     driver.get(initial_url)
     
     try:
-        # Wait for the product count element to appear
-        product_count_element = None
         total_count = None
-        
-        # Method 1: Look for the specific paragraph with class
+
+        # Count detection with stronger fallbacks for pages that use "Viewing X of Y"
         try:
-            product_count_element = WebDriverWait(driver, 15).until(
-                EC.presence_of_element_located((By.CSS_SELECTOR, "p.lll-type-label-medium"))
-            )
-        except:
+            WebDriverWait(driver, 20).until(lambda d: _extract_counts_from_page(d)[1] is not None)
+        except Exception:
             pass
-        
-        # Method 2: Look for any paragraph with the pattern
-        if not product_count_element:
-            try:
-                product_count_element = WebDriverWait(driver, 10).until(
-                    EC.presence_of_element_located((By.XPATH, "//p[contains(text(), 'Showing') and contains(text(), 'of') and contains(text(), 'items')]"))
-                )
-            except:
-                pass
-        
-        if product_count_element:
-            text = product_count_element.text
-            print(f"    📊 Found: '{text}'")
-            
-            # Extract the total count using regex: "Showing X of Y items"
-            match = re.search(r'Showing\s+\d+\s+of\s+(\d+)\s+items?', text, re.IGNORECASE)
-            if match:
-                total_count = int(match.group(1))
-                print(f"    ✓ Detected {total_count} total products")
+
+        visible_count, detected_total = _extract_counts_from_page(driver)
+        if detected_total:
+            total_count = detected_total
+            if visible_count is not None:
+                print(f"    📊 Found: 'Viewing/Showing {visible_count} of {total_count} items'")
+            print(f"    ✓ Detected {total_count} total products")
         
         if not total_count:
             print(f"    ⚠ Could not detect count, using default=500")
@@ -577,6 +611,7 @@ def extract_product_count_and_links(driver, category_name, url):
         start_ts = time.time()
         last_count = 0
         stagnant_since = start_ts
+        no_controls_since = None
 
         while True:
             # Trigger lazy loading by scrolling through the page
@@ -601,7 +636,10 @@ def extract_product_count_and_links(driver, category_name, url):
                             has_view_more = True
                             driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", button)
                             time.sleep(0.15)
-                            button.click()
+                            try:
+                                button.click()
+                            except Exception:
+                                driver.execute_script("arguments[0].click();", button)
                             view_more_clicked = True
                             time.sleep(0.8)
                             break
@@ -654,6 +692,10 @@ def extract_product_count_and_links(driver, category_name, url):
                     continue
 
             current_count = len(product_links)
+            viewed_count, detected_total_from_progress = _extract_counts_from_page(driver)
+            if total_count == 500 and detected_total_from_progress:
+                total_count = detected_total_from_progress
+
             # If we've reached expected total_count, or count isn't growing and we've passed a short stable window, break
             elapsed = time.time() - start_ts
             if current_count >= total_count:
@@ -665,7 +707,19 @@ def extract_product_count_and_links(driver, category_name, url):
             stagnant_for = time.time() - stagnant_since
 
             # If we no longer have a "view more" control and the count has stabilized, we're done.
+            if not has_view_more:
+                if no_controls_since is None:
+                    no_controls_since = time.time()
+            else:
+                no_controls_since = None
+
+            # If controls disappear temporarily but the page still reports we haven't loaded all products,
+            # keep waiting/retrying instead of exiting early.
             if (not has_view_more) and current_count > 0 and stagnant_for > 8:
+                if viewed_count is not None and total_count and viewed_count < total_count:
+                    if no_controls_since and (time.time() - no_controls_since) < 30:
+                        time.sleep(1.0)
+                        continue
                 print(f"    ⚠ No more pagination controls; stabilized at {current_count} links")
                 break
 
