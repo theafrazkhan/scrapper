@@ -534,10 +534,15 @@ def extract_product_count_and_links(driver, category_name, url):
         print(f"    ⏳ Loading all {total_count} products...")
         driver.get(full_url)
 
-        # Optimized waiting: poll the DOM for product link count instead of a long fixed sleep.
+        # Optimized waiting: poll the DOM and source for product links (handles lazy loading/site changes).
         print("    ⏳ Waiting for products to render (progressive polling)...")
         product_links = set()
         product_pattern = re.compile(r'^/p/[^/]+/[^/?#]+$')
+        page_source_pattern = re.compile(r'["\'](/p/[^"\'?#\s]+(?:/[^"\'?#\s]+)?)(?:["\'?#])', re.IGNORECASE)
+        view_more_selectors = [
+            (By.CSS_SELECTOR, "button[data-testid='cdp-pagination__view-more-products_test-id']"),
+            (By.XPATH, "//button[contains(translate(normalize-space(.), 'abcdefghijklmnopqrstuvwxyz', 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'), 'VIEW MORE PRODUCTS')]")
+        ]
 
         # Polling strategy: check every 1s up to a reasonable timeout based on total_count
         # fast path: timeout = min(60, 5 + total_count // 5)
@@ -546,23 +551,71 @@ def extract_product_count_and_links(driver, category_name, url):
         last_count = 0
 
         while True:
+            # Trigger lazy loading by scrolling through the page
+            try:
+                driver.execute_script("window.scrollTo(0, document.body.scrollHeight * 0.5);")
+                time.sleep(0.2)
+                driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+            except Exception:
+                pass
+
+            # If page still paginates with "VIEW MORE PRODUCTS", click until exhausted.
+            # Some category pages ignore large `limit` values and require progressive loading.
+            try:
+                view_more_clicked = False
+                for by, selector in view_more_selectors:
+                    buttons = driver.find_elements(by, selector)
+                    for button in buttons:
+                        try:
+                            if not button.is_displayed() or not button.is_enabled():
+                                continue
+                            driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", button)
+                            time.sleep(0.15)
+                            button.click()
+                            view_more_clicked = True
+                            time.sleep(0.8)
+                            break
+                        except Exception:
+                            continue
+                    if view_more_clicked:
+                        break
+            except Exception:
+                pass
+
             # Use JavaScript to quickly collect hrefs from anchors (faster than many selenium calls)
             try:
                 js = (
-                    "Array.from(document.querySelectorAll('a[href*=\"/p/\"]')).map(a => a.getAttribute('href')).filter(Boolean)"
+                    "Array.from(document.querySelectorAll('a.product-tile_productTileLink__SW_Jh[href*=\"/p/\"], a[href*=\"/p/\"]')).map(a => a.getAttribute('href')).filter(Boolean)"
                 )
                 hrefs = driver.execute_script(f"return {js};")
             except Exception:
                 hrefs = []
 
+            # Fallback: parse product links from raw HTML/JSON payloads when anchors are not yet attached
+            try:
+                source = driver.page_source or ""
+                source_matches = page_source_pattern.findall(source)
+            except Exception:
+                source_matches = []
+
+            if source_matches:
+                hrefs.extend(source_matches)
+
             # Normalize and filter
             found_before = len(product_links)
             for href in hrefs:
                 try:
+                    if not href:
+                        continue
+
                     if 'wholesale.lululemon.com' in href:
                         path = href.split('wholesale.lululemon.com')[-1].split('?')[0].split('#')[0]
                     else:
                         path = href.split('?')[0].split('#')[0]
+
+                    # Normalize non-root matches like p/slug/id
+                    if path.startswith('p/'):
+                        path = f'/{path}'
 
                     if product_pattern.match(path):
                         full_url = f"https://wholesale.lululemon.com{path}" if path.startswith('/') else href
@@ -590,7 +643,24 @@ def extract_product_count_and_links(driver, category_name, url):
             sleep_for = 0.8 if current_count < total_count // 2 else 1.2
             time.sleep(sleep_for)
 
-        print(f"    📦 Collected {len(product_links)} candidate links from DOM")
+        print(f"    📦 Collected {len(product_links)} candidate links")
+
+        # Final fallback once more from full source if still empty
+        if not product_links:
+            try:
+                source = driver.page_source or ""
+                source_matches = page_source_pattern.findall(source)
+                for raw_path in source_matches:
+                    path = raw_path.split('?')[0].split('#')[0]
+                    if path.startswith('p/'):
+                        path = f'/{path}'
+                    if product_pattern.match(path):
+                        product_links.add(f"https://wholesale.lululemon.com{path}")
+            except Exception:
+                pass
+
+        if not product_links:
+            print("    ⚠ No product links found. Page structure may have changed or content is blocked for this session.")
 
         # Final dedupe and sanity-check: ensure the number doesn't exceed total_count wildly
         if len(product_links) > total_count * 3:
