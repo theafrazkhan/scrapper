@@ -529,10 +529,22 @@ def extract_product_count_and_links(driver, category_name, url):
             print(f"    ⚠ Could not detect count, using default=500")
             total_count = 500
         
-        # Step 2: Reload page with full limit
-        full_url = re.sub(r'limit=\d+', f'limit={total_count}', url) if 'limit=' in url else (url + f'?limit={total_count}' if '?' not in url else url + f'&limit={total_count}')
-        print(f"    ⏳ Loading all {total_count} products...")
-        driver.get(full_url)
+        # Step 2: Stay on paginated mode (limit=12) and use "VIEW MORE PRODUCTS".
+        # On updated pages, very large limits can return non-hydrated product grids.
+        paged_url = re.sub(r'limit=\d+', 'limit=12', url) if 'limit=' in url else (url + '?limit=12' if '?' not in url else url + '&limit=12')
+        print(f"    ⏳ Loading products in paginated mode (target: {total_count})...")
+        driver.get(paged_url)
+
+        # Wait for first batch to become available
+        try:
+            WebDriverWait(driver, 25).until(
+                lambda d: (
+                    len(d.find_elements(By.CSS_SELECTOR, "a.product-tile_productTileLink__SW_Jh[href*='/p/'], a[href*='/p/']")) > 0
+                    or '/p/' in (d.page_source or '')
+                )
+            )
+        except Exception:
+            print("    ⚠ Initial product grid did not appear quickly; continuing with progressive extraction")
 
         # Optimized waiting: poll the DOM and source for product links (handles lazy loading/site changes).
         print("    ⏳ Waiting for products to render (progressive polling)...")
@@ -544,11 +556,11 @@ def extract_product_count_and_links(driver, category_name, url):
             (By.XPATH, "//button[contains(translate(normalize-space(.), 'abcdefghijklmnopqrstuvwxyz', 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'), 'VIEW MORE PRODUCTS')]")
         ]
 
-        # Polling strategy: check every 1s up to a reasonable timeout based on total_count
-        # fast path: timeout = min(60, 5 + total_count // 5)
-        timeout_secs = min(60, 5 + total_count // 5)
+        # Polling strategy: check every 1s with higher timeout for progressive loading
+        timeout_secs = min(180, 30 + total_count // 2)
         start_ts = time.time()
         last_count = 0
+        stagnant_since = start_ts
 
         while True:
             # Trigger lazy loading by scrolling through the page
@@ -561,6 +573,7 @@ def extract_product_count_and_links(driver, category_name, url):
 
             # If page still paginates with "VIEW MORE PRODUCTS", click until exhausted.
             # Some category pages ignore large `limit` values and require progressive loading.
+            has_view_more = False
             try:
                 view_more_clicked = False
                 for by, selector in view_more_selectors:
@@ -569,6 +582,7 @@ def extract_product_count_and_links(driver, category_name, url):
                         try:
                             if not button.is_displayed() or not button.is_enabled():
                                 continue
+                            has_view_more = True
                             driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", button)
                             time.sleep(0.15)
                             button.click()
@@ -629,8 +643,23 @@ def extract_product_count_and_links(driver, category_name, url):
             if current_count >= total_count:
                 print(f"    ✓ Reached expected product count: {current_count}")
                 break
-            if current_count == last_count and elapsed > max(8, timeout_secs // 3):
-                # no progress in a stable window; assume loaded
+
+            if current_count > last_count:
+                stagnant_since = time.time()
+            stagnant_for = time.time() - stagnant_since
+
+            # If we no longer have a "view more" control and the count has stabilized, we're done.
+            if (not has_view_more) and current_count > 0 and stagnant_for > 8:
+                print(f"    ⚠ No more pagination controls; stabilized at {current_count} links")
+                break
+
+            # If still zero after long wait, stop with a clear warning.
+            if current_count == 0 and elapsed > 90:
+                print(f"    ⚠ No product links detected after {int(elapsed)}s")
+                break
+
+            # Generic stabilization fallback for non-zero counts.
+            if current_count == last_count and current_count > 0 and stagnant_for > max(20, timeout_secs // 4):
                 print(f"    ⚠ Product count stabilized at {current_count} after {int(elapsed)}s")
                 break
 
@@ -639,8 +668,8 @@ def extract_product_count_and_links(driver, category_name, url):
                 break
 
             last_count = current_count
-            # Adaptive sleep: shorter when early, slightly longer when close to expected
-            sleep_for = 0.8 if current_count < total_count // 2 else 1.2
+            # Adaptive sleep: a bit longer when still waiting on heavy DOM updates
+            sleep_for = 0.9 if current_count < max(24, total_count // 3) else 1.3
             time.sleep(sleep_for)
 
         print(f"    📦 Collected {len(product_links)} candidate links")
