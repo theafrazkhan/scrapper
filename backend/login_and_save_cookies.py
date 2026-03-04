@@ -618,15 +618,32 @@ def extract_product_count_and_links(driver, category_name, url):
     # Step 1: Load initial page with limit=12 to detect count
     initial_url = re.sub(r'limit=\d+', 'limit=12', url) if 'limit=' in url else (url + '?limit=12' if '?' not in url else url + '&limit=12')
 
-    # Navigate to about:blank first to free DOM/memory from previous category processing.
+    # Open a fresh browser tab and close old ones to get a clean rendering context.
     # After scrolling through hundreds of product tiles (e.g. 307 for WOMEN),
-    # the browser DOM is heavy and navigating directly to the next category
-    # can result in incomplete page rendering.
+    # the browser's rendering context is degraded and the next category page
+    # may fail to render properly even after navigating to about:blank.
     try:
-        driver.get('about:blank')
+        old_handles = set(driver.window_handles)
+        driver.execute_script("window.open('about:blank', '_blank');")
+        time.sleep(0.5)
+        new_handles = set(driver.window_handles) - old_handles
+        if new_handles:
+            driver.switch_to.window(new_handles.pop())
+            for old_handle in old_handles:
+                try:
+                    driver.switch_to.window(old_handle)
+                    driver.close()
+                except Exception:
+                    pass
+            driver.switch_to.window(driver.window_handles[0])
         time.sleep(1)
     except Exception:
-        pass
+        # Fallback: just navigate to about:blank
+        try:
+            driver.get('about:blank')
+            time.sleep(1)
+        except Exception:
+            pass
 
     print(f"    ⏳ Loading initial page...")
     driver.get(initial_url)
@@ -649,7 +666,23 @@ def extract_product_count_and_links(driver, category_name, url):
         for attempt in range(3):
             if attempt > 0:
                 print(f"    ⏳ Retrying count detection (attempt {attempt + 1})...")
-                driver.get('about:blank')
+                # Open fresh tab for retry
+                try:
+                    old_handles = set(driver.window_handles)
+                    driver.execute_script("window.open('about:blank', '_blank');")
+                    time.sleep(0.5)
+                    new_handles = set(driver.window_handles) - old_handles
+                    if new_handles:
+                        driver.switch_to.window(new_handles.pop())
+                        for oh in old_handles:
+                            try:
+                                driver.switch_to.window(oh)
+                                driver.close()
+                            except Exception:
+                                pass
+                        driver.switch_to.window(driver.window_handles[0])
+                except Exception:
+                    driver.get('about:blank')
                 time.sleep(1)
                 driver.get(initial_url)
                 try:
@@ -680,12 +713,12 @@ def extract_product_count_and_links(driver, category_name, url):
                 page_url = driver.current_url or "(no url)"
                 source_len = len(driver.page_source or "")
                 has_next_data = driver.execute_script("return !!document.getElementById('__NEXT_DATA__')")
-                print(f"    [debug] Page title: {page_title}")
-                print(f"    [debug] Current URL: {page_url}")
-                print(f"    [debug] Page source length: {source_len}")
-                print(f"    [debug] Has __NEXT_DATA__: {has_next_data}")
+                print(f"    ℹ️ [debug] Page title: {page_title}")
+                print(f"    ℹ️ [debug] Current URL: {page_url}")
+                print(f"    ℹ️ [debug] Page source length: {source_len}")
+                print(f"    ℹ️ [debug] Has __NEXT_DATA__: {has_next_data}")
             except Exception as dbg_e:
-                print(f"    [debug] Could not inspect page: {dbg_e}")
+                print(f"    ℹ️ [debug] Could not inspect page: {dbg_e}")
             print(f"    ⚠ Could not detect count, using default=500")
             total_count = 500
         
@@ -888,6 +921,76 @@ def extract_product_count_and_links(driver, category_name, url):
                         product_links.add(f"https://wholesale.lululemon.com{path}")
             except Exception:
                 pass
+
+        # __NEXT_DATA__ fallback: if we found far fewer products than expected,
+        # try loading with limit=total and extracting all product slugs from JSON directly.
+        # This bypasses DOM rendering entirely.
+        if len(product_links) < total_count * 0.5 and total_count > 0:
+            print(f"    ℹ️ Only {len(product_links)}/{total_count} found via pagination, trying JSON extraction...")
+            try:
+                json_url = re.sub(r'limit=\d+', f'limit={total_count + 10}', url) if 'limit=' in url else (url + f'?limit={total_count + 10}' if '?' not in url else url + f'&limit={total_count + 10}')
+                # Fresh tab for clean load
+                try:
+                    old_handles = set(driver.window_handles)
+                    driver.execute_script("window.open('about:blank', '_blank');")
+                    time.sleep(0.5)
+                    new_handles = set(driver.window_handles) - old_handles
+                    if new_handles:
+                        driver.switch_to.window(new_handles.pop())
+                        for oh in old_handles:
+                            try:
+                                driver.switch_to.window(oh)
+                                driver.close()
+                            except Exception:
+                                pass
+                        driver.switch_to.window(driver.window_handles[0])
+                except Exception:
+                    driver.get('about:blank')
+                time.sleep(1)
+                driver.get(json_url)
+                WebDriverWait(driver, 45).until(
+                    lambda d: d.execute_script("return document.readyState") == "complete"
+                )
+                time.sleep(5)
+
+                # Extract all product URLs from __NEXT_DATA__ in browser JS
+                json_links = driver.execute_script("""
+                    try {
+                        var el = document.getElementById('__NEXT_DATA__');
+                        if (!el) return [];
+                        var data = JSON.parse(el.textContent);
+                        var pd = data.props && data.props.pageProps && data.props.pageProps.data;
+                        if (!pd) return [];
+                        var ds = null;
+                        if (pd.data && pd.data.dataSources) {
+                            ds = pd.data.dataSources.__master || pd.data.dataSources[Object.keys(pd.data.dataSources)[0]];
+                        }
+                        if (!ds && pd.dataSource) ds = pd.dataSource;
+                        if (!ds || !ds.items) return [];
+                        return ds.items.map(function(item) {
+                            // Prefer _url field which has the correct path format
+                            if (item._url) {
+                                var path = item._url.split('?')[0];
+                                if (path.indexOf('/p/') === 0) return path;
+                            }
+                            // Fallback: construct from slug + productKey
+                            var slug = item.slug || '';
+                            var key = item.productKey || '';
+                            if (slug && key) return '/p/' + slug.toLowerCase() + '/' + key;
+                            return null;
+                        }).filter(Boolean);
+                    } catch(e) { return []; }
+                """)
+                if json_links:
+                    for path in json_links:
+                        clean = path.split('?')[0].split('#')[0]
+                        if product_pattern.match(clean):
+                            product_links.add(f"https://wholesale.lululemon.com{clean}")
+                    print(f"    ✓ JSON extraction added products, now at {len(product_links)} total")
+                else:
+                    print(f"    ⚠ JSON extraction returned no products")
+            except Exception as json_e:
+                print(f"    ⚠ JSON fallback failed: {json_e}")
 
         if not product_links:
             print("    ⚠ No product links found. Page structure may have changed or content is blocked for this session.")
