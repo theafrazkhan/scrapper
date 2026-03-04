@@ -522,6 +522,27 @@ def extract_product_count_and_links(driver, category_name, url):
         visible_count = None
         total_count = None
 
+        # Method 1: JavaScript extraction (bypasses is_displayed issues after heavy DOM operations)
+        try:
+            js_result = drv.execute_script("""
+                var selectors = ['p.lll-type-label-medium', 'p', 'div'];
+                for (var s = 0; s < selectors.length; s++) {
+                    var elements = document.querySelectorAll(selectors[s]);
+                    for (var i = 0; i < elements.length; i++) {
+                        var text = (elements[i].textContent || '').trim();
+                        var match = text.match(/(Showing|Viewing)\\s+(\\d+)\\s+of\\s+(\\d+)\\s+items?/i);
+                        if (match) return match[2] + '|' + match[3];
+                    }
+                }
+                return null;
+            """)
+            if js_result:
+                parts = js_result.split('|')
+                return int(parts[0]), int(parts[1])
+        except Exception:
+            pass
+
+        # Method 2: Selenium element text (original approach)
         selectors = [
             "p.lll-type-label-medium",
             "p",
@@ -544,6 +565,7 @@ def extract_product_count_and_links(driver, category_name, url):
         except Exception:
             pass
 
+        # Method 3: Page source fallback
         try:
             source = drv.page_source or ""
             v, t = _extract_counts_from_text(source)
@@ -556,25 +578,36 @@ def extract_product_count_and_links(driver, category_name, url):
     
     # Step 1: Load initial page with limit=12 to detect count
     initial_url = re.sub(r'limit=\d+', 'limit=12', url) if 'limit=' in url else (url + '?limit=12' if '?' not in url else url + '&limit=12')
+
+    # Brief pause to let the browser settle after previous category processing
+    time.sleep(1)
+
     print(f"    ⏳ Loading initial page...")
     driver.get(initial_url)
-    
+
     try:
         total_count = None
 
-        # Count detection with stronger fallbacks for pages that use "Viewing X of Y"
-        try:
-            WebDriverWait(driver, 20).until(lambda d: _extract_counts_from_page(d)[1] is not None)
-        except Exception:
-            pass
+        # Count detection with retry - some pages need more time after heavy prior processing
+        for attempt in range(2):
+            if attempt > 0:
+                print(f"    ⏳ Retrying count detection (attempt {attempt + 1})...")
+                driver.refresh()
+                time.sleep(3)
 
-        visible_count, detected_total = _extract_counts_from_page(driver)
-        if detected_total:
-            total_count = detected_total
-            if visible_count is not None:
-                print(f"    📊 Found: 'Viewing/Showing {visible_count} of {total_count} items'")
-            print(f"    ✓ Detected {total_count} total products")
-        
+            try:
+                WebDriverWait(driver, 30).until(lambda d: _extract_counts_from_page(d)[1] is not None)
+            except Exception:
+                pass
+
+            visible_count, detected_total = _extract_counts_from_page(driver)
+            if detected_total:
+                total_count = detected_total
+                if visible_count is not None:
+                    print(f"    📊 Found: 'Viewing/Showing {visible_count} of {total_count} items'")
+                print(f"    ✓ Detected {total_count} total products")
+                break
+
         if not total_count:
             print(f"    ⚠ Could not detect count, using default=500")
             total_count = 500
